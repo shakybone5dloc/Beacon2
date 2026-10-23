@@ -1,5 +1,7 @@
 package dev.beacon.domain.applications;
 
+import dev.beacon.domain.DomainException;
+
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
@@ -55,6 +57,18 @@ public class JobApplication {
         app.updatedAt = now;
 
         return app;
+    }
+
+    public void changeStatus(ApplicationStatus newStatus, Instant now) {
+        if (newStatus == status) {
+            throw new DomainException("Application is already " + status + ".");
+        }
+        if (!ApplicationStatusTransitions.canMove(status, newStatus)) {
+            throw new DomainException("Cannot move an application from " + status + " to " + newStatus + ".");
+        }
+
+        this.status = newStatus;
+        this.updatedAt = now;
     }
 
     private static String trimToNull(String value) {

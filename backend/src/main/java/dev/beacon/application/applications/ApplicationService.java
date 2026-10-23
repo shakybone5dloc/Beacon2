@@ -2,8 +2,10 @@ package dev.beacon.application.applications;
 
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.CreateApplicationRequest;
+import dev.beacon.domain.applications.ApplicationStatus;
 import dev.beacon.domain.applications.JobApplication;
 import dev.beacon.infrastructure.persistence.JobApplicationRepository;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,5 +51,23 @@ public class ApplicationService {
                 .stream()
                 .map(ApplicationMappings::toResponse)
                 .toList();
+    }
+
+    @Transactional
+    public Optional<ApplicationResponse> changeStatus(UUID id, ApplicationStatus newStatus, long expectedVersion) {
+        var found = repository.findById(id);
+        if (found.isEmpty()) {
+            return Optional.empty();
+        }
+        var application = found.get();
+
+        if (application.getVersion().longValue() != expectedVersion) {
+            throw new OptimisticLockingFailureException(String.format("Application with id %s has version %d, which does not match version %d", application.getId(), application.getVersion(), expectedVersion));
+        }
+
+        application.changeStatus(newStatus, Instant.now(clock));
+
+        repository.flush();
+        return Optional.of(ApplicationMappings.toResponse(application));
     }
 }

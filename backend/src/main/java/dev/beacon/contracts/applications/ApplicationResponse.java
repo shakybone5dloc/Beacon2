@@ -2,6 +2,7 @@ package dev.beacon.contracts.applications;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
 
 public record ApplicationResponse (
         UUID id,
@@ -12,6 +13,7 @@ public record ApplicationResponse (
         String status,
         Instant createdAt,
         Instant updatedAt,
-        Long version
+        Long version,
+        List<String> allowedTransitions
 ) {
 }
