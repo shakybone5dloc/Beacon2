@@ -9,16 +9,24 @@
       "autoPort": false
     },
     {
-      "name": "api (testcontainers db)",
-      "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "cd backend && .\\mvnw.cmd spring-boot:test-run"],
-      "port": 8080
-    },
-    {
       "name": "frontend",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "frontend", "start"],
       "port": 4200
+    },
+    {
+      "name": "api (testcontainers db)",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd backend && .\\mvnw.cmd spring-boot:test-run -Dspring-boot.run.arguments=--server.port=8081"],
+      "port": 8081,
+      "autoPort": false
+    },
+    {
+      "name": "frontend (testcontainers api)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "start", "--", "--port", "4201", "--proxy-config", "proxy.testcontainers.conf.json"],
+      "port": 4201,
+      "autoPort": false
     }
   ]
 }

@@ -1,0 +1,132 @@
+<h1>Find jobs</h1>
+
+<form [formGroup]="form" (ngSubmit)="search()" novalidate class="search">
+  <label class="keywords">
+    Keywords
+    <input formControlName="keywords" placeholder="java spring angular" />
+    @if (form.controls.keywords.touched && form.controls.keywords.invalid) {
+      <span class="error">Enter at least one keyword.</span>
+    }
+  </label>
+  <label>
+    Location
+    <input formControlName="location" placeholder="USA, Denver, anywhere..." />
+  </label>
+  <label class="check">
+    <input type="checkbox" formControlName="remoteOnly" />
+    Remote only
+  </label>
+  <button type="submit" [disabled]="searching()">
+    {{ searching() ? 'Searching...' : 'Search' }}
+  </button>
+</form>
+
+@if (sources().length > 0) {
+  <fieldset class="sources">
+    <legend>Sources</legend>
+    @for (source of sources(); track source.id) {
+      <label
+        class="source"
+        [class.off]="!source.configured"
+        [title]="source.setupHint ?? source.coverage"
+      >
+        <input
+          type="checkbox"
+          [checked]="source.configured && isSelected(source.id)"
+          [disabled]="!source.configured"
+          (change)="toggleSource(source.id)"
+        />
+        <span class="name">{{ source.name }}</span>
+        <span class="coverage">
+          {{ source.configured ? source.coverage : 'Needs an API key. ' + source.setupHint }}
+        </span>
+      </label>
+    }
+  </fieldset>
+}
+
+@if (error(); as message) {
+  <p class="notice">{{ message }}</p>
+}
+
+@for (failure of failures(); track failure.id) {
+  <p class="notice">{{ sourceName(failure.id) }}: {{ failure.error }}</p>
+}
+
+@if (state.results(); as results) {
+  <p class="summary">
+    {{ results.postings.length }} {{ results.postings.length === 1 ? 'posting' : 'postings' }}
+    @for (s of results.sources; track s.id) {
+      @if (!s.error) {
+        <span class="count">{{ sourceName(s.id) }} {{ s.count }}</span>
+      }
+    }
+  </p>
+
+  <ul class="results">
+    @for (p of results.postings; track p.source + p.id) {
+      <li class="posting">
+        <div class="head">
+          <a class="title" [href]="p.url" target="_blank" rel="noopener">{{ p.title }}</a>
+          @if (formatPosted(p); as posted) {
+            <span class="posted">{{ posted }}</span>
+          }
+        </div>
+        <div class="meta">
+          @if (p.company) {
+            <span class="company">{{ p.company }}</span>
+          }
+          @if (formatLocation(p.location); as where) {
+            <span [title]="p.location">{{ where }}</span>
+          }
+          @if (p.remote) {
+            <span class="chip">Remote</span>
+          }
+          @if (formatSalary(p); as salary) {
+            <span class="salary">{{ salary }}</span>
+          }
+          @if (p.closesOn) {
+            <span class="chip closes">Closes {{ p.closesOn | date: 'MMM d' }}</span>
+          }
+        </div>
+        @if (p.snippet) {
+          <p class="snippet">{{ p.snippet }}</p>
+        }
+        <div class="foot">
+          @if (source(p.source); as s) {
+            <a
+              class="via"
+              [class.adzuna]="s.id === 'adzuna'"
+              [href]="s.attributionUrl"
+              target="_blank"
+              rel="noopener"
+            >
+              {{ s.id === 'adzuna' ? 'Jobs by Adzuna' : 'via ' + s.name }}
+            </a>
+          }
+          @for (tag of p.tags.slice(0, 4); track tag) {
+            <span class="tag">{{ tag }}</span>
+          }
+          <span class="spacer"></span>
+          @if (savedByUrl().get(p.url); as appId) {
+            <a class="saved" [routerLink]="['/applications', appId]">On your board</a>
+          } @else {
+            <button
+              type="button"
+              class="save"
+              [disabled]="savingUrls().has(p.url)"
+              (click)="save(p)"
+            >
+              {{ savingUrls().has(p.url) ? 'Saving...' : 'Save to board' }}
+            </button>
+          }
+        </div>
+        @if (saveErrors().get(p.url); as saveError) {
+          <p class="error">{{ saveError }}</p>
+        }
+      </li>
+    } @empty {
+      <li class="empty">No postings matched. Try fewer keywords or another location.</li>
+    }
+  </ul>
+}
