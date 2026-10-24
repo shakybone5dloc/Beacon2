@@ -76,6 +76,59 @@ describe('Board', () => {
     expect(link.getAttribute('href')).toBe('/applications/a1');
   });
 
+  describe('time in status', () => {
+    const daysAgo = (days: number) =>
+      new Date(Date.now() - days * 24 * 60 * 60 * 1000 - 60_000).toISOString();
+
+    async function render(...apps: ReturnType<typeof anApplication>[]) {
+      const fixture = TestBed.createComponent(Board);
+      await fixture.whenStable();
+      http.expectOne('/api/applications').flush(apps);
+      await fixture.whenStable();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    function cardFor(el: HTMLElement, company: string): HTMLElement {
+      return Array.from(el.querySelectorAll<HTMLElement>('.card')).find((c) =>
+        c.textContent?.includes(company),
+      )!;
+    }
+
+    it('shows each active card how long it has been in its status', async () => {
+      const el = await render(
+        anApplication({ company: 'Acme', status: 'APPLIED', statusChangedAt: daysAgo(3) }),
+      );
+
+      const age = cardFor(el, 'Acme').querySelector('.age')!;
+      expect(age.textContent?.trim()).toBe('3d');
+      expect(age.getAttribute('title')).toBe('In Applied for 3 days.');
+      expect(cardFor(el, 'Acme').classList).not.toContain('stale');
+    });
+
+    it('highlights cards past their status limit and counts them', async () => {
+      const el = await render(
+        anApplication({ company: 'Acme', status: 'APPLIED', statusChangedAt: daysAgo(8) }),
+        anApplication({ company: 'Globex', status: 'OFFER', statusChangedAt: daysAgo(4) }),
+        anApplication({ company: 'Initech', status: 'INTERVIEWING', statusChangedAt: daysAgo(30) }),
+      );
+
+      expect(cardFor(el, 'Acme').classList).toContain('stale');
+      expect(cardFor(el, 'Globex').classList).toContain('stale');
+      expect(cardFor(el, 'Initech').classList).not.toContain('stale');
+      expect(el.querySelector('.quiet')?.textContent).toContain('2 applications have gone quiet');
+    });
+
+    it('leaves closed cards without an age and out of the count', async () => {
+      const el = await render(
+        anApplication({ company: 'Acme', status: 'REJECTED', statusChangedAt: daysAgo(90) }),
+      );
+
+      expect(cardFor(el, 'Acme').querySelector('.age')).toBeNull();
+      expect(cardFor(el, 'Acme').classList).not.toContain('stale');
+      expect(el.querySelector('.quiet')).toBeNull();
+    });
+  });
+
   it('shows Loading... until the applications arrive', async () => {
     const fixture = TestBed.createComponent(Board);
     await fixture.whenStable();

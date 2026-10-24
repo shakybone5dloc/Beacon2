@@ -10,6 +10,13 @@
 } @else if (applications() == null) {
   <p>Loading...</p>
 } @else {
+  @if (staleCount() > 0) {
+    <p class="quiet">
+      {{ staleCount() }} {{ staleCount() === 1 ? 'application has' : 'applications have' }}
+      gone quiet.
+    </p>
+  }
+
   <div class="board">
     @for (column of columns(); track column.title) {
       <section class="column">
@@ -18,9 +25,17 @@
           <span class="count">{{ column.cards.length }}</span>
         </h2>
 
-        @for (app of column.cards; track app.id) {
-          <article class="card">
-            <a [routerLink]="['/applications', app.id]" class="company">{{ app.company }}</a>
+        @for (card of column.cards; track card.app.id) {
+          @let app = card.app;
+          <article class="card" [class.stale]="card.staleness?.stale">
+            <div class="title">
+              <a [routerLink]="['/applications', app.id]" class="company">{{ app.company }}</a>
+              @if (card.staleness; as s) {
+                <span class="age" [title]="s.description" [attr.aria-label]="s.description">
+                  {{ s.age }}
+                </span>
+              }
+            </div>
             <span>{{ app.role }}</span>
             @if (column.statuses.length > 1) {
               <span class="badge">{{ app.status | titlecase }}</span>

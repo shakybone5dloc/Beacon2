@@ -5,11 +5,17 @@ import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApplicationsApi } from '../applications/applications-api';
 import { ApplicationResponse, ApplicationStatus } from '../applications/application.model';
+import { Staleness, stalenessOf } from '../applications/staleness';
+
+interface Card {
+  app: ApplicationResponse;
+  staleness: Staleness | null;
+}
 
 interface Column {
   title: string;
   statuses: ApplicationStatus[];
-  cards: ApplicationResponse[];
+  cards: Card[];
 }
 
 // Active stages get their own column; every terminal status shares "Closed".
@@ -35,14 +41,27 @@ export class Board implements OnInit {
   protected readonly busy = signal(false);
   protected readonly notice = signal<string | null>(null);
 
+  /** Reference time for card ages; refreshed whenever the list loads. */
+  private readonly now = signal(new Date());
+
   protected readonly columns = computed<Column[]>(() => {
     const apps = this.applications() ?? [];
+    const now = this.now();
 
     return COLUMNS.map((column) => ({
       ...column,
-      cards: apps.filter((app) => column.statuses.includes(app.status)),
+      cards: apps
+        .filter((app) => column.statuses.includes(app.status))
+        .map((app) => ({ app, staleness: stalenessOf(app, now) })),
     }));
   });
+
+  protected readonly staleCount = computed(
+    () =>
+      this.columns()
+        .flatMap((c) => c.cards)
+        .filter((card) => card.staleness?.stale).length,
+  );
 
   ngOnInit(): void {
     this.load();
@@ -57,6 +76,7 @@ export class Board implements OnInit {
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: (updated) => {
+          this.now.set(new Date());
           this.applications.update((list) => list!.map((a) => (a.id === updated.id ? updated : a)));
         },
         error: (err: HttpErrorResponse) => {
@@ -77,7 +97,10 @@ export class Board implements OnInit {
 
   private load(): void {
     this.api.list().subscribe({
-      next: (apps) => this.applications.set(apps),
+      next: (apps) => {
+        this.now.set(new Date());
+        this.applications.set(apps);
+      },
       error: () => this.error.set('Could not load applications. Is the API running?'),
     });
   }

@@ -1,4 +1,4 @@
-import { durationBetween } from './durations';
+import { durationBetween, shortDurationBetween } from './durations';
 
 describe('durationBetween', () => {
   const start = '2026-10-01T12:00:00Z';
@@ -16,5 +16,18 @@ describe('durationBetween', () => {
 
   it('treats a negative gap as less than an hour', () => {
     expect(durationBetween('2026-10-02T00:00:00Z', start)).toBe('less than an hour');
+  });
+});
+
+describe('shortDurationBetween', () => {
+  const start = '2026-10-01T12:00:00Z';
+
+  it.each([
+    ['2026-10-01T12:59:00Z', '<1h'],
+    ['2026-10-01T17:00:00Z', '5h'],
+    ['2026-10-02T12:00:00Z', '1d'],
+    ['2026-10-13T12:00:00Z', '12d'],
+  ])('to %s is %s', (end, expected) => {
+    expect(shortDurationBetween(start, end)).toBe(expected);
   });
 });
