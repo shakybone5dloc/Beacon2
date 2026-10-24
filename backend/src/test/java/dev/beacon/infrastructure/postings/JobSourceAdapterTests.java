@@ -286,6 +286,33 @@ class JobSourceAdapterTests {
         }
 
         @Test
+        void dropsAnnouncementsThatOnlyMentionTheKeywordInPassing() {
+            var builder = RestClient.builder();
+            var server = MockRestServiceServer.bindTo(builder).build();
+            var longSummary = "Develop and maintain enterprise systems for the agency. ".repeat(6) + "Uses Java and Spring.";
+            server.expect(requestTo(startsWith("https://data.usajobs.gov/api/Search")))
+                    .andRespond(withSuccess("""
+                            {"SearchResult": {"SearchResultItems": [
+                              {"MatchedObjectDescriptor": {"PositionID": "P1", "PositionTitle": "IT Specialist (APPSW)",
+                                "OrganizationName": "Census Bureau", "PositionURI": "https://www.usajobs.gov/job/1",
+                                "UserArea": {"Details": {"JobSummary": "%s"}}}},
+                              {"MatchedObjectDescriptor": {"PositionID": "P2", "PositionTitle": "Food and Beverage Attendant",
+                                "OrganizationName": "Army MWR", "PositionURI": "https://www.usajobs.gov/job/2",
+                                "UserArea": {"Details": {"JobSummary": "Serve food and beverages in the club."}}}}
+                            ]}}
+                            """.formatted(longSummary), MediaType.APPLICATION_JSON));
+            var props = properties(null, new PostingsProperties.UsaJobs("k1", "me@example.com"));
+
+            var results = new UsaJobsSource(builder, new MutableClock(), props).search(JAVA);
+
+            // Kept even though "Java" sits past the snippet's cut-off.
+            assertThat(results).singleElement().satisfies(p -> {
+                assertThat(p.title()).isEqualTo("IT Specialist (APPSW)");
+                assertThat(p.snippet()).doesNotContain("Java");
+            });
+        }
+
+        @Test
         void sendsTheRequiredHeadersAndReadsTheCloseDate() {
             var builder = RestClient.builder();
             var server = MockRestServiceServer.bindTo(builder).build();

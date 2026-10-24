@@ -30,12 +30,17 @@ public final class PostingMatcher {
 
     /** Every term must appear in the title, company, tags or snippet. */
     public static boolean matchesKeywords(JobPosting posting, String keywords) {
-        if (keywords.isBlank()) return true;
-
-        var haystack = String.join(" ", Stream.concat(
+        return matchesKeywords(keywords, Stream.concat(
                 Stream.of(posting.title(), posting.company(), posting.snippet()),
                 posting.tags().stream()
-        ).filter(s -> s != null).toList()).toLowerCase(Locale.ROOT);
+        ).toList());
+    }
+
+    /** Every term must appear somewhere in the given texts; nulls are skipped. */
+    public static boolean matchesKeywords(String keywords, List<String> texts) {
+        if (keywords.isBlank()) return true;
+
+        var haystack = String.join(" ", texts.stream().filter(s -> s != null).toList()).toLowerCase(Locale.ROOT);
 
         return Arrays.stream(keywords.toLowerCase(Locale.ROOT).split("\\s+"))
                 .allMatch(term -> containsWord(haystack, term));

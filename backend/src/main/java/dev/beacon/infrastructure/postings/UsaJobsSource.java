@@ -2,6 +2,7 @@ package dev.beacon.infrastructure.postings;
 
 import dev.beacon.application.postings.JobPosting;
 import dev.beacon.application.postings.JobSource;
+import dev.beacon.application.postings.PostingMatcher;
 import dev.beacon.application.postings.PostingQuery;
 import dev.beacon.config.PostingsProperties;
 import org.springframework.http.HttpHeaders;
@@ -14,6 +15,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -74,6 +76,16 @@ public class UsaJobsSource implements JobSource {
         var postings = new ArrayList<JobPosting>();
         for (var item : body.path("SearchResult").path("SearchResultItems").values()) {
             var job = item.path("MatchedObjectDescriptor");
+            var title = Feeds.text(job, "PositionTitle");
+            var agency = Feeds.text(job, "OrganizationName");
+            var summary = Feeds.text(job.path("UserArea").path("Details"), "JobSummary");
+
+            // USAJOBS matches keywords anywhere in the full announcement, which lets in
+            // unrelated jobs; keep only those naming the keywords in title, agency or summary.
+            if (!PostingMatcher.matchesKeywords(query.keywords(), Arrays.asList(title, agency, Feeds.plain(summary)))) {
+                continue;
+            }
+
             var location = Feeds.text(job, "PositionLocationDisplay");
             var pay = job.path("PositionRemuneration").path(0);
             var published = date(Feeds.text(job, "PublicationStartDate"));
@@ -81,8 +93,8 @@ public class UsaJobsSource implements JobSource {
             postings.add(new JobPosting(
                     id(),
                     Feeds.text(job, "PositionID"),
-                    Feeds.text(job, "PositionTitle"),
-                    Feeds.text(job, "OrganizationName"),
+                    title,
+                    agency,
                     location,
                     query.remoteOnly() || (location != null && location.toLowerCase(Locale.ROOT).contains("remote")),
                     Feeds.text(job, "PositionURI"),
@@ -94,7 +106,7 @@ public class UsaJobsSource implements JobSource {
                     period(Feeds.text(pay, "Description")),
                     null,
                     List.of(),
-                    Feeds.snippet(Feeds.text(job.path("UserArea").path("Details"), "JobSummary"))
+                    Feeds.snippet(summary)
             ));
         }
         return postings;
