@@ -29,11 +29,37 @@ describe('NewApplication', () => {
     expect(el.querySelectorAll('.error').length).toBeGreaterThanOrEqual(2); // company + role
   });
 
-  // TODO 9 (stretch): Fill in company and role, submit, answer the POST with
-  //   .flush({ errors: { company: ['already tracked'] } }, { status: 400, statusText: 'Bad Request' })
-  //   and assert 'already tracked' appears on the page.
-  //   Filling an input in a test:
-  //     const input = el.querySelector<HTMLInputElement>('input[formControlName=company]')!;
-  //     input.value = 'Acme';
-  //     input.dispatchEvent(new Event('input'));   // tells the form the value changed
+  it('shows server validation errors next to the matching field', async () => {
+    const fixture = TestBed.createComponent(NewApplication);
+    await fixture.whenStable();
+    const el: HTMLElement = fixture.nativeElement;
+
+    fill(el, 'company', 'Acme');
+    fill(el, 'role', 'Engineer');
+    el.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+
+    const req = http.expectOne('/api/applications');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      company: 'Acme',
+      role: 'Engineer',
+      jobUrl: null,
+      notes: null,
+    });
+    req.flush(
+      { errors: { company: ['already tracked'] } },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    await fixture.whenStable();
+
+    const companyLabel = el.querySelector('input[formControlName=company]')!.closest('label')!;
+    expect(companyLabel.querySelector('.error')?.textContent).toContain('already tracked');
+    expect(el.querySelectorAll('.error').length).toBe(1);
+  });
 });
+
+function fill(el: HTMLElement, name: string, value: string): void {
+  const input = el.querySelector<HTMLInputElement>(`input[formControlName=${name}]`)!;
+  input.value = value;
+  input.dispatchEvent(new Event('input'));
+}

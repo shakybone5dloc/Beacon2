@@ -112,9 +112,38 @@ describe('Board', () => {
     expect(columns[1].textContent).toContain('Acme');
   });
 
-  // TODO 8: A 409 shows the "changed somewhere else" notice AND reloads the board.
-  //   Same setup, but answer the PATCH with
-  //     .flush({ title: 'Conflict' }, { status: 409, statusText: 'Conflict' })
-  //   then expect a SECOND http.expectOne('/api/applications') (the reload) and flush it.
-  //   After whenStable, the notice text should be on the page.
+  it('shows a notice and reloads the board when the move conflicts', async () => {
+    const fixture = TestBed.createComponent(Board);
+    await fixture.whenStable();
+
+    const acme = anApplication({
+      id: 'a1',
+      company: 'Acme',
+      status: 'SAVED',
+      allowedTransitions: ['APPLIED', 'WITHDRAWN'],
+    });
+    http.expectOne('/api/applications').flush([acme]);
+    await fixture.whenStable();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const applied = Array.from(el.querySelectorAll('button')).find(
+      (b) => b.textContent?.trim() === 'Applied',
+    )!;
+    applied.click();
+
+    http
+      .expectOne('/api/applications/a1/status')
+      .flush({ title: 'Conflict' }, { status: 409, statusText: 'Conflict' });
+
+    // Someone else already moved it; the reload brings back the current state.
+    http
+      .expectOne('/api/applications')
+      .flush([{ ...acme, status: 'APPLIED', version: 1, allowedTransitions: [] }]);
+    await fixture.whenStable();
+
+    expect(el.querySelector('.notice')?.textContent).toContain('changed somewhere else');
+    const columns = el.querySelectorAll('section.column');
+    expect(columns[0].textContent).not.toContain('Acme');
+    expect(columns[1].textContent).toContain('Acme');
+  });
 });
