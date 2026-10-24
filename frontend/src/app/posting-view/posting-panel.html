@@ -1,0 +1,58 @@
+@let app = application();
+<div class="tabs" role="tablist" aria-label="Posting views">
+  <button
+    type="button"
+    role="tab"
+    [attr.aria-selected]="tab() === 'view'"
+    (click)="tab.set('view')"
+  >
+    Posting
+  </button>
+  @if (pdfSrc()) {
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="tab() === 'pdf'"
+      (click)="tab.set('pdf')"
+    >
+      Saved PDF
+    </button>
+  }
+  @if (liveSrc()) {
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="tab() === 'live'"
+      (click)="tab.set('live')"
+    >
+      Live page
+    </button>
+  }
+  <span class="spacer"></span>
+  <a class="print" [routerLink]="['/applications', app.id, 'posting']">Printable view</a>
+</div>
+
+<div class="body" role="tabpanel">
+  @switch (tab()) {
+    @case ('pdf') {
+      <iframe [src]="pdfSrc()" title="Saved posting PDF"></iframe>
+    }
+    @case ('live') {
+      <p class="note">
+        Many job sites refuse to be shown inside other apps. If this stays blank,
+        <a [href]="app.jobUrl" target="_blank" rel="noopener noreferrer">open it in a new tab</a>.
+      </p>
+      <iframe
+        [src]="liveSrc()"
+        title="Live job posting"
+        referrerpolicy="no-referrer"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+      ></iframe>
+    }
+    @default {
+      <div class="scroll">
+        <app-posting-view [application]="app" />
+      </div>
+    }
+  }
+</div>

@@ -212,3 +212,47 @@ section {
   max-height: 32rem;
   overflow-y: auto;
 }
+
+.layout.with-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 720px) minmax(360px, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+.side {
+  position: sticky;
+  top: 1rem;
+  height: calc(100vh - 6rem);
+  display: flex;
+  flex-direction: column;
+}
+.side app-posting-panel {
+  flex: 1;
+}
+@media (max-width: 1099px) {
+  .layout.with-panel {
+    display: block;
+  }
+  .side {
+    position: static;
+    height: 75vh;
+    margin-top: 1.5rem;
+  }
+}
+.heading-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+.panel-toggle {
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.15rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+}

@@ -1,0 +1,63 @@
+@let app = application();
+<article class="posting">
+  <header>
+    <h1>{{ app.role }}</h1>
+    <p class="company">{{ app.company }}</p>
+  </header>
+
+  <dl class="facts">
+    @if (app.location || workArrangement()) {
+      <div>
+        <dt>Location</dt>
+        <dd>
+          {{ app.location }}
+          @if (workArrangement(); as arrangement) {
+            <span class="tag">{{ arrangement }}</span>
+          }
+        </dd>
+      </div>
+    }
+    @if (salary(); as pay) {
+      <div>
+        <dt>Salary</dt>
+        <dd>{{ pay }}</dd>
+      </div>
+    }
+    @if (app.postedOn; as postedOn) {
+      <div>
+        <dt>Posted</dt>
+        <dd>{{ postedOn | date: 'mediumDate' }}</dd>
+      </div>
+    }
+    @if (app.applyBy; as applyBy) {
+      <div>
+        <dt>Apply by</dt>
+        <dd>{{ applyBy | date: 'mediumDate' }}</dd>
+      </div>
+    }
+    @if (app.source; as source) {
+      <div>
+        <dt>Found on</dt>
+        <dd>{{ source }}</dd>
+      </div>
+    }
+  </dl>
+
+  @if (app.jobUrl; as url) {
+    <p class="original">
+      Original posting: <a [href]="url" target="_blank" rel="noopener noreferrer">{{ url }}</a>
+    </p>
+  }
+
+  @if (paragraphs().length > 0) {
+    <div class="description">
+      @for (paragraph of paragraphs(); track $index) {
+        <p>{{ paragraph }}</p>
+      }
+    </div>
+  } @else {
+    <p class="empty">
+      No job description saved yet. Save the posting as PDF, or paste the description in Edit.
+    </p>
+  }
+</article>

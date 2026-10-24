@@ -31,3 +31,14 @@ body {
   padding: 0.6rem 0.8rem;
   border-radius: 6px;
 }
+
+/* Printing a page (the printable posting, mainly) leaves out the app chrome. */
+@media print {
+  header.top,
+  .no-print {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+}

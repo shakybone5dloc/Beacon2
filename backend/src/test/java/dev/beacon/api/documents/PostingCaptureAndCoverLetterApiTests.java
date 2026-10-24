@@ -140,6 +140,32 @@ class PostingCaptureAndCoverLetterApiTests {
         assertThat(capture(UUID.randomUUID().toString())).hasStatus(HttpStatus.NOT_FOUND);
     }
 
+    // --- posting summary ---
+
+    @Test
+    void postingSummaryPrintsBeaconsOwnCopyOfThePosting() {
+        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Java Engineer\", \"salaryMin\": 140000, "
+                + "\"salaryCurrency\": \"USD\", \"jobDescription\": \"Build services.\"}");
+
+        var result = mvc.post().uri("/api/applications/{id}/documents/posting-summary", appId).exchange();
+
+        assertThat(result).hasStatus(HttpStatus.CREATED);
+        assertThat(result).bodyJson().extractingPath("$.kind").isEqualTo("POSTING");
+        assertThat(result).bodyJson().extractingPath("$.filename").asString().startsWith("posting-acme-summary-");
+        assertThat(printer.printedUrls).isEmpty();
+        assertThat(printer.printedHtml).singleElement().satisfies(html -> {
+            assertThat(html).contains("<h1>Java Engineer</h1>");
+            assertThat(html).contains("$140,000");
+            assertThat(html).contains("<p>Build services.</p>");
+        });
+    }
+
+    @Test
+    void postingSummaryForUnknownApplicationReturns404() {
+        assertThat(mvc.post().uri("/api/applications/{id}/documents/posting-summary", UUID.randomUUID()).exchange())
+                .hasStatus(HttpStatus.NOT_FOUND);
+    }
+
     // --- cover letters ---
 
     @Test

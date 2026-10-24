@@ -2,6 +2,7 @@ package dev.beacon.api.documents;
 
 import dev.beacon.application.documents.DocumentService;
 import dev.beacon.application.documents.PostingCaptureService;
+import dev.beacon.application.documents.PostingSummaryService;
 import dev.beacon.contracts.documents.CaptureResponse;
 import dev.beacon.contracts.documents.DocumentResponse;
 import org.springframework.http.ResponseEntity;
@@ -18,10 +19,13 @@ public class ApplicationDocumentsController {
 
     private final DocumentService documents;
     private final PostingCaptureService capture;
+    private final PostingSummaryService summary;
 
-    public ApplicationDocumentsController(DocumentService documents, PostingCaptureService capture) {
+    public ApplicationDocumentsController(DocumentService documents, PostingCaptureService capture,
+                                          PostingSummaryService summary) {
         this.documents = documents;
         this.capture = capture;
+        this.summary = summary;
     }
 
     @GetMapping
@@ -47,6 +51,16 @@ public class ApplicationDocumentsController {
     @PostMapping("/posting-capture")
     public ResponseEntity<CaptureResponse> capturePosting(@PathVariable UUID applicationId) {
         return ResponseEntity.of(capture.capture(applicationId));
+    }
+
+    /** Prints Beacon's own copy of the posting, from the stored details, as a POSTING document. */
+    @PostMapping("/posting-summary")
+    public ResponseEntity<DocumentResponse> savePostingSummary(@PathVariable UUID applicationId) {
+        return summary.save(applicationId)
+                .map(saved -> ResponseEntity
+                        .created(URI.create("/api/applications/" + applicationId + "/documents/" + saved.id() + "/content"))
+                        .body(saved))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{documentId}/content")

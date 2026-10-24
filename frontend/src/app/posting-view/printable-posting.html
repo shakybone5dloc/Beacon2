@@ -1,0 +1,29 @@
+@if (error(); as message) {
+  <p class="notice">{{ message }}</p>
+  <p><a routerLink="/">Back to the board</a></p>
+} @else if (application(); as app) {
+  <div class="toolbar no-print">
+    <a [routerLink]="['/applications', app.id]" class="back">← Back to the application</a>
+    <span class="spacer"></span>
+    <button type="button" (click)="print()">Print</button>
+    <button type="button" class="primary" [disabled]="saving()" (click)="saveToDocuments()">
+      {{ saving() ? 'Saving...' : 'Save as PDF to documents' }}
+    </button>
+  </div>
+
+  @if (saved(); as doc) {
+    <p class="notice no-print">
+      Saved as <a [href]="contentUrl(doc)" target="_blank" rel="noopener">{{ doc.filename }}</a> in
+      this application's documents.
+    </p>
+  }
+  @if (notice(); as text) {
+    <p class="notice no-print">{{ text }}</p>
+  }
+
+  <div class="page">
+    <app-posting-view [application]="app" />
+  </div>
+} @else {
+  <p>Loading...</p>
+}

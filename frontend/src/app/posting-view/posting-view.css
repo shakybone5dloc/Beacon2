@@ -1,0 +1,76 @@
+:host {
+  display: block;
+}
+.posting {
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+header h1 {
+  font-size: 1.45rem;
+  line-height: 1.25;
+  margin: 0;
+}
+.company {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.6rem 1.25rem;
+  margin: 1rem 0;
+  padding: 0.75rem 0.9rem;
+  background: var(--surface);
+  border-radius: 8px;
+}
+.facts dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+.tag {
+  display: inline-block;
+  margin-left: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: normal;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: white;
+}
+.original {
+  font-size: 0.85rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.description p {
+  /* Single line breaks inside a paragraph (lists, addresses) are kept. */
+  white-space: pre-line;
+  margin: 0 0 0.85em;
+}
+.empty {
+  color: var(--muted);
+}
+
+@media print {
+  .posting {
+    font-size: 10.5pt;
+  }
+  .facts {
+    background: none;
+    border: 1px solid #ccc;
+  }
+  .original a {
+    color: inherit;
+  }
+  .description p {
+    break-inside: avoid;
+  }
+}

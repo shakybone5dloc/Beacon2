@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
@@ -34,6 +34,8 @@ export class ApplicationDocuments implements OnInit {
 
   /** After a posting capture; true when its text became the job description. */
   readonly captured = output<boolean>();
+  /** The current list, whenever it loads or changes. */
+  readonly changed = output<DocumentResponse[]>();
 
   protected readonly documents = signal<DocumentResponse[] | null>(null);
   protected readonly error = signal<string | null>(null);
@@ -56,6 +58,13 @@ export class ApplicationDocuments implements OnInit {
       docs: docs.filter((d) => d.kind === kind),
     })).filter((g) => g.docs.length > 0);
   });
+
+  constructor() {
+    effect(() => {
+      const docs = this.documents();
+      if (docs) this.changed.emit(docs);
+    });
+  }
 
   ngOnInit(): void {
     this.kind.set(this.defaultKind());

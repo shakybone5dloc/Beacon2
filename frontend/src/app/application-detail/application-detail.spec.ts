@@ -9,6 +9,9 @@ import { ApplicationDocuments } from '../documents/application-documents';
 import { CoverLetterDrafter } from '../documents/cover-letter-drafter';
 import { Component, input, output } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { DocumentResponse } from '../documents/document.model';
+import { aDocument } from '../documents/testing';
+import { PostingPanel } from '../posting-view/posting-panel';
 
 /** Stand-ins for the child panels, which have their own specs and HTTP calls. */
 @Component({
@@ -19,6 +22,7 @@ class DocumentsStub {
   readonly applicationId = input<string | null>(null);
   readonly jobUrl = input<string | null>(null);
   readonly captured = output<boolean>();
+  readonly changed = output<DocumentResponse[]>();
   reload(): void {}
 }
 
@@ -49,6 +53,7 @@ describe('ApplicationDetail', () => {
   afterEach(() => {
     http.verify();
     vi.restoreAllMocks();
+    localStorage.clear();
   });
 
   const created: StatusChange = {
@@ -195,6 +200,55 @@ describe('ApplicationDetail', () => {
       'its text is now the job description',
     );
     expect(el.querySelector('.description-text')?.textContent).toBe('Captured text');
+  });
+
+  describe('posting panel', () => {
+    function toggle(el: HTMLElement): HTMLButtonElement {
+      return el.querySelector<HTMLButtonElement>('button.panel-toggle')!;
+    }
+
+    it('opens beside the details and takes over showing the description', async () => {
+      const { fixture, el } = await open(
+        anApplication({ id: 'a1', jobDescription: 'Build services.' }),
+      );
+      expect(el.querySelector('aside app-posting-panel')).toBeNull();
+      expect(el.querySelector('.description-text')).not.toBeNull();
+
+      toggle(el).click();
+      await fixture.whenStable();
+
+      expect(toggle(el).textContent?.trim()).toBe('Hide posting');
+      expect(toggle(el).getAttribute('aria-expanded')).toBe('true');
+      expect(el.querySelector('aside app-posting-panel')).not.toBeNull();
+      expect(el.querySelector('main .description-text, .main .description-text')).toBeNull();
+    });
+
+    it('remembers whether it was open', async () => {
+      const { fixture, el } = await open(anApplication({ id: 'a1' }));
+
+      toggle(el).click();
+      await fixture.whenStable();
+
+      expect(localStorage.getItem('beacon.detail.postingPanel')).toBe('open');
+    });
+
+    it('gets the newest saved posting PDF from the documents list', async () => {
+      localStorage.setItem('beacon.detail.postingPanel', 'open');
+      const { fixture } = await open(anApplication({ id: 'a1' }));
+
+      fixture.debugElement
+        .query(By.directive(DocumentsStub))
+        .componentInstance.changed.emit([
+          aDocument({ id: 'r1', kind: 'RESUME' }),
+          aDocument({ id: 'p2', kind: 'POSTING' }),
+          aDocument({ id: 'p1', kind: 'POSTING' }),
+        ]);
+      await fixture.whenStable();
+
+      const panel = fixture.debugElement.query(By.directive(PostingPanel))
+        .componentInstance as PostingPanel;
+      expect(panel.postingPdfUrl()).toBe('/api/applications/a1/documents/p2/content');
+    });
   });
 
   it('shows a notice when the application does not exist', async () => {

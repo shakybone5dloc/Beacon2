@@ -11,6 +11,9 @@ import {
 } from '../applications/application.model';
 import { attentionFor } from '../applications/attention';
 import { ApplicationDocuments } from '../documents/application-documents';
+import { DocumentsApi } from '../documents/documents-api';
+import { DocumentResponse } from '../documents/document.model';
+import { PostingPanel } from '../posting-view/posting-panel';
 import { CoverLetterDrafter } from '../documents/cover-letter-drafter';
 import { formatSalary } from '../postings/format';
 import { durationBetween } from '../applications/durations';
@@ -22,13 +25,21 @@ interface TimelineEntry extends StatusChange {
 
 @Component({
   selector: 'app-application-detail',
-  imports: [DatePipe, TitleCasePipe, RouterLink, ApplicationDocuments, CoverLetterDrafter],
+  imports: [
+    DatePipe,
+    TitleCasePipe,
+    RouterLink,
+    ApplicationDocuments,
+    CoverLetterDrafter,
+    PostingPanel,
+  ],
   templateUrl: './application-detail.html',
   styleUrl: './application-detail.css',
 })
 export class ApplicationDetail implements OnInit {
   private readonly api = inject(ApplicationsApi);
   private readonly router = inject(Router);
+  private readonly documentsApi = inject(DocumentsApi);
 
   /** Bound from the `:id` route param. */
   readonly id = input.required<string>();
@@ -46,6 +57,17 @@ export class ApplicationDetail implements OnInit {
   });
 
   protected readonly documents = viewChild(ApplicationDocuments);
+  protected readonly documentList = signal<DocumentResponse[]>([]);
+  protected readonly panelOpen = signal(initialPanelOpen());
+
+  /** The newest saved posting (documents arrive newest first), for the panel's PDF tab. */
+  protected readonly postingPdfUrl = computed(() => {
+    const posting = this.documentList().find(
+      (d) => d.kind === 'POSTING' && d.contentType === 'application/pdf',
+    );
+    return posting ? this.documentsApi.contentUrl(posting) : null;
+  });
+
   protected readonly salary = computed(() => {
     const app = this.application();
     return app ? formatSalary(app) : null;
@@ -70,6 +92,16 @@ export class ApplicationDetail implements OnInit {
 
   ngOnInit(): void {
     this.load();
+  }
+
+  protected togglePanel(): void {
+    const open = !this.panelOpen();
+    this.panelOpen.set(open);
+    try {
+      localStorage.setItem(PANEL_KEY, open ? 'open' : 'closed');
+    } catch {
+      // Storage can be unavailable (private windows); the toggle still works for this visit.
+    }
   }
 
   protected move(app: ApplicationResponse, target: ApplicationStatus): void {
@@ -160,4 +192,17 @@ export class ApplicationDetail implements OnInit {
         ),
     });
   }
+}
+
+const PANEL_KEY = 'beacon.detail.postingPanel';
+
+/** Remembers the user's last choice; otherwise open on screens wide enough for two columns. */
+function initialPanelOpen(): boolean {
+  try {
+    const saved = localStorage.getItem(PANEL_KEY);
+    if (saved) return saved === 'open';
+  } catch {
+    // Fall through to the screen-size default.
+  }
+  return typeof window !== 'undefined' && window.innerWidth >= 1100;
 }

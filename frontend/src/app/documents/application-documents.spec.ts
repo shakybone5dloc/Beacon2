@@ -52,6 +52,25 @@ describe('ApplicationDocuments', () => {
     expect(el.textContent).toContain('82 KB');
   });
 
+  it('reports the list whenever it loads or changes', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const fixture = TestBed.createComponent(ApplicationDocuments);
+    const lists: string[][] = [];
+    fixture.componentInstance.changed.subscribe((docs) => lists.push(docs.map((d) => d.id)));
+    fixture.componentRef.setInput('applicationId', 'a1');
+    await fixture.whenStable();
+    http.expectOne('/api/applications/a1/documents').flush([aDocument({ id: 'd1' })]);
+    await fixture.whenStable();
+
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('button.delete')!
+      .click();
+    http.expectOne((r) => r.method === 'DELETE').flush(null);
+    await fixture.whenStable();
+
+    expect(lists).toEqual([['d1'], []]);
+  });
+
   it('shows the default kind as selected in the type picker', async () => {
     const { el } = await render([]);
 

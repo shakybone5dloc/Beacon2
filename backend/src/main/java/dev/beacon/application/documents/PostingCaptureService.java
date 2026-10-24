@@ -68,7 +68,7 @@ public class PostingCaptureService {
             var descriptionSaved = application.getJobDescription() == null
                     && text.filter(t -> t.length() >= MIN_DESCRIPTION).isPresent();
             if (descriptionSaved) {
-                var description = text.get();
+                var description = DocumentText.reflow(text.get());
                 application.setJobDescription(
                         description.length() <= MAX_DESCRIPTION ? description : description.substring(0, MAX_DESCRIPTION), now);
             }

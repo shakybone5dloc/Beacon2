@@ -37,6 +37,11 @@ export class DocumentsApi {
     return this.http.post<CaptureResponse>(`${this.base(applicationId)}/posting-capture`, null);
   }
 
+  /** Renders Beacon's own posting view to PDF on the server and attaches it. */
+  savePostingSummary(applicationId: string): Observable<DocumentResponse> {
+    return this.http.post<DocumentResponse>(`${this.base(applicationId)}/posting-summary`, null);
+  }
+
   private base(applicationId: string | null): string {
     return applicationId ? `/api/applications/${applicationId}/documents` : '/api/documents';
   }
