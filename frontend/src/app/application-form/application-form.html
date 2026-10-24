@@ -1,0 +1,64 @@
+<h1>{{ isEdit() ? 'Edit application' : 'New application' }}</h1>
+
+@if (loadError(); as message) {
+  <p class="notice">{{ message }}</p>
+  <p><a routerLink="/">Back to the board</a></p>
+} @else if (loading()) {
+  <p>Loading...</p>
+} @else {
+  @if (formError(); as message) {
+    <p class="notice">
+      {{ message }}
+      @if (stale()) {
+        <button type="button" class="link" (click)="loadExisting()">
+          Load latest (discards your edits)
+        </button>
+      }
+    </p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      Company
+      <input formControlName="company" />
+      @if (errorFor('company'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+
+    <label>
+      Role
+      <input formControlName="role" />
+      @if (errorFor('role'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+
+    <label>
+      Job URL
+      <input formControlName="jobUrl" type="url" placeholder="https://..." />
+      @if (errorFor('jobUrl'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+
+    <label>
+      Notes
+      <textarea formControlName="notes" rows="5"></textarea>
+      @if (errorFor('notes'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+
+    <div class="buttons">
+      <button type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Saving...' : 'Save' }}
+      </button>
+      @if (id(); as appId) {
+        <a [routerLink]="['/applications', appId]">Cancel</a>
+      } @else {
+        <a routerLink="/">Cancel</a>
+      }
+    </div>
+  </form>
+}

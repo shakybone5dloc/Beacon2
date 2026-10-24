@@ -2,38 +2,43 @@
 <p><a routerLink="/applications/new" class="new">+ New application</a></p>
 
 @if (notice(); as text) {
-    <p class="notice">{{ text }}</p>
+  <p class="notice">{{ text }}</p>
 }
 
 @if (error(); as message) {
-    <p class="notice">{{ message }}</p>
+  <p class="notice">{{ message }}</p>
 } @else if (applications() == null) {
-    <p>Loading...</p>
+  <p>Loading...</p>
 } @else {
-    <div class="board">
-        @for (column of columns(); track column.status) {
-            <section class="column">
-                <h2>
-                    {{ column.status | titlecase }}
-                    <span class="count">{{ column.cards.length }}</span>
-                </h2>
+  <div class="board">
+    @for (column of columns(); track column.title) {
+      <section class="column">
+        <h2>
+          {{ column.title }}
+          <span class="count">{{ column.cards.length }}</span>
+        </h2>
 
-                @for (app of column.cards; track app.id) {
-                    <article class="card">
-                        <strong>{{ app.company }}</strong>
-                        <span>{{ app.role }}</span>
-                        @if (app.allowedTransitions.length > 0) {
-                            <div class="actions">
-                                @for (target of app.allowedTransitions; track target) {
-                                    <button type="button" [disabled]="busy()" (click)="move(app, target)">{{ target | titlecase }}</button>
-                                }
-                            </div>
-                        }
-                    </article>
-                } @empty {
-                    <p class="empty">Nothing here</p>
+        @for (app of column.cards; track app.id) {
+          <article class="card">
+            <a [routerLink]="['/applications', app.id]" class="company">{{ app.company }}</a>
+            <span>{{ app.role }}</span>
+            @if (column.statuses.length > 1) {
+              <span class="badge">{{ app.status | titlecase }}</span>
+            }
+            @if (app.allowedTransitions.length > 0) {
+              <div class="actions">
+                @for (target of app.allowedTransitions; track target) {
+                  <button type="button" [disabled]="busy()" (click)="move(app, target)">
+                    {{ target | titlecase }}
+                  </button>
                 }
-            </section>
+              </div>
+            }
+          </article>
+        } @empty {
+          <p class="empty">Nothing here</p>
         }
-    </div>
+      </section>
+    }
+  </div>
 }

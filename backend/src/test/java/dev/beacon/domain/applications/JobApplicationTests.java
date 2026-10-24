@@ -28,4 +28,28 @@ class JobApplicationTests {
         assertThat(app.getJobUrl()).isNull();
         assertThat(app2.getJobUrl()).isEqualTo("url");
     }
+
+    @Test
+    void updateDetailsTrimsValuesAndBumpsUpdatedAt() {
+        var app = JobApplication.create("Acme", "Engineer", "https://acme.dev/job", "note", NOW);
+        var later = NOW.plusSeconds(60);
+
+        app.updateDetails("  Globex  ", "Staff Engineer", "  ", "  new notes  ", later);
+
+        assertThat(app.getCompany()).isEqualTo("Globex");
+        assertThat(app.getRole()).isEqualTo("Staff Engineer");
+        assertThat(app.getJobUrl()).isNull();
+        assertThat(app.getNotes()).isEqualTo("new notes");
+        assertThat(app.getUpdatedAt()).isEqualTo(later);
+        assertThat(app.getCreatedAt()).isEqualTo(NOW);
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.SAVED);
+    }
+
+    @Test
+    void updateDetailsWithBlankRoleThrowsIllegalArgumentException() {
+        var app = JobApplication.create("Acme", "Engineer", null, null, NOW);
+
+        assertThatIllegalArgumentException()
+            .isThrownBy(() -> app.updateDetails("Acme", " ", null, null, NOW));
+    }
 }

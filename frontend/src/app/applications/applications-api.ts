@@ -3,10 +3,11 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   ApplicationResponse,
+  ApplicationStatus,
   ChangeStatusRequest,
   CreateApplicationRequest,
+  UpdateApplicationRequest,
 } from './application.model';
-import { ApplicationStatus } from './application.model';
 
 @Injectable({ providedIn: 'root' })
 export class ApplicationsApi {
@@ -32,5 +33,13 @@ export class ApplicationsApi {
 
   create(request: CreateApplicationRequest): Observable<ApplicationResponse> {
     return this.http.post<ApplicationResponse>(`${this.baseUrl}`, request);
+  }
+
+  update(id: string, request: UpdateApplicationRequest): Observable<ApplicationResponse> {
+    return this.http.put<ApplicationResponse>(`${this.baseUrl}/${id}`, request);
+  }
+
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }

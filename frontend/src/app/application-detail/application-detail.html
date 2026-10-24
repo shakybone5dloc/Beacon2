@@ -1,0 +1,52 @@
+<p><a routerLink="/" class="back">← Board</a></p>
+
+@if (error(); as message) {
+  <p class="notice">{{ message }}</p>
+} @else if (application(); as app) {
+  <header class="heading">
+    <div>
+      <h1>{{ app.company }}</h1>
+      <p class="role">{{ app.role }}</p>
+    </div>
+    <span class="status">{{ app.status | titlecase }}</span>
+  </header>
+
+  @if (notice(); as text) {
+    <p class="notice">{{ text }}</p>
+  }
+
+  <dl>
+    <dt>Job posting</dt>
+    <dd>
+      @if (app.jobUrl; as url) {
+        <a [href]="url" target="_blank" rel="noopener noreferrer">{{ url }}</a>
+      } @else {
+        <span class="none">None</span>
+      }
+    </dd>
+
+    <dt>Added</dt>
+    <dd>{{ app.createdAt | date: 'medium' }}</dd>
+
+    <dt>Last updated</dt>
+    <dd>{{ app.updatedAt | date: 'medium' }}</dd>
+
+    <dt>Notes</dt>
+    <dd>
+      @if (app.notes; as notes) {
+        <span class="notes">{{ notes }}</span>
+      } @else {
+        <span class="none">None</span>
+      }
+    </dd>
+  </dl>
+
+  <div class="buttons">
+    <a [routerLink]="['/applications', app.id, 'edit']" class="edit">Edit</a>
+    <button type="button" class="delete" [disabled]="deleting()" (click)="remove(app)">
+      {{ deleting() ? 'Deleting...' : 'Delete' }}
+    </button>
+  </div>
+} @else {
+  <p>Loading...</p>
+}

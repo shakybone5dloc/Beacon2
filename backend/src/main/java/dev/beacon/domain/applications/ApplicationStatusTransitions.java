@@ -16,7 +16,11 @@ public final class ApplicationStatusTransitions {
     static {
         ALLOWED.put(SAVED, EnumSet.of(APPLIED, WITHDRAWN));
         ALLOWED.put(APPLIED, EnumSet.of(INTERVIEWING, REJECTED, WITHDRAWN));
-        ALLOWED.put(INTERVIEWING, EnumSet.of(REJECTED, WITHDRAWN));
+        ALLOWED.put(INTERVIEWING, EnumSet.of(OFFER, REJECTED, WITHDRAWN));
+        // REJECTED from OFFER covers an offer being rescinded.
+        ALLOWED.put(OFFER, EnumSet.of(ACCEPTED, DECLINED, REJECTED));
+        ALLOWED.put(ACCEPTED, EnumSet.noneOf(ApplicationStatus.class));
+        ALLOWED.put(DECLINED, EnumSet.noneOf(ApplicationStatus.class));
         ALLOWED.put(REJECTED, EnumSet.noneOf(ApplicationStatus.class));
         ALLOWED.put(WITHDRAWN, EnumSet.noneOf(ApplicationStatus.class));
     }

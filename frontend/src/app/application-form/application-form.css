@@ -1,0 +1,42 @@
+form {
+  display: grid;
+  gap: 1rem;
+  max-width: 520px;
+}
+label {
+  display: grid;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+input,
+textarea {
+  font: inherit;
+  font-weight: normal;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+input.ng-invalid.ng-touched,
+textarea.ng-invalid.ng-touched {
+  border-color: #e50000;
+}
+.error {
+  color: #e50000;
+  font-weight: normal;
+  font-size: 0.85rem;
+}
+.buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 0.5rem;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}

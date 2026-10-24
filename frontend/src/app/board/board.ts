@@ -4,16 +4,22 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApplicationsApi } from '../applications/applications-api';
-import {
-  ApplicationResponse,
-  ApplicationStatus,
-  STATUSES,
-} from '../applications/application.model';
+import { ApplicationResponse, ApplicationStatus } from '../applications/application.model';
 
 interface Column {
-  status: ApplicationStatus;
+  title: string;
+  statuses: ApplicationStatus[];
   cards: ApplicationResponse[];
 }
+
+// Active stages get their own column; every terminal status shares "Closed".
+const COLUMNS: Omit<Column, 'cards'>[] = [
+  { title: 'Saved', statuses: ['SAVED'] },
+  { title: 'Applied', statuses: ['APPLIED'] },
+  { title: 'Interviewing', statuses: ['INTERVIEWING'] },
+  { title: 'Offer', statuses: ['OFFER'] },
+  { title: 'Closed', statuses: ['ACCEPTED', 'DECLINED', 'REJECTED', 'WITHDRAWN'] },
+];
 
 @Component({
   selector: 'app-board',
@@ -32,9 +38,9 @@ export class Board implements OnInit {
   protected readonly columns = computed<Column[]>(() => {
     const apps = this.applications() ?? [];
 
-    return STATUSES.map((status) => ({
-      status,
-      cards: apps.filter((app) => app.status == status),
+    return COLUMNS.map((column) => ({
+      ...column,
+      cards: apps.filter((app) => column.statuses.includes(app.status)),
     }));
   });
 

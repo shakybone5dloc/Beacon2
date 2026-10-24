@@ -7,13 +7,27 @@
   --surface: #f6f8fa;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   font-size: 15px;
   line-height: 1.5;
   color: var(--text);
   background: white;
+}
+
+.notice {
+  background: #fff4e5;
+  border: 1px solid #f5c26b;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
 }

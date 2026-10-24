@@ -5,6 +5,7 @@ import dev.beacon.application.applications.ApplicationService;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.ChangeStatusRequest;
 import dev.beacon.contracts.applications.CreateApplicationRequest;
+import dev.beacon.contracts.applications.UpdateApplicationRequest;
 import dev.beacon.domain.applications.ApplicationStatus;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +41,21 @@ public class ApplicationController {
     @GetMapping
     public List<ApplicationResponse> getAll() {
         return service.list();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApplicationResponse> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateApplicationRequest request
+    ) {
+        return ResponseEntity.of(service.update(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        return service.delete(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 
     @PatchMapping("/{id}/status")

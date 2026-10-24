@@ -3,6 +3,8 @@ export const STATUSES = [
   'APPLIED',
   'INTERVIEWING',
   'OFFER',
+  'ACCEPTED',
+  'DECLINED',
   'REJECTED',
   'WITHDRAWN',
 ] as const;
@@ -27,6 +29,10 @@ export interface CreateApplicationRequest {
   role: string;
   jobUrl: string | null;
   notes: string | null;
+}
+
+export interface UpdateApplicationRequest extends CreateApplicationRequest {
+  version: number;
 }
 
 export interface ChangeStatusRequest {

@@ -1,0 +1,75 @@
+.back {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 720px;
+}
+.heading h1 {
+  margin: 0;
+}
+.role {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.status {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.6rem 1.5rem;
+  max-width: 720px;
+  margin: 1.5rem 0;
+}
+dt {
+  font-weight: 600;
+  color: var(--muted);
+}
+dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.notes {
+  white-space: pre-wrap;
+}
+.none {
+  color: var(--muted);
+}
+
+.buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.edit {
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+.delete {
+  font: inherit;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid #e50000;
+  border-radius: 6px;
+  background: white;
+  color: #e50000;
+  cursor: pointer;
+}
+.delete:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}

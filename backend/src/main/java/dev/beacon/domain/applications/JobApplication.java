@@ -41,22 +41,31 @@ public class JobApplication {
     protected JobApplication() { }
 
     public static JobApplication create(String company, String role, String jobUrl, String notes, Instant now) {
-        if (company == null
-            || company.isBlank()
-            || role == null
-            || role.isBlank()) throw new IllegalArgumentException();
-
         var app = new JobApplication();
         app.id = UUID.randomUUID();
-        app.company = company.strip();
-        app.role = role.strip();
-        app.jobUrl = trimToNull(jobUrl);
-        app.notes = trimToNull(notes);
+        app.applyDetails(company, role, jobUrl, notes);
         app.status = ApplicationStatus.SAVED;
         app.createdAt = now;
         app.updatedAt = now;
 
         return app;
+    }
+
+    public void updateDetails(String company, String role, String jobUrl, String notes, Instant now) {
+        applyDetails(company, role, jobUrl, notes);
+        this.updatedAt = now;
+    }
+
+    private void applyDetails(String company, String role, String jobUrl, String notes) {
+        if (company == null
+            || company.isBlank()
+            || role == null
+            || role.isBlank()) throw new IllegalArgumentException();
+
+        this.company = company.strip();
+        this.role = role.strip();
+        this.jobUrl = trimToNull(jobUrl);
+        this.notes = trimToNull(notes);
     }
 
     public void changeStatus(ApplicationStatus newStatus, Instant now) {

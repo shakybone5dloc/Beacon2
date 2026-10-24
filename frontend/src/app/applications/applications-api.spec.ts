@@ -41,4 +41,22 @@ describe('ApplicationsApi', () => {
     expect(req.request.body).toEqual(request);
     req.flush({});
   });
+
+  it('update PUTs the details and version to /api/applications/:id', () => {
+    const request = { company: 'Acme', role: 'Engineer', jobUrl: null, notes: null, version: 2 };
+    service.update('abc', request).subscribe();
+
+    const req = http.expectOne('/api/applications/abc');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual(request);
+    req.flush({});
+  });
+
+  it('delete DELETEs /api/applications/:id', () => {
+    service.delete('abc').subscribe();
+
+    const req = http.expectOne('/api/applications/abc');
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+  });
 });

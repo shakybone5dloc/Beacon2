@@ -2,24 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Board } from './board';
-import { ApplicationResponse } from '../applications/application.model';
+import { anApplication } from '../applications/testing';
 import { provideRouter } from '@angular/router';
-
-function anApplication(overrides: Partial<ApplicationResponse> = {}): ApplicationResponse {
-  return {
-    id: crypto.randomUUID(),
-    company: 'Acme',
-    role: 'Engineer',
-    jobUrl: null,
-    notes: null,
-    status: 'SAVED',
-    createdAt: '2026-10-23T12:00:00Z',
-    updatedAt: '2026-10-23T12:00:00Z',
-    version: 0,
-    allowedTransitions: [],
-    ...overrides,
-  };
-}
 
 describe('Board', () => {
   let http: HttpTestingController;
@@ -49,10 +33,47 @@ describe('Board', () => {
     const columns: HTMLElement[] = Array.from(
       fixture.nativeElement.querySelectorAll('section.column'),
     );
-    expect(columns.length).toBe(6);
+    expect(columns.length).toBe(5);
     expect(columns[0].textContent).toContain('Acme');
     expect(columns[1].textContent).toContain('Globex');
     expect(columns[0].textContent).not.toContain('Globex');
+  });
+
+  it('groups every closed status into the Closed column with a status badge', async () => {
+    const fixture = TestBed.createComponent(Board);
+    await fixture.whenStable();
+
+    http
+      .expectOne('/api/applications')
+      .flush([
+        anApplication({ company: 'Acme', status: 'ACCEPTED' }),
+        anApplication({ company: 'Globex', status: 'REJECTED' }),
+        anApplication({ company: 'Initech', status: 'OFFER' }),
+      ]);
+    await fixture.whenStable();
+
+    const columns: HTMLElement[] = Array.from(
+      fixture.nativeElement.querySelectorAll('section.column'),
+    );
+    const closed = columns[4];
+    expect(closed.querySelector('h2')?.textContent).toContain('Closed');
+    expect(closed.querySelectorAll('.card').length).toBe(2);
+    expect(closed.textContent).toContain('Accepted');
+    expect(closed.textContent).toContain('Rejected');
+    expect(columns[3].textContent).toContain('Initech');
+    expect(columns[3].querySelector('.badge')).toBeNull();
+  });
+
+  it('links each card to its detail page', async () => {
+    const fixture = TestBed.createComponent(Board);
+    await fixture.whenStable();
+
+    http.expectOne('/api/applications').flush([anApplication({ id: 'a1', company: 'Acme' })]);
+    await fixture.whenStable();
+
+    const link = fixture.nativeElement.querySelector('.card a.company');
+    expect(link.textContent).toContain('Acme');
+    expect(link.getAttribute('href')).toBe('/applications/a1');
   });
 
   it('shows Loading... until the applications arrive', async () => {
