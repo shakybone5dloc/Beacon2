@@ -1,5 +1,7 @@
 package dev.beacon.api.errors;
 
+import dev.beacon.application.coverletters.CoverLetterException;
+import dev.beacon.application.documents.PostingCaptureException;
 import dev.beacon.domain.DomainException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.*;
@@ -55,6 +57,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
                 "This application was changed by someone else. Reload it and try again.");
         problem.setTitle("Conflict");
+        return problem;
+    }
+
+    @ExceptionHandler(PostingCaptureException.class)
+    public ProblemDetail handleCapture(PostingCaptureException ex) {
+        // 502 when the page or browser failed (try again, or print it by hand); 422 when the request can't work.
+        var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
+        var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        problem.setTitle("Could not save the posting");
+        return problem;
+    }
+
+    @ExceptionHandler(CoverLetterException.class)
+    public ProblemDetail handleCoverLetter(CoverLetterException ex) {
+        var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
+        var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        problem.setTitle("Could not prepare the cover letter");
         return problem;
     }
 

@@ -99,7 +99,9 @@ public class AdzunaSource implements JobSource {
                     "year",
                     null,
                     category == null ? List.of() : List.of(category),
-                    snippet
+                    snippet,
+                    // Adzuna only ever sends a snippet; the full ad lives on the employer's site.
+                    null
             ));
         }
         return postings;

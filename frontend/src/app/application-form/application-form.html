@@ -62,6 +62,91 @@
       </label>
     </div>
 
+    <details
+      class="posting"
+      [open]="detailsOpen()"
+      (toggle)="detailsOpen.set($any($event.target).open)"
+    >
+      <summary>Posting details</summary>
+      <div class="grid">
+        <label class="wide">
+          Location
+          <input formControlName="location" placeholder="Denver, CO" />
+          @if (errorFor('location'); as msg) {
+            <span class="error">{{ msg }}</span>
+          }
+        </label>
+        <label>
+          Work arrangement
+          <select formControlName="remote">
+            <option value="">Not specified</option>
+            <option value="yes">Remote</option>
+            <option value="no">On-site or hybrid</option>
+          </select>
+        </label>
+        <label>
+          Source
+          <input formControlName="source" placeholder="Referral, company site..." />
+          @if (errorFor('source'); as msg) {
+            <span class="error">{{ msg }}</span>
+          }
+        </label>
+        <label>
+          Salary from
+          <input formControlName="salaryMin" inputmode="numeric" placeholder="120000" />
+          @if (errorFor('salaryMin'); as msg) {
+            <span class="error">{{ msg }}</span>
+          }
+        </label>
+        <label>
+          Salary to
+          <input formControlName="salaryMax" inputmode="numeric" placeholder="150000" />
+          @if (errorFor('salaryMax'); as msg) {
+            <span class="error">{{ msg }}</span>
+          }
+        </label>
+        <label>
+          Currency
+          <input formControlName="salaryCurrency" placeholder="USD" maxlength="3" />
+          @if (errorFor('salaryCurrency'); as msg) {
+            <span class="error">{{ msg }}</span>
+          }
+        </label>
+        <label>
+          Per
+          <select formControlName="salaryPeriod">
+            <option value="">-</option>
+            @for (period of periods; track period) {
+              <option [value]="period">{{ period }}</option>
+            }
+          </select>
+        </label>
+        <label class="wide">
+          Salary notes
+          <input formControlName="salaryText" placeholder="DOE, plus equity..." />
+          @if (errorFor('salaryText'); as msg) {
+            <span class="error">{{ msg }}</span>
+          }
+        </label>
+        <label>
+          Posted on
+          <input formControlName="postedOn" type="date" />
+        </label>
+      </div>
+      <label>
+        Job description
+        <textarea
+          formControlName="jobDescription"
+          rows="8"
+          placeholder="Paste the posting text"
+        ></textarea>
+        <span class="hint">Kept for reference and used when drafting a cover letter</span>
+        @if (errorFor('jobDescription'); as msg) {
+          <span class="error">{{ msg }}</span>
+        }
+      </label>
+    </details>
+
     <label>
       Notes
       <textarea formControlName="notes" rows="5"></textarea>

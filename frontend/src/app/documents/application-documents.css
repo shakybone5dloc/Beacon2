@@ -1,0 +1,84 @@
+.muted,
+.hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  margin: 0.9rem 0 0.3rem;
+}
+.docs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+.docs li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+}
+.docs a {
+  overflow-wrap: anywhere;
+}
+button,
+select,
+.file {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  color: var(--text);
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.delete {
+  border-color: transparent;
+  color: #b42318;
+  padding: 0 0.3rem;
+}
+.delete:hover:not(:disabled) {
+  border-color: #fda29b;
+}
+.capture {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0 0 0.6rem;
+}
+.capture button {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+.file {
+  position: relative;
+  overflow: hidden;
+}
+.file input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.file:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

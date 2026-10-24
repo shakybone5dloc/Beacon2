@@ -121,6 +121,6 @@ public class PostingSearchService {
     private static JobPostingResponse toResponse(JobPosting p) {
         return new JobPostingResponse(p.source(), p.id(), p.title(), p.company(), p.location(), p.remote(),
                 p.url(), p.postedAt(), p.closesOn(), p.salaryMin(), p.salaryMax(), p.salaryCurrency(),
-                p.salaryPeriod(), p.salaryText(), p.tags(), p.snippet());
+                p.salaryPeriod(), p.salaryText(), p.tags(), p.snippet(), p.description());
     }
 }

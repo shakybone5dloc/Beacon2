@@ -41,7 +41,7 @@ class PostingsApiTests {
                     return List.of(new JobPosting("fake", "1", "Java " + query.keywords(), "Acme", query.location(),
                             query.remoteOnly(), "https://fake.example/1", Instant.parse("2026-10-20T00:00:00Z"),
                             LocalDate.parse("2026-11-15"), 100000, 120000, "USD", "year", null, List.of("spring"),
-                            "Build things"));
+                            "Build things", "Build things with Java and Spring."));
                 }
             };
         }

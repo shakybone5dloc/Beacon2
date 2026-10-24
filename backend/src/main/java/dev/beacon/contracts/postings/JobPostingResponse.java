@@ -20,6 +20,7 @@ public record JobPostingResponse(
         String salaryPeriod,
         String salaryText,
         List<String> tags,
-        String snippet
+        String snippet,
+        String description
 ) {
 }

@@ -1,0 +1,60 @@
+.muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.panel {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.8rem 0.9rem;
+}
+label {
+  display: grid;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+input,
+select,
+textarea {
+  font: inherit;
+  font-weight: normal;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+}
+textarea {
+  line-height: 1.5;
+}
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+button {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  color: var(--text);
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+button.primary,
+button.start {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+code {
+  font-size: 0.85em;
+  background: var(--surface);
+  padding: 0 0.25rem;
+  border-radius: 4px;
+}

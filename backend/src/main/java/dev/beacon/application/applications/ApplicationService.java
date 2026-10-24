@@ -41,6 +41,8 @@ public class ApplicationService {
         );
         application.setApplyBy(request.applyBy(), now);
         application.scheduleFollowUp(request.followUpOn(), now);
+        application.setPostingDetails(ApplicationMappings.toPostingDetails(request), now);
+        application.setJobDescription(request.jobDescription(), now);
 
         repository.save(application);
         return ApplicationMappings.toResponse(application);
@@ -55,7 +57,7 @@ public class ApplicationService {
     public List<ApplicationResponse> list() {
         return repository.findAllByOrderByCreatedAtDesc()
                 .stream()
-                .map(ApplicationMappings::toResponse)
+                .map(ApplicationMappings::toSummary)
                 .toList();
     }
 
@@ -101,6 +103,8 @@ public class ApplicationService {
         );
         application.setApplyBy(request.applyBy(), now);
         application.scheduleFollowUp(request.followUpOn(), now);
+        application.setPostingDetails(ApplicationMappings.toPostingDetails(request), now);
+        application.setJobDescription(request.jobDescription(), now);
 
         repository.flush();
         return Optional.of(ApplicationMappings.toResponse(application));

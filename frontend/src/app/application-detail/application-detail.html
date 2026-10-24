@@ -30,6 +30,41 @@
   }
 
   <dl>
+    @if (salary(); as pay) {
+      <dt>Salary</dt>
+      <dd class="salary">{{ pay }}</dd>
+    }
+
+    @if (app.location || app.remote != null) {
+      <dt>Location</dt>
+      <dd>
+        {{ app.location }}
+        @if (app.remote === true) {
+          <span class="chip">Remote</span>
+        } @else if (app.remote === false) {
+          <span class="chip">On-site or hybrid</span>
+        }
+      </dd>
+    }
+
+    @if (app.source; as source) {
+      <dt>Found on</dt>
+      <dd>{{ source }}</dd>
+    }
+
+    @if (app.postedOn; as postedOn) {
+      <dt>Posted</dt>
+      <dd>{{ postedOn | date: 'mediumDate' }}</dd>
+    }
+
+    @if (app.appliedAt; as appliedAt) {
+      <dt>Applied</dt>
+      <dd>
+        {{ appliedAt | date: 'mediumDate' }}
+        <span class="none">· {{ appliedAgo() }} ago</span>
+      </dd>
+    }
+
     <dt>Job posting</dt>
     <dd>
       @if (app.jobUrl; as url) {
@@ -78,6 +113,43 @@
       }
     </dd>
   </dl>
+
+  <section>
+    <h2>Job description</h2>
+    @if (app.jobDescription; as description) {
+      <details class="description" [open]="description.length < 1500">
+        <summary>Full text</summary>
+        <div class="description-text">{{ description }}</div>
+      </details>
+    } @else {
+      <p class="none">
+        None yet.
+        @if (app.jobUrl) {
+          Use "Save posting as PDF" below to capture it, or paste it in Edit.
+        } @else {
+          Paste it in Edit.
+        }
+      </p>
+    }
+  </section>
+
+  <section>
+    <h2>Documents</h2>
+    <app-application-documents
+      [applicationId]="app.id"
+      [jobUrl]="app.jobUrl"
+      (captured)="onCaptured($event)"
+    />
+  </section>
+
+  <section>
+    <h2>Cover letter</h2>
+    <app-cover-letter-drafter
+      [applicationId]="app.id"
+      [hasJobDescription]="app.jobDescription != null"
+      (saved)="documents()?.reload()"
+    />
+  </section>
 
   <h2>History</h2>
   <ol class="timeline">

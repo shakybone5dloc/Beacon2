@@ -29,7 +29,7 @@ class PostingSearchServiceTests {
 
     private static JobPosting posting(String source, String company, String title, String postedAt) {
         return new JobPosting(source, title, title, company, null, true, "https://" + source + ".example/" + title,
-                postedAt == null ? null : Instant.parse(postedAt), null, null, null, null, null, null, List.of(), null);
+                postedAt == null ? null : Instant.parse(postedAt), null, null, null, null, null, null, List.of(), null, null);
     }
 
     @Test

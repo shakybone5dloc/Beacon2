@@ -1,4 +1,4 @@
-import { ApplicationResponse } from './application.model';
+import { ApplicationResponse, PostingDetails } from './application.model';
 
 export function anApplication(overrides: Partial<ApplicationResponse> = {}): ApplicationResponse {
   return {
@@ -9,6 +9,17 @@ export function anApplication(overrides: Partial<ApplicationResponse> = {}): App
     notes: null,
     applyBy: null,
     followUpOn: null,
+    location: null,
+    remote: null,
+    salaryMin: null,
+    salaryMax: null,
+    salaryCurrency: null,
+    salaryPeriod: null,
+    salaryText: null,
+    source: null,
+    postedOn: null,
+    jobDescription: null,
+    appliedAt: null,
     status: 'SAVED',
     createdAt: '2026-10-23T12:00:00Z',
     updatedAt: '2026-10-23T12:00:00Z',
@@ -18,3 +29,17 @@ export function anApplication(overrides: Partial<ApplicationResponse> = {}): App
     ...overrides,
   };
 }
+
+/** Every posting field empty, for building requests in specs. */
+export const noPostingDetails: PostingDetails = {
+  location: null,
+  remote: null,
+  salaryMin: null,
+  salaryMax: null,
+  salaryCurrency: null,
+  salaryPeriod: null,
+  salaryText: null,
+  source: null,
+  postedOn: null,
+  jobDescription: null,
+};

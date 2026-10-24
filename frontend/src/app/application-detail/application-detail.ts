@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
@@ -10,6 +10,9 @@ import {
   StatusChange,
 } from '../applications/application.model';
 import { attentionFor } from '../applications/attention';
+import { ApplicationDocuments } from '../documents/application-documents';
+import { CoverLetterDrafter } from '../documents/cover-letter-drafter';
+import { formatSalary } from '../postings/format';
 import { durationBetween } from '../applications/durations';
 
 interface TimelineEntry extends StatusChange {
@@ -19,7 +22,7 @@ interface TimelineEntry extends StatusChange {
 
 @Component({
   selector: 'app-application-detail',
-  imports: [DatePipe, TitleCasePipe, RouterLink],
+  imports: [DatePipe, TitleCasePipe, RouterLink, ApplicationDocuments, CoverLetterDrafter],
   templateUrl: './application-detail.html',
   styleUrl: './application-detail.css',
 })
@@ -42,6 +45,17 @@ export class ApplicationDetail implements OnInit {
     return app ? durationBetween(app.statusChangedAt, new Date()) : null;
   });
 
+  protected readonly documents = viewChild(ApplicationDocuments);
+  protected readonly salary = computed(() => {
+    const app = this.application();
+    return app ? formatSalary(app) : null;
+  });
+
+  protected readonly appliedAgo = computed(() => {
+    const appliedAt = this.application()?.appliedAt;
+    return appliedAt ? durationBetween(appliedAt, new Date()) : null;
+  });
+
   protected readonly attention = computed(() => {
     const app = this.application();
     return app ? attentionFor(app, new Date()) : null;
@@ -62,6 +76,16 @@ export class ApplicationDetail implements OnInit {
     this.write(this.api.changeStatus(app.id, target, app.version), 'move', () =>
       this.api.history(app.id).subscribe((history) => this.history.set(history)),
     );
+  }
+
+  /** A captured posting may have filled in the job description, which also bumps the version. */
+  protected onCaptured(descriptionSaved: boolean): void {
+    this.notice.set(
+      descriptionSaved
+        ? 'Posting saved, and its text is now the job description.'
+        : 'Posting saved.',
+    );
+    this.load();
   }
 
   /** Empty input clears the follow-up. */

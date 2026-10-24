@@ -106,7 +106,8 @@ public class UsaJobsSource implements JobSource {
                     period(Feeds.text(pay, "Description")),
                     null,
                     List.of(),
-                    Feeds.snippet(summary)
+                    Feeds.snippet(summary),
+                    Feeds.description(summary)
             ));
         }
         return postings;

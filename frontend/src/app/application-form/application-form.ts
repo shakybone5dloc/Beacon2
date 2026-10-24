@@ -8,9 +8,31 @@ import {
   ApplicationResponse,
   CreateApplicationRequest,
   ProblemDetail,
+  SALARY_PERIODS,
 } from '../applications/application.model';
 
-type FieldName = 'company' | 'role' | 'jobUrl' | 'notes' | 'applyBy' | 'followUpOn';
+type FieldName =
+  | 'company'
+  | 'role'
+  | 'jobUrl'
+  | 'notes'
+  | 'applyBy'
+  | 'followUpOn'
+  | 'location'
+  | 'salaryMin'
+  | 'salaryMax'
+  | 'salaryCurrency'
+  | 'salaryText'
+  | 'source'
+  | 'jobDescription';
+
+/** Messages for pattern failures, by field. */
+const PATTERN_MESSAGES: Partial<Record<FieldName, string>> = {
+  jobUrl: 'Must start with http:// or https://',
+  salaryMin: 'Whole number, no commas.',
+  salaryMax: 'Whole number, no commas.',
+  salaryCurrency: 'A 3-letter code, like USD.',
+};
 
 @Component({
   selector: 'app-application-form',
@@ -32,6 +54,9 @@ export class ApplicationForm implements OnInit {
   protected readonly submitting = signal(false);
   protected readonly formError = signal<string | null>(null);
   protected readonly stale = signal(false);
+  /** The posting details section starts open when editing an application that has some. */
+  protected readonly detailsOpen = signal(false);
+  protected readonly periods = SALARY_PERIODS;
 
   private version = 0;
 
@@ -42,6 +67,17 @@ export class ApplicationForm implements OnInit {
     notes: ['', [Validators.maxLength(4000)]],
     applyBy: [''],
     followUpOn: [''],
+    location: ['', [Validators.maxLength(500)]],
+    /** '' not specified, 'yes' remote, 'no' on-site or hybrid. */
+    remote: [''],
+    salaryMin: ['', [Validators.pattern(/^\d+$/)]],
+    salaryMax: ['', [Validators.pattern(/^\d+$/)]],
+    salaryCurrency: ['', [Validators.pattern(/^[A-Za-z]{3}$/)]],
+    salaryPeriod: [''],
+    salaryText: ['', [Validators.maxLength(100)]],
+    source: ['', [Validators.maxLength(100)]],
+    postedOn: [''],
+    jobDescription: ['', [Validators.maxLength(100_000)]],
   });
 
   ngOnInit(): void {
@@ -83,6 +119,16 @@ export class ApplicationForm implements OnInit {
       notes: v.notes.trim() || null,
       applyBy: v.applyBy || null,
       followUpOn: v.followUpOn || null,
+      location: v.location.trim() || null,
+      remote: v.remote === '' ? null : v.remote === 'yes',
+      salaryMin: v.salaryMin ? Number(v.salaryMin) : null,
+      salaryMax: v.salaryMax ? Number(v.salaryMax) : null,
+      salaryCurrency: v.salaryCurrency.trim().toUpperCase() || null,
+      salaryPeriod: v.salaryPeriod || null,
+      salaryText: v.salaryText.trim() || null,
+      source: v.source.trim() || null,
+      postedOn: v.postedOn || null,
+      jobDescription: v.jobDescription.trim() || null,
     };
 
     this.submitting.set(true);
@@ -107,7 +153,7 @@ export class ApplicationForm implements OnInit {
     if (e['server']) return e['server'];
     if (e['required']) return 'Required.';
     if (e['maxlength']) return `Must be at most ${e['maxlength'].requiredLength} characters`;
-    if (e['pattern']) return 'Must start with http:// or https://';
+    if (e['pattern']) return PATTERN_MESSAGES[name] ?? 'Invalid.';
     return 'Invalid.';
   }
 
@@ -120,7 +166,18 @@ export class ApplicationForm implements OnInit {
       notes: app.notes ?? '',
       applyBy: app.applyBy ?? '',
       followUpOn: app.followUpOn ?? '',
+      location: app.location ?? '',
+      remote: app.remote == null ? '' : app.remote ? 'yes' : 'no',
+      salaryMin: app.salaryMin?.toString() ?? '',
+      salaryMax: app.salaryMax?.toString() ?? '',
+      salaryCurrency: app.salaryCurrency ?? '',
+      salaryPeriod: app.salaryPeriod ?? '',
+      salaryText: app.salaryText ?? '',
+      source: app.source ?? '',
+      postedOn: app.postedOn ?? '',
+      jobDescription: app.jobDescription ?? '',
     });
+    this.detailsOpen.set(hasPostingDetails(app));
   }
 
   private applyServerErrors(err: HttpErrorResponse): void {
@@ -149,4 +206,17 @@ export class ApplicationForm implements OnInit {
 
     this.formError.set('Could not save the application. Try again.');
   }
+}
+
+function hasPostingDetails(app: ApplicationResponse): boolean {
+  return [
+    app.location,
+    app.remote,
+    app.salaryMin,
+    app.salaryMax,
+    app.salaryText,
+    app.source,
+    app.postedOn,
+    app.jobDescription,
+  ].some((v) => v != null);
 }

@@ -13,7 +13,14 @@ final class Feeds {
     private static final Pattern TAGS = Pattern.compile("<[^>]*>");
     private static final Pattern SPACES = Pattern.compile("\\s+");
     private static final Pattern NUMERIC_ENTITY = Pattern.compile("&#(x[0-9a-fA-F]+|[0-9]+);");
+    private static final Pattern BREAKS = Pattern.compile("(?i)<br\\s*/?>");
+    private static final Pattern BLOCK_ENDS = Pattern.compile("(?i)</(p|div|ul|ol|h[1-6]|section|table|tr)>");
+    private static final Pattern LIST_ITEMS = Pattern.compile("(?i)<li[^>]*>");
+    private static final Pattern INLINE_SPACES = Pattern.compile("[ \\t\\x{00A0}]+");
+    private static final Pattern SPACE_AROUND_NEWLINES = Pattern.compile(" *\\n *");
+    private static final Pattern EXTRA_NEWLINES = Pattern.compile("\\n{3,}");
     private static final int SNIPPET_LENGTH = 240;
+    private static final int DESCRIPTION_LENGTH = 20_000;
 
     private Feeds() {}
 
@@ -45,9 +52,31 @@ final class Feeds {
     /** Plain text from HTML, with common entities decoded and whitespace collapsed. */
     static String plain(String html) {
         if (html == null) return null;
-        var text = TAGS.matcher(html).replaceAll(" ")
+        var text = decodeEntities(TAGS.matcher(html).replaceAll(" "));
+        text = SPACES.matcher(text).replaceAll(" ").strip();
+        return text.isEmpty() ? null : text;
+    }
+
+    /**
+     * A full job description as readable plain text: paragraphs and list items
+     * stay on their own lines. Capped so one ad can't bloat a search response.
+     */
+    static String description(String html) {
+        if (html == null) return null;
+        var text = BREAKS.matcher(html).replaceAll("\n");
+        text = BLOCK_ENDS.matcher(text).replaceAll("\n\n");
+        text = LIST_ITEMS.matcher(text).replaceAll("\n• ");
+        text = decodeEntities(TAGS.matcher(text).replaceAll(""));
+        text = INLINE_SPACES.matcher(text).replaceAll(" ");
+        text = SPACE_AROUND_NEWLINES.matcher(text).replaceAll("\n");
+        text = EXTRA_NEWLINES.matcher(text).replaceAll("\n\n").strip();
+        if (text.isEmpty()) return null;
+        return text.length() <= DESCRIPTION_LENGTH ? text : text.substring(0, DESCRIPTION_LENGTH) + "…";
+    }
+
+    private static String decodeEntities(String text) {
+        text = text
                 .replace("&nbsp;", " ")
-                .replace("&amp;", "&")
                 .replace("&lt;", "<")
                 .replace("&gt;", ">")
                 .replace("&quot;", "\"")
@@ -58,8 +87,8 @@ final class Feeds {
             var codePoint = code.startsWith("x") ? Integer.parseInt(code.substring(1), 16) : Integer.parseInt(code);
             return Matcher.quoteReplacement(Character.toString(codePoint));
         });
-        text = SPACES.matcher(text).replaceAll(" ").strip();
-        return text.isEmpty() ? null : text;
+        // Last, so "&amp;lt;" becomes the literal text "&lt;" rather than "<".
+        return text.replace("&amp;", "&");
     }
 
     /** First few sentences of an HTML description as plain text. */

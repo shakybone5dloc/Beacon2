@@ -17,6 +17,28 @@ class FeedsTests {
     }
 
     @Test
+    void descriptionKeepsParagraphsAndListItemsOnTheirOwnLines() {
+        var html = "<h2>About</h2><p>We build   tools.</p><ul><li>Java</li><li>Spring &amp; Postgres</li></ul><p>Apply<br>today</p>";
+
+        assertThat(Feeds.description(html)).isEqualTo("""
+                About
+
+                We build tools.
+
+                • Java
+                • Spring & Postgres
+
+                Apply
+                today""");
+    }
+
+    @Test
+    void descriptionIsNullForEmptyHtml() {
+        assertThat(Feeds.description("<p> </p>")).isNull();
+        assertThat(Feeds.description(null)).isNull();
+    }
+
+    @Test
     void snippetCutsLongTextAtAWordBoundary() {
         var snippet = Feeds.snippet("word ".repeat(100));
 

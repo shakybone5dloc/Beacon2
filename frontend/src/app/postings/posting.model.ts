@@ -28,6 +28,8 @@ export interface JobPosting {
   salaryText: string | null;
   tags: string[];
   snippet: string | null;
+  /** The full ad as plain text, when the source provides it. */
+  description: string | null;
 }
 
 export interface SourceResult {

@@ -18,6 +18,7 @@ export function aPosting(overrides: Partial<JobPosting> = {}): JobPosting {
     salaryText: null,
     tags: [],
     snippet: null,
+    description: null,
     ...overrides,
   };
 }

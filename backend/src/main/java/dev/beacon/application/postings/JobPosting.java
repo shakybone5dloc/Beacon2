@@ -26,6 +26,8 @@ public record JobPosting(
         String salaryText,
         List<String> tags,
         /** Short plain-text excerpt. */
-        String snippet
+        String snippet,
+        /** The full ad as plain text when the source provides it; null otherwise. */
+        String description
 ) {
 }

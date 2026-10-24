@@ -11,7 +11,29 @@ export const STATUSES = [
 
 export type ApplicationStatus = (typeof STATUSES)[number];
 
-export interface ApplicationResponse {
+export const SALARY_PERIODS = ['year', 'month', 'week', 'day', 'hour'] as const;
+export type SalaryPeriod = (typeof SALARY_PERIODS)[number];
+
+/** Facts copied from the job ad; shared by responses and requests. */
+export interface PostingDetails {
+  location: string | null;
+  remote: boolean | null;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  /** 3-letter code, e.g. USD. */
+  salaryCurrency: string | null;
+  salaryPeriod: string | null;
+  /** Free-text pay for ads without numbers. */
+  salaryText: string | null;
+  /** Where it was found: a job board, "Referral", "Company site"... */
+  source: string | null;
+  /** YYYY-MM-DD */
+  postedOn: string | null;
+  /** Full text of the ad. Null in list responses. */
+  jobDescription: string | null;
+}
+
+export interface ApplicationResponse extends PostingDetails {
   id: string;
   company: string;
   role: string;
@@ -26,6 +48,8 @@ export interface ApplicationResponse {
   updatedAt: string;
   /** When the application entered its current status. */
   statusChangedAt: string;
+  /** When it first moved to APPLIED; null if never, and in list responses. */
+  appliedAt: string | null;
   version: number;
   allowedTransitions: ApplicationStatus[];
 }
@@ -37,7 +61,7 @@ export interface StatusChange {
   changedAt: string;
 }
 
-export interface CreateApplicationRequest {
+export interface CreateApplicationRequest extends PostingDetails {
   company: string;
   role: string;
   jobUrl: string | null;

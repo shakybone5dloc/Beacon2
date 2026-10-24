@@ -6,6 +6,7 @@ import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.ChangeStatusRequest;
 import dev.beacon.contracts.applications.CreateApplicationRequest;
 import dev.beacon.contracts.applications.FollowUpRequest;
+import dev.beacon.contracts.applications.PostingFields;
 import dev.beacon.contracts.applications.StatusChangeResponse;
 import dev.beacon.contracts.applications.UpdateApplicationRequest;
 import dev.beacon.domain.applications.ApplicationStatus;
@@ -29,6 +30,7 @@ public class ApplicationController {
 
     @PostMapping
     public ResponseEntity<ApplicationResponse> create(@Valid @RequestBody CreateApplicationRequest request) {
+        requireOrderedSalary(request);
         var response = service.create(request);
         return ResponseEntity
                 .created(URI.create("/api/applications/" + response.id()))
@@ -50,6 +52,7 @@ public class ApplicationController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateApplicationRequest request
     ) {
+        requireOrderedSalary(request);
         return ResponseEntity.of(service.update(id, request));
     }
 
@@ -80,6 +83,12 @@ public class ApplicationController {
     ) {
         var status = parseStatus(request.status());
         return ResponseEntity.of(service.changeStatus(id, status, request.version()));
+    }
+
+    private static void requireOrderedSalary(PostingFields fields) {
+        if (fields.salaryMin() != null && fields.salaryMax() != null && fields.salaryMin() > fields.salaryMax()) {
+            throw new RequestValidationException("salaryMax", "must be at least the minimum salary");
+        }
     }
 
     private static ApplicationStatus parseStatus(String value) {

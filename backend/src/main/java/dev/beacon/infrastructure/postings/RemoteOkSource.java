@@ -64,7 +64,8 @@ public class RemoteOkSource implements JobSource {
                     "year",
                     null,
                     Feeds.strings(job, "tags"),
-                    Feeds.snippet(Feeds.text(job, "description"))
+                    Feeds.snippet(Feeds.text(job, "description")),
+                    Feeds.description(Feeds.text(job, "description"))
             ));
         }
         return postings;

@@ -97,7 +97,8 @@ public class HimalayasSource implements JobSource {
                 period(Feeds.text(job, "salaryPeriod")),
                 null,
                 tags,
-                Feeds.snippet(Feeds.text(job, "excerpt"))
+                Feeds.snippet(Feeds.text(job, "excerpt")),
+                Feeds.description(Feeds.text(job, "description"))
         );
     }
 

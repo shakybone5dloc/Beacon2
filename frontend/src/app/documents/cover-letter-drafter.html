@@ -1,0 +1,80 @@
+@if (configured() === false) {
+  <p class="muted">
+    To draft cover letters with AI, add <code>ANTHROPIC_API_KEY</code> to <code>.env</code> and
+    restart the API.
+  </p>
+} @else if (configured()) {
+  @if (!open()) {
+    <button type="button" class="start" (click)="start()">Draft a cover letter with AI</button>
+  } @else {
+    <div class="panel">
+      @if (!hasJobDescription()) {
+        <p class="notice">
+          This application has no job description yet. Save the posting as PDF or paste it in Edit
+          first.
+        </p>
+      }
+
+      @if (resumes(); as list) {
+        @if (list.length === 0) {
+          <p class="muted">
+            Upload a resume (PDF, text or Markdown) here or in the Documents library to draft from.
+          </p>
+        } @else {
+          <label>
+            Resume
+            <select [value]="resumeId()" (change)="resumeId.set($any($event.target).value)">
+              @for (r of list; track r.id) {
+                <option [value]="r.id" [selected]="r.id === resumeId()">{{ label(r) }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Anything to emphasize? <span class="muted">(optional)</span>
+            <input
+              [value]="instructions()"
+              (input)="instructions.set($any($event.target).value)"
+              maxlength="1000"
+              placeholder="e.g. mention I'm relocating to Denver"
+            />
+          </label>
+          <div class="buttons">
+            <button
+              type="button"
+              class="primary"
+              [disabled]="drafting() || !hasJobDescription()"
+              (click)="generate()"
+            >
+              {{ drafting() ? 'Drafting...' : draft() ? 'Draft again' : 'Draft' }}
+            </button>
+            <button type="button" (click)="open.set(false)">Close</button>
+          </div>
+        }
+      } @else {
+        <p class="muted">Loading resumes...</p>
+      }
+
+      @if (notice(); as text) {
+        <p class="notice">{{ text }}</p>
+      }
+
+      @if (draft() !== null) {
+        <label>
+          Draft <span class="muted">(edit freely before saving)</span>
+          <textarea
+            rows="16"
+            [value]="draft()"
+            (input)="draft.set($any($event.target).value)"
+          ></textarea>
+        </label>
+        <p class="muted">AI drafts can get details wrong. Check every claim against your resume.</p>
+        <div class="buttons">
+          <button type="button" class="primary" [disabled]="saving()" (click)="save()">
+            {{ saving() ? 'Saving...' : 'Save as PDF' }}
+          </button>
+          <button type="button" (click)="copy()">Copy text</button>
+        </div>
+      }
+    </div>
+  }
+}

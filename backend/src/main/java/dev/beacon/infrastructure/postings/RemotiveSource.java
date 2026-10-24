@@ -67,7 +67,8 @@ public class RemotiveSource implements JobSource {
                     null, null, null, null,
                     Feeds.text(job, "salary"),
                     tags,
-                    Feeds.snippet(Feeds.text(job, "description"))
+                    Feeds.snippet(Feeds.text(job, "description")),
+                    Feeds.description(Feeds.text(job, "description"))
             ));
         }
         return postings;

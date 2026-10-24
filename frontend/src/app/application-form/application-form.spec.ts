@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { ApplicationForm } from './application-form';
-import { anApplication } from '../applications/testing';
+import { anApplication, noPostingDetails } from '../applications/testing';
 
 describe('ApplicationForm', () => {
   let http: HttpTestingController;
@@ -49,6 +49,7 @@ describe('ApplicationForm', () => {
         role: 'Engineer',
         jobUrl: null,
         notes: null,
+        ...noPostingDetails,
         applyBy: null,
         followUpOn: null,
       });
@@ -80,6 +81,53 @@ describe('ApplicationForm', () => {
     req.flush(anApplication());
   });
 
+  it('sends posting details converted to the API types', async () => {
+    const fixture = TestBed.createComponent(ApplicationForm);
+    await fixture.whenStable();
+    const el: HTMLElement = fixture.nativeElement;
+
+    fill(el, 'company', 'Acme');
+    fill(el, 'role', 'Engineer');
+    fill(el, 'salaryMin', '140000');
+    fill(el, 'salaryMax', '170000');
+    fill(el, 'salaryCurrency', 'usd');
+    const remote = el.querySelector<HTMLSelectElement>('select[formControlName=remote]')!;
+    remote.value = 'yes';
+    remote.dispatchEvent(new Event('change'));
+    const description = el.querySelector<HTMLTextAreaElement>(
+      'textarea[formControlName=jobDescription]',
+    )!;
+    description.value = '  Build services.  ';
+    description.dispatchEvent(new Event('input'));
+    el.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+
+    const req = http.expectOne('/api/applications');
+    expect(req.request.body).toMatchObject({
+      salaryMin: 140000,
+      salaryMax: 170000,
+      salaryCurrency: 'USD',
+      remote: true,
+      jobDescription: 'Build services.',
+      location: null,
+    });
+    req.flush(anApplication());
+  });
+
+  it('rejects a salary with commas before sending', async () => {
+    const fixture = TestBed.createComponent(ApplicationForm);
+    await fixture.whenStable();
+    const el: HTMLElement = fixture.nativeElement;
+
+    fill(el, 'company', 'Acme');
+    fill(el, 'role', 'Engineer');
+    fill(el, 'salaryMin', '140,000');
+    el.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+    await fixture.whenStable();
+
+    http.expectNone('/api/applications');
+    expect(el.textContent).toContain('Whole number, no commas.');
+  });
+
   describe('editing', () => {
     async function openEditor(app = anApplication({ id: 'a1', version: 4 })) {
       const fixture = TestBed.createComponent(ApplicationForm);
@@ -108,7 +156,9 @@ describe('ApplicationForm', () => {
       expect(input(el, 'company').value).toBe('Globex');
       expect(input(el, 'role').value).toBe('Staff Engineer');
       expect(input(el, 'jobUrl').value).toBe('https://globex.com/jobs/1');
-      expect(el.querySelector('textarea')!.value).toBe('Referred by Sam');
+      expect(el.querySelector<HTMLTextAreaElement>('textarea[formControlName=notes]')!.value).toBe(
+        'Referred by Sam',
+      );
       expect(input(el, 'applyBy').value).toBe('2026-11-15');
       expect(input(el, 'followUpOn').value).toBe('2026-11-01');
     });
@@ -126,6 +176,7 @@ describe('ApplicationForm', () => {
         role: 'Principal Engineer',
         jobUrl: null,
         notes: null,
+        ...noPostingDetails,
         applyBy: null,
         followUpOn: null,
         version: 4,

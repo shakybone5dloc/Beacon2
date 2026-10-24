@@ -156,9 +156,19 @@ describe('JobSearch', () => {
       company: 'Acme',
       role: 'Senior Java Engineer',
       jobUrl: 'https://remotive.com/remote-jobs/1',
-      notes: 'Found on Remotive.',
+      notes: null,
       applyBy: '2026-11-21',
       followUpOn: null,
+      location: 'USA',
+      remote: true,
+      salaryMin: null,
+      salaryMax: null,
+      salaryCurrency: null,
+      salaryPeriod: null,
+      salaryText: null,
+      source: 'Remotive',
+      postedOn: null,
+      jobDescription: null,
     });
     req.flush(anApplication({ id: 'new-app' }));
     await fixture.whenStable();
@@ -166,6 +176,38 @@ describe('JobSearch', () => {
     const saved = el.querySelector('a.saved')!;
     expect(saved.textContent).toContain('On your board');
     expect(saved.getAttribute('href')).toBe('/applications/new-app');
+  });
+
+  it('saves the full description and posting details when the source has them', async () => {
+    const { fixture, el } = await render();
+    await searchFor(fixture, [
+      aPosting({
+        source: 'remotive',
+        location: 'United States, Canada',
+        salaryMin: 140000,
+        salaryMax: 170000,
+        salaryCurrency: 'USD',
+        salaryPeriod: 'weekly',
+        postedAt: '2026-10-20T08:00:00Z',
+        description: 'About us\n\nWe build tools.',
+      }),
+    ]);
+
+    el.querySelector<HTMLButtonElement>('button.save')!.click();
+
+    const req = http.expectOne('/api/applications');
+    expect(req.request.body).toMatchObject({
+      location: 'United States, Canada',
+      salaryMin: 140000,
+      salaryMax: 170000,
+      salaryCurrency: 'USD',
+      // "weekly" isn't a period the board stores, so it is dropped rather than failing the save.
+      salaryPeriod: null,
+      source: 'Remotive',
+      postedOn: '2026-10-20',
+      jobDescription: 'About us\n\nWe build tools.',
+    });
+    req.flush(anApplication());
   });
 
   it('marks postings that are already on the board', async () => {

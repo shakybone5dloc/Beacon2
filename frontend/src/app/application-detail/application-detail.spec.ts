@@ -5,6 +5,29 @@ import { provideRouter, Router } from '@angular/router';
 import { ApplicationDetail } from './application-detail';
 import { anApplication } from '../applications/testing';
 import { ApplicationResponse, StatusChange } from '../applications/application.model';
+import { ApplicationDocuments } from '../documents/application-documents';
+import { CoverLetterDrafter } from '../documents/cover-letter-drafter';
+import { Component, input, output } from '@angular/core';
+import { By } from '@angular/platform-browser';
+
+/** Stand-ins for the child panels, which have their own specs and HTTP calls. */
+@Component({
+  selector: 'app-application-documents',
+  template: '<div class="documents-stub"></div>',
+})
+class DocumentsStub {
+  readonly applicationId = input<string | null>(null);
+  readonly jobUrl = input<string | null>(null);
+  readonly captured = output<boolean>();
+  reload(): void {}
+}
+
+@Component({ selector: 'app-cover-letter-drafter', template: '' })
+class DrafterStub {
+  readonly applicationId = input<string>();
+  readonly hasJobDescription = input(false);
+  readonly saved = output<unknown>();
+}
 
 describe('ApplicationDetail', () => {
   let http: HttpTestingController;
@@ -14,6 +37,10 @@ describe('ApplicationDetail', () => {
     TestBed.configureTestingModule({
       imports: [ApplicationDetail],
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+    TestBed.overrideComponent(ApplicationDetail, {
+      remove: { imports: [ApplicationDocuments, CoverLetterDrafter] },
+      add: { imports: [DocumentsStub, DrafterStub] },
     });
     http = TestBed.inject(HttpTestingController);
     navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
@@ -113,6 +140,61 @@ describe('ApplicationDetail', () => {
 
     expect(buttonLabelled(el, 'Clear')).toBeUndefined();
     expect(el.querySelector('.follow-up .chip')).toBeNull();
+  });
+
+  it('shows the posting details, applied date and job description', async () => {
+    const { el } = await open(
+      anApplication({
+        id: 'a1',
+        status: 'APPLIED',
+        location: 'Denver, CO',
+        remote: true,
+        salaryMin: 140000,
+        salaryMax: 170000,
+        salaryCurrency: 'USD',
+        salaryPeriod: 'year',
+        source: 'Himalayas',
+        postedOn: '2026-10-20',
+        appliedAt: '2026-10-22T15:00:00Z',
+        jobDescription: 'Build services with Spring Boot.',
+      }),
+    );
+
+    const facts = new Map(
+      Array.from(el.querySelectorAll('dt')).map((dt) => [
+        dt.textContent!.trim(),
+        dt.nextElementSibling!.textContent!.replace(/\s+/g, ' ').trim(),
+      ]),
+    );
+    expect(facts.get('Salary')).toBe('$140k–$170k/yr');
+    expect(facts.get('Location')).toBe('Denver, CO Remote');
+    expect(facts.get('Found on')).toBe('Himalayas');
+    expect(facts.get('Posted')).toBe('Oct 20, 2026');
+    expect(facts.get('Applied')).toMatch(/^Oct 22, 2026 · \d+ days? ago$/);
+    expect(el.querySelector('.description-text')?.textContent).toBe(
+      'Build services with Spring Boot.',
+    );
+  });
+
+  it('points to capturing the posting when there is no description', async () => {
+    const { el } = await open(anApplication({ id: 'a1', jobUrl: 'https://example.com/job' }));
+
+    expect(el.textContent).toContain('Save posting as PDF');
+    expect(el.querySelector('.description-text')).toBeNull();
+  });
+
+  it('reloads after a posting capture so the new description shows', async () => {
+    const app = anApplication({ id: 'a1', jobUrl: 'https://example.com/job' });
+    const { fixture, el } = await open(app);
+
+    fixture.debugElement.query(By.directive(DocumentsStub)).componentInstance.captured.emit(true);
+    flushLoad({ ...app, version: 1, jobDescription: 'Captured text' }, [created]);
+    await fixture.whenStable();
+
+    expect(el.querySelector('.notice')?.textContent).toContain(
+      'its text is now the job description',
+    );
+    expect(el.querySelector('.description-text')?.textContent).toBe('Captured text');
   });
 
   it('shows a notice when the application does not exist', async () => {

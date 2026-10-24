@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationsApi } from './applications-api';
-import { CreateApplicationRequest } from './application.model';
+import { noPostingDetails } from './testing';
 
 describe('ApplicationsApi', () => {
   let service: ApplicationsApi;
@@ -33,6 +33,7 @@ describe('ApplicationsApi', () => {
       role: 'Engineer',
       jobUrl: 'http://example.com',
       notes: 'something here',
+      ...noPostingDetails,
       applyBy: '2026-11-15',
       followUpOn: null,
     };
@@ -58,6 +59,7 @@ describe('ApplicationsApi', () => {
       role: 'Engineer',
       jobUrl: null,
       notes: null,
+      ...noPostingDetails,
       applyBy: null,
       followUpOn: '2026-11-07',
       version: 2,

@@ -10,7 +10,7 @@ class PostingMatcherTests {
 
     private static JobPosting posting(String title, String location, boolean remote, String... tags) {
         return new JobPosting("test", "1", title, "Acme", location, remote, "https://example.com/1",
-                null, null, null, null, null, null, null, List.of(tags), null);
+                null, null, null, null, null, null, null, List.of(tags), null, null);
     }
 
     @Test

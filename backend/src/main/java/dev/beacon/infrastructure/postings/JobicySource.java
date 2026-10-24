@@ -68,7 +68,8 @@ public class JobicySource implements JobSource {
                     period(Feeds.text(job, "salaryPeriod")),
                     null,
                     tags,
-                    Feeds.snippet(Feeds.text(job, "jobExcerpt"))
+                    Feeds.snippet(Feeds.text(job, "jobExcerpt")),
+                    Feeds.description(Feeds.text(job, "jobDescription"))
             ));
         }
         return postings;

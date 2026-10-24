@@ -50,3 +50,38 @@ textarea.ng-invalid.ng-touched {
   font-weight: normal;
   font-size: 0.8rem;
 }
+select {
+  font: inherit;
+  font-weight: normal;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+}
+.posting {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+}
+.posting summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.posting[open] {
+  display: grid;
+  gap: 1rem;
+}
+.posting .grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+}
+.posting .grid .wide {
+  grid-column: span 2;
+}
+@media (max-width: 600px) {
+  .posting .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

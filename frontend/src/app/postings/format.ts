@@ -2,10 +2,22 @@ import { JobPosting } from './posting.model';
 import { shortDurationBetween } from '../applications/durations';
 
 const SYMBOLS: Record<string, string> = { USD: '$', CAD: 'CA$', AUD: 'A$', GBP: '£', EUR: '€' };
-const PERIODS: Record<string, string> = { year: '/yr', hour: '/hr', month: '/mo' };
+const PERIODS: Record<string, string> = {
+  year: '/yr',
+  month: '/mo',
+  week: '/wk',
+  day: '/day',
+  hour: '/hr',
+};
+
+/** The salary fields postings and applications share. */
+export type SalaryFields = Pick<
+  JobPosting,
+  'salaryMin' | 'salaryMax' | 'salaryCurrency' | 'salaryPeriod' | 'salaryText'
+>;
 
 /** e.g. "$140k–$170k/yr", the source's own text, or null when there is nothing to show. */
-export function formatSalary(p: JobPosting): string | null {
+export function formatSalary(p: SalaryFields): string | null {
   if (p.salaryMin == null && p.salaryMax == null) return p.salaryText;
 
   const symbol = p.salaryCurrency ? (SYMBOLS[p.salaryCurrency] ?? `${p.salaryCurrency} `) : '';

@@ -35,6 +35,33 @@ public class JobApplication {
     /** When to chase this application next. */
     private LocalDate followUpOn;
 
+    @Column(length = 500)
+    private String location;
+
+    private Boolean remote;
+
+    private Integer salaryMin;
+
+    private Integer salaryMax;
+
+    @Column(length = 3)
+    private String salaryCurrency;
+
+    @Column(length = 10)
+    private String salaryPeriod;
+
+    @Column(length = 100)
+    private String salaryText;
+
+    @Column(length = 100)
+    private String source;
+
+    private LocalDate postedOn;
+
+    /** Full text of the ad, kept for reference and for drafting cover letters. */
+    @Column(columnDefinition = "text")
+    private String jobDescription;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private ApplicationStatus status;
@@ -85,6 +112,24 @@ public class JobApplication {
         this.notes = trimToNull(notes);
     }
 
+    public void setPostingDetails(PostingDetails details, Instant now) {
+        this.location = details.location();
+        this.remote = details.remote();
+        this.salaryMin = details.salaryMin();
+        this.salaryMax = details.salaryMax();
+        this.salaryCurrency = details.salaryCurrency();
+        this.salaryPeriod = details.salaryPeriod();
+        this.salaryText = details.salaryText();
+        this.source = details.source();
+        this.postedOn = details.postedOn();
+        this.updatedAt = now;
+    }
+
+    public void setJobDescription(String jobDescription, Instant now) {
+        this.jobDescription = jobDescription == null || jobDescription.isBlank() ? null : jobDescription.strip();
+        this.updatedAt = now;
+    }
+
     public void setApplyBy(LocalDate applyBy, Instant now) {
         this.applyBy = applyBy;
         this.updatedAt = now;
@@ -125,6 +170,18 @@ public class JobApplication {
     public String getNotes() { return notes; }
     public LocalDate getApplyBy() { return applyBy; }
     public LocalDate getFollowUpOn() { return followUpOn; }
+    public PostingDetails getPostingDetails() {
+        return new PostingDetails(location, remote, salaryMin, salaryMax, salaryCurrency, salaryPeriod, salaryText, source, postedOn);
+    }
+    public String getJobDescription() { return jobDescription; }
+    /** When the application first moved to APPLIED, or null if it never has. */
+    public Instant getAppliedAt() {
+        return statusHistory.stream()
+                .filter(change -> change.getToStatus() == ApplicationStatus.APPLIED)
+                .map(StatusChange::getChangedAt)
+                .findFirst()
+                .orElse(null);
+    }
     public ApplicationStatus getStatus() { return status; }
     public Long getVersion() { return version; }
     public Instant getCreatedAt() { return createdAt; }

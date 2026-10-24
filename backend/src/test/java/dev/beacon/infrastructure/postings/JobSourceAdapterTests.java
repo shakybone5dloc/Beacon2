@@ -82,6 +82,7 @@ class JobSourceAdapterTests {
                 assertThat(p.salaryText()).isEqualTo("$150k - $180k");
                 assertThat(p.tags()).contains("spring", "Software Development");
                 assertThat(p.snippet()).isEqualTo("Build things & more");
+                assertThat(p.description()).isEqualTo("Build things & more");
             });
             server.verify();
         }

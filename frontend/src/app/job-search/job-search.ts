@@ -5,6 +5,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApplicationsApi } from '../applications/applications-api';
+import { SALARY_PERIODS } from '../applications/application.model';
 import { formatLocation, formatPosted, formatSalary } from '../postings/format';
 import { JobSearchState } from '../postings/job-search-state';
 import { JobPosting, JobSource } from '../postings/posting.model';
@@ -129,9 +130,25 @@ export class JobSearch implements OnInit {
         company: truncate(posting.company ?? 'Unknown company'),
         role: truncate(posting.title),
         jobUrl: posting.url.length <= 2048 ? posting.url : null,
-        notes: `Found on ${this.sourceName(posting.source)}.`,
+        notes: null,
         applyBy: posting.closesOn,
         followUpOn: null,
+        location: posting.location ? posting.location.slice(0, 500) : null,
+        remote: posting.remote,
+        salaryMin: posting.salaryMin,
+        salaryMax: posting.salaryMax,
+        // Boards occasionally send values the board can't store ("weekly", "US$"); drop those rather than fail the save.
+        salaryCurrency: /^[A-Za-z]{3}$/.test(posting.salaryCurrency ?? '')
+          ? posting.salaryCurrency
+          : null,
+        salaryPeriod: (SALARY_PERIODS as readonly string[]).includes(posting.salaryPeriod ?? '')
+          ? posting.salaryPeriod
+          : null,
+        salaryText: posting.salaryText ? posting.salaryText.slice(0, 100) : null,
+        source: this.sourceName(posting.source),
+        postedOn: posting.postedAt ? posting.postedAt.slice(0, 10) : null,
+        // Most boards send the full ad, so the description is there without scraping the page.
+        jobDescription: posting.description,
       })
       .pipe(
         finalize(() =>

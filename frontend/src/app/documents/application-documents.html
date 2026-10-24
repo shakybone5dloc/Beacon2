@@ -1,0 +1,62 @@
+@if (error(); as message) {
+  <p class="notice">{{ message }}</p>
+} @else {
+  @if (applicationId() && jobUrl()) {
+    <p class="capture">
+      <button type="button" [disabled]="capturing()" (click)="capture()">
+        {{ capturing() ? 'Saving posting...' : 'Save posting as PDF' }}
+      </button>
+      <span class="hint">Prints the job page and keeps its text as the job description.</span>
+    </p>
+  }
+
+  @if (notice(); as text) {
+    <p class="notice">{{ text }}</p>
+  }
+
+  @if (documents() == null) {
+    <p class="muted">Loading...</p>
+  } @else if (groups().length === 0) {
+    <p class="muted">No documents yet.</p>
+  } @else {
+    @for (group of groups(); track group.kind) {
+      <h3>{{ labels[group.kind] }}</h3>
+      <ul class="docs">
+        @for (doc of group.docs; track doc.id) {
+          <li>
+            <a [href]="contentUrl(doc)" target="_blank" rel="noopener">{{ doc.filename }}</a>
+            <span class="muted"
+              >{{ formatBytes(doc.sizeBytes) }} · {{ doc.createdAt | date: 'MMM d, y' }}</span
+            >
+            <button
+              type="button"
+              class="delete"
+              [disabled]="deleting().has(doc.id)"
+              (click)="remove(doc)"
+              [attr.aria-label]="'Delete ' + doc.filename"
+            >
+              Delete
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  }
+
+  <div class="upload">
+    <select
+      [value]="kind()"
+      (change)="kind.set($any($event.target).value)"
+      aria-label="Document type"
+    >
+      @for (k of kinds; track k) {
+        <option [value]="k" [selected]="k === kind()">{{ labels[k] }}</option>
+      }
+    </select>
+    <label class="file">
+      <input #file type="file" [accept]="accept" [disabled]="uploading()" (change)="upload(file)" />
+      {{ uploading() ? 'Uploading...' : 'Upload a file' }}
+    </label>
+    <span class="hint">PDF, Word, text, Markdown or image, up to 10 MB</span>
+  </div>
+}
