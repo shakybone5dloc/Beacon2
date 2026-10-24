@@ -8,11 +8,25 @@
       <h1>{{ app.company }}</h1>
       <p class="role">{{ app.role }}</p>
     </div>
-    <span class="status">{{ app.status | titlecase }}</span>
+    <span class="status">
+      {{ app.status | titlecase }}
+      <span class="for">for {{ timeInStatus() }}</span>
+    </span>
   </header>
 
   @if (notice(); as text) {
     <p class="notice">{{ text }}</p>
+  }
+
+  @if (app.allowedTransitions.length > 0) {
+    <div class="moves">
+      <span>Move to</span>
+      @for (target of app.allowedTransitions; track target) {
+        <button type="button" [disabled]="busy()" (click)="move(app, target)">
+          {{ target | titlecase }}
+        </button>
+      }
+    </div>
   }
 
   <dl>
@@ -40,6 +54,19 @@
       }
     </dd>
   </dl>
+
+  <h2>History</h2>
+  <ol class="timeline">
+    @for (entry of timeline(); track $index) {
+      <li>
+        <strong>{{ entry.toStatus | titlecase }}</strong>
+        <time [attr.datetime]="entry.changedAt">{{ entry.changedAt | date: 'medium' }}</time>
+        @if (entry.after; as after) {
+          <span class="after">{{ after }} later</span>
+        }
+      </li>
+    }
+  </ol>
 
   <div class="buttons">
     <a [routerLink]="['/applications', app.id, 'edit']" class="edit">Edit</a>

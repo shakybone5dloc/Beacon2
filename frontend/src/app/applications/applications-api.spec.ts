@@ -42,6 +42,14 @@ describe('ApplicationsApi', () => {
     req.flush({});
   });
 
+  it('history GETs /api/applications/:id/history', () => {
+    service.history('abc').subscribe();
+
+    const req = http.expectOne('/api/applications/abc/history');
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+  });
+
   it('update PUTs the details and version to /api/applications/:id', () => {
     const request = { company: 'Acme', role: 'Engineer', jobUrl: null, notes: null, version: 2 };
     service.update('abc', request).subscribe();

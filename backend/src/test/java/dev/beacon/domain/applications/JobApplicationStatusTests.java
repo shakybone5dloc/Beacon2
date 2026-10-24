@@ -90,4 +90,51 @@ class JobApplicationStatusTests {
             assertThat(reachable).as("%s is reachable", status).isTrue();
         }
     }
+
+    @Test
+    void createRecordsTheInitialSavedEntry() {
+        var app = newApp();
+
+        assertThat(app.getStatusChangedAt()).isEqualTo(NOW);
+        assertThat(app.getStatusHistory()).singleElement().satisfies(change -> {
+            assertThat(change.getFromStatus()).isNull();
+            assertThat(change.getToStatus()).isEqualTo(ApplicationStatus.SAVED);
+            assertThat(change.getChangedAt()).isEqualTo(NOW);
+        });
+    }
+
+    @Test
+    void changeStatusAppendsToHistoryAndMovesStatusChangedAt() {
+        var app = newApp();
+
+        app.changeStatus(ApplicationStatus.APPLIED, LATER);
+
+        assertThat(app.getStatusChangedAt()).isEqualTo(LATER);
+        assertThat(app.getStatusHistory()).hasSize(2);
+        var last = app.getStatusHistory().getLast();
+        assertThat(last.getFromStatus()).isEqualTo(ApplicationStatus.SAVED);
+        assertThat(last.getToStatus()).isEqualTo(ApplicationStatus.APPLIED);
+        assertThat(last.getChangedAt()).isEqualTo(LATER);
+    }
+
+    @Test
+    void rejectedMoveLeavesHistoryUntouched() {
+        var app = newApp();
+
+        assertThatThrownBy(() -> app.changeStatus(ApplicationStatus.OFFER, LATER))
+                .isInstanceOf(DomainException.class);
+
+        assertThat(app.getStatusHistory()).hasSize(1);
+        assertThat(app.getStatusChangedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void editingDetailsDoesNotTouchStatusChangedAt() {
+        var app = newApp();
+
+        app.updateDetails("Globex", "Engineer", null, null, LATER);
+
+        assertThat(app.getStatusChangedAt()).isEqualTo(NOW);
+        assertThat(app.getStatusHistory()).hasSize(1);
+    }
 }

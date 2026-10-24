@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideRouter, Router } from '@angular/router';
 import { ApplicationDetail } from './application-detail';
 import { anApplication } from '../applications/testing';
-import { ApplicationResponse } from '../applications/application.model';
+import { ApplicationResponse, StatusChange } from '../applications/application.model';
 
 describe('ApplicationDetail', () => {
   let http: HttpTestingController;
@@ -24,14 +24,29 @@ describe('ApplicationDetail', () => {
     vi.restoreAllMocks();
   });
 
-  async function open(app: ApplicationResponse) {
+  const created: StatusChange = {
+    fromStatus: null,
+    toStatus: 'SAVED',
+    changedAt: '2026-10-01T12:00:00Z',
+  };
+
+  async function open(app: ApplicationResponse, history: StatusChange[] = [created]) {
     const fixture = TestBed.createComponent(ApplicationDetail);
     fixture.componentRef.setInput('id', app.id);
     await fixture.whenStable();
 
-    http.expectOne(`/api/applications/${app.id}`).flush(app);
+    flushLoad(app, history);
     await fixture.whenStable();
     return { fixture, el: fixture.nativeElement as HTMLElement };
+  }
+
+  function flushLoad(app: ApplicationResponse, history: StatusChange[]) {
+    http.expectOne(`/api/applications/${app.id}`).flush(app);
+    http.expectOne(`/api/applications/${app.id}/history`).flush(history);
+  }
+
+  function buttonLabelled(el: HTMLElement, label: string): HTMLButtonElement {
+    return Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.trim() === label)!;
   }
 
   function deleteButton(el: HTMLElement): HTMLButtonElement {
@@ -66,9 +81,83 @@ describe('ApplicationDetail', () => {
     await fixture.whenStable();
 
     http.expectOne('/api/applications/gone').flush(null, { status: 404, statusText: 'Not Found' });
+    http.expectOne('/api/applications/gone/history'); // cancelled once the first request fails
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('no longer exists');
+  });
+
+  it('shows the status history oldest first with the gap between steps', async () => {
+    const { el } = await open(anApplication({ id: 'a1', status: 'APPLIED' }), [
+      created,
+      { fromStatus: 'SAVED', toStatus: 'APPLIED', changedAt: '2026-10-04T12:00:00Z' },
+    ]);
+
+    const entries = Array.from(el.querySelectorAll('.timeline li')).map((li) =>
+      li.textContent!.replace(/\s+/g, ' ').trim(),
+    );
+    expect(entries.length).toBe(2);
+    expect(entries[0]).toContain('Saved');
+    expect(entries[0]).not.toContain('later');
+    expect(entries[1]).toContain('Applied');
+    expect(entries[1]).toContain('3 days later');
+  });
+
+  it('shows how long the application has been in its current status', async () => {
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 - 60_000).toISOString();
+    const { el } = await open(
+      anApplication({ id: 'a1', status: 'APPLIED', statusChangedAt: twoDaysAgo }),
+    );
+
+    expect(el.querySelector('.status')?.textContent).toContain('for 2 days');
+  });
+
+  it('moves the application and refreshes the history', async () => {
+    const app = anApplication({
+      id: 'a1',
+      status: 'INTERVIEWING',
+      version: 3,
+      allowedTransitions: ['OFFER', 'REJECTED', 'WITHDRAWN'],
+    });
+    const { fixture, el } = await open(app);
+
+    buttonLabelled(el, 'Offer').click();
+
+    const req = http.expectOne('/api/applications/a1/status');
+    expect(req.request.body).toEqual({ status: 'OFFER', version: 3 });
+    req.flush({
+      ...app,
+      status: 'OFFER',
+      version: 4,
+      allowedTransitions: ['ACCEPTED', 'DECLINED', 'REJECTED'],
+    });
+    http
+      .expectOne('/api/applications/a1/history')
+      .flush([
+        created,
+        { fromStatus: 'INTERVIEWING', toStatus: 'OFFER', changedAt: '2026-10-05T12:00:00Z' },
+      ]);
+    await fixture.whenStable();
+
+    expect(el.querySelector('.status')?.textContent).toContain('Offer');
+    expect(buttonLabelled(el, 'Accepted')).toBeTruthy();
+    expect(el.querySelectorAll('.timeline li').length).toBe(2);
+  });
+
+  it('reloads with a notice when the move conflicts', async () => {
+    const app = anApplication({ id: 'a1', status: 'SAVED', allowedTransitions: ['APPLIED'] });
+    const { fixture, el } = await open(app);
+
+    buttonLabelled(el, 'Applied').click();
+    http
+      .expectOne('/api/applications/a1/status')
+      .flush({ title: 'Conflict' }, { status: 409, statusText: 'Conflict' });
+    flushLoad({ ...app, status: 'WITHDRAWN', version: 1, allowedTransitions: [] }, [created]);
+    await fixture.whenStable();
+
+    expect(el.querySelector('.notice')?.textContent).toContain('changed somewhere else');
+    expect(el.querySelector('.status')?.textContent).toContain('Withdrawn');
+    expect(el.querySelector('.moves')).toBeNull();
   });
 
   it('deletes after confirmation and returns to the board', async () => {

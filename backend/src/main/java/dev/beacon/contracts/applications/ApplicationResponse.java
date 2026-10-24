@@ -13,6 +13,7 @@ public record ApplicationResponse (
         String status,
         Instant createdAt,
         Instant updatedAt,
+        Instant statusChangedAt,
         Long version,
         List<String> allowedTransitions
 ) {

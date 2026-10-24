@@ -2,6 +2,7 @@ package dev.beacon.application.applications;
 
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.CreateApplicationRequest;
+import dev.beacon.contracts.applications.StatusChangeResponse;
 import dev.beacon.contracts.applications.UpdateApplicationRequest;
 import dev.beacon.domain.applications.ApplicationStatus;
 import dev.beacon.domain.applications.JobApplication;
@@ -52,6 +53,14 @@ public class ApplicationService {
                 .stream()
                 .map(ApplicationMappings::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<List<StatusChangeResponse>> history(UUID id) {
+        return repository.findById(id).map(application -> application.getStatusHistory()
+                .stream()
+                .map(ApplicationMappings::toResponse)
+                .toList());
     }
 
     @Transactional

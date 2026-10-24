@@ -1,10 +1,20 @@
-import { Component, inject, input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 import { ApplicationsApi } from '../applications/applications-api';
-import { ApplicationResponse } from '../applications/application.model';
+import {
+  ApplicationResponse,
+  ApplicationStatus,
+  StatusChange,
+} from '../applications/application.model';
+import { durationBetween } from '../applications/durations';
+
+interface TimelineEntry extends StatusChange {
+  /** Time since the previous entry; null for the first. */
+  after: string | null;
+}
 
 @Component({
   selector: 'app-application-detail',
@@ -20,20 +30,51 @@ export class ApplicationDetail implements OnInit {
   readonly id = input.required<string>();
 
   protected readonly application = signal<ApplicationResponse | null>(null);
+  protected readonly history = signal<StatusChange[]>([]);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
+  protected readonly busy = signal(false);
   protected readonly deleting = signal(false);
 
+  protected readonly timeInStatus = computed(() => {
+    const app = this.application();
+    return app ? durationBetween(app.statusChangedAt, new Date()) : null;
+  });
+
+  protected readonly timeline = computed<TimelineEntry[]>(() =>
+    this.history().map((change, i, all) => ({
+      ...change,
+      after: i === 0 ? null : durationBetween(all[i - 1].changedAt, change.changedAt),
+    })),
+  );
+
   ngOnInit(): void {
-    this.api.getById(this.id()).subscribe({
-      next: (app) => this.application.set(app),
-      error: (err: HttpErrorResponse) =>
-        this.error.set(
-          err.status === 404
-            ? 'That application no longer exists.'
-            : 'Could not load the application. Is the API running?',
-        ),
-    });
+    this.load();
+  }
+
+  protected move(app: ApplicationResponse, target: ApplicationStatus): void {
+    this.busy.set(true);
+    this.notice.set(null);
+
+    this.api
+      .changeStatus(app.id, target, app.version)
+      .pipe(finalize(() => this.busy.set(false)))
+      .subscribe({
+        next: (updated) => {
+          this.application.set(updated);
+          this.api.history(app.id).subscribe((history) => this.history.set(history));
+        },
+        error: (err: HttpErrorResponse) => {
+          if (err.status === 409) {
+            this.notice.set('This application was changed somewhere else. It has been refreshed.');
+            this.load();
+          } else if (err.status === 404) {
+            this.error.set('That application no longer exists.');
+          } else {
+            this.notice.set('Could not move the application. Try again.');
+          }
+        },
+      });
   }
 
   protected remove(app: ApplicationResponse): void {
@@ -58,5 +99,23 @@ export class ApplicationDetail implements OnInit {
           }
         },
       });
+  }
+
+  private load(): void {
+    forkJoin({
+      application: this.api.getById(this.id()),
+      history: this.api.history(this.id()),
+    }).subscribe({
+      next: ({ application, history }) => {
+        this.application.set(application);
+        this.history.set(history);
+      },
+      error: (err: HttpErrorResponse) =>
+        this.error.set(
+          err.status === 404
+            ? 'That application no longer exists.'
+            : 'Could not load the application. Is the API running?',
+        ),
+    });
   }
 }

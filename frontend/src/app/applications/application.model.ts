@@ -20,8 +20,17 @@ export interface ApplicationResponse {
   status: ApplicationStatus;
   createdAt: string;
   updatedAt: string;
+  /** When the application entered its current status. */
+  statusChangedAt: string;
   version: number;
   allowedTransitions: ApplicationStatus[];
+}
+
+export interface StatusChange {
+  /** Null for the entry recorded when the application was created. */
+  fromStatus: ApplicationStatus | null;
+  toStatus: ApplicationStatus;
+  changedAt: string;
 }
 
 export interface CreateApplicationRequest {

@@ -84,6 +84,37 @@ class ApplicationStatusApiTests {
         assertThat(result).hasStatus(HttpStatus.OK);
     }
 
+    @Test
+    void historyListsEveryMoveOldestFirst() {
+        var id = createApplication();
+        patchStatus(id, "APPLIED", 0);
+        patchStatus(id, "INTERVIEWING", 1);
+
+        var result = mvc.get().uri("/api/applications/{id}/history", id).exchange();
+
+        assertThat(result).hasStatus(HttpStatus.OK);
+        assertThat(result).bodyJson().extractingPath("$[*].toStatus").asArray()
+                .containsExactly("SAVED", "APPLIED", "INTERVIEWING");
+        assertThat(result).bodyJson().extractingPath("$[0].fromStatus").isNull();
+        assertThat(result).bodyJson().extractingPath("$[2].fromStatus").isEqualTo("APPLIED");
+    }
+
+    @Test
+    void historyForUnknownIdReturns404() {
+        var result = mvc.get().uri("/api/applications/{id}/history", UUID.randomUUID()).exchange();
+
+        assertThat(result).hasStatus(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void moveResponseIncludesStatusChangedAt() {
+        var id = createApplication();
+
+        var result = patchStatus(id, "APPLIED", 0);
+
+        assertThat(result).bodyJson().extractingPath("$.statusChangedAt").isNotNull();
+    }
+
     // --- helpers ---
 
     private String createApplication() {

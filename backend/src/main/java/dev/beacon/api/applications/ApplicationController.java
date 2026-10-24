@@ -5,6 +5,7 @@ import dev.beacon.application.applications.ApplicationService;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.ChangeStatusRequest;
 import dev.beacon.contracts.applications.CreateApplicationRequest;
+import dev.beacon.contracts.applications.StatusChangeResponse;
 import dev.beacon.contracts.applications.UpdateApplicationRequest;
 import dev.beacon.domain.applications.ApplicationStatus;
 import jakarta.validation.Valid;
@@ -56,6 +57,11 @@ public class ApplicationController {
         return service.delete(id)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<StatusChangeResponse>> history(@PathVariable UUID id) {
+        return ResponseEntity.of(service.history(id));
     }
 
     @PatchMapping("/{id}/status")

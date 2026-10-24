@@ -53,4 +53,36 @@ class JobApplicationRepositoryTests {
         assertThat(loaded).hasSize(3);
         assertThat(loaded.getFirst().getCompany()).isEqualTo("company B");
     }
+
+    @Test
+    void persistsStatusHistoryInOrder() {
+        var app = JobApplication.create("Acme", "Engineer", null, null, NOW);
+        app.changeStatus(ApplicationStatus.APPLIED, NOW.plusSeconds(60));
+        app.changeStatus(ApplicationStatus.INTERVIEWING, NOW.plusSeconds(120));
+
+        repository.saveAndFlush(app);
+        entityManager.clear();
+
+        var loaded = repository.findById(app.getId()).orElseThrow();
+        assertThat(loaded.getStatusChangedAt()).isEqualTo(NOW.plusSeconds(120));
+        assertThat(loaded.getStatusHistory())
+                .extracting(change -> change.getToStatus())
+                .containsExactly(ApplicationStatus.SAVED, ApplicationStatus.APPLIED, ApplicationStatus.INTERVIEWING);
+    }
+
+    @Test
+    void deletingAnApplicationDeletesItsHistory() {
+        var app = JobApplication.create("Acme", "Engineer", null, null, NOW);
+        app.changeStatus(ApplicationStatus.APPLIED, NOW.plusSeconds(60));
+        repository.saveAndFlush(app);
+        entityManager.clear();
+
+        repository.deleteById(app.getId());
+        repository.flush();
+
+        var remaining = entityManager
+                .createQuery("select count(c) from StatusChange c", Long.class)
+                .getSingleResult();
+        assertThat(remaining).isZero();
+    }
 }

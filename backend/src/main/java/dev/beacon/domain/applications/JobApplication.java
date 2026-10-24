@@ -4,6 +4,9 @@ import dev.beacon.domain.DomainException;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -38,15 +41,22 @@ public class JobApplication {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    @Column(nullable = false)
+    private Instant statusChangedAt;
+
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("changedAt ASC, id ASC")
+    private List<StatusChange> statusHistory = new ArrayList<>();
+
     protected JobApplication() { }
 
     public static JobApplication create(String company, String role, String jobUrl, String notes, Instant now) {
         var app = new JobApplication();
         app.id = UUID.randomUUID();
         app.applyDetails(company, role, jobUrl, notes);
-        app.status = ApplicationStatus.SAVED;
         app.createdAt = now;
         app.updatedAt = now;
+        app.recordStatus(ApplicationStatus.SAVED, now);
 
         return app;
     }
@@ -76,8 +86,14 @@ public class JobApplication {
             throw new DomainException("Cannot move an application from " + status + " to " + newStatus + ".");
         }
 
-        this.status = newStatus;
         this.updatedAt = now;
+        recordStatus(newStatus, now);
+    }
+
+    private void recordStatus(ApplicationStatus newStatus, Instant now) {
+        statusHistory.add(new StatusChange(this, status, newStatus, now));
+        this.status = newStatus;
+        this.statusChangedAt = now;
     }
 
     private static String trimToNull(String value) {
@@ -93,4 +109,6 @@ public class JobApplication {
     public Long getVersion() { return version; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+    public Instant getStatusChangedAt() { return statusChangedAt; }
+    public List<StatusChange> getStatusHistory() { return Collections.unmodifiableList(statusHistory); }
 }

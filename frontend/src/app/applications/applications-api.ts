@@ -6,6 +6,7 @@ import {
   ApplicationStatus,
   ChangeStatusRequest,
   CreateApplicationRequest,
+  StatusChange,
   UpdateApplicationRequest,
 } from './application.model';
 
@@ -20,6 +21,10 @@ export class ApplicationsApi {
 
   getById(id: string): Observable<ApplicationResponse> {
     return this.http.get<ApplicationResponse>(`${this.baseUrl}/${id}`);
+  }
+
+  history(id: string): Observable<StatusChange[]> {
+    return this.http.get<StatusChange[]>(`${this.baseUrl}/${id}/history`);
   }
 
   changeStatus(

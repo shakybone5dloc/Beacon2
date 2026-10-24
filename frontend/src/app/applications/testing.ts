@@ -10,6 +10,7 @@ export function anApplication(overrides: Partial<ApplicationResponse> = {}): App
     status: 'SAVED',
     createdAt: '2026-10-23T12:00:00Z',
     updatedAt: '2026-10-23T12:00:00Z',
+    statusChangedAt: '2026-10-23T12:00:00Z',
     version: 0,
     allowedTransitions: [],
     ...overrides,
