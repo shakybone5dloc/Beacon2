@@ -113,6 +113,105 @@ describe('ApplicationForm', () => {
     req.flush(anApplication());
   });
 
+  describe('pay', () => {
+    async function create() {
+      const fixture = TestBed.createComponent(ApplicationForm);
+      await fixture.whenStable();
+      const el: HTMLElement = fixture.nativeElement;
+      fill(el, 'company', 'Acme');
+      fill(el, 'role', 'Engineer');
+      return { fixture, el };
+    }
+
+    async function choose(
+      fixture: { whenStable(): Promise<unknown> },
+      el: HTMLElement,
+      type: string,
+    ) {
+      el.querySelector<HTMLInputElement>(`input[type=radio][value=${type}]`)!.click();
+      await fixture.whenStable();
+    }
+
+    it('sends a salary range per year by default', async () => {
+      const { el } = await create();
+      fill(el, 'salaryMin', '120000');
+      fill(el, 'salaryMax', '150000');
+      el.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+
+      const req = http.expectOne('/api/applications');
+      expect(req.request.body).toMatchObject({
+        salaryMin: 120000,
+        salaryMax: 150000,
+        salaryPeriod: 'year',
+      });
+      req.flush(anApplication());
+    });
+
+    it('sends an hourly rate as one amount per hour', async () => {
+      const { fixture, el } = await create();
+      await choose(fixture, el, 'hourly');
+
+      expect(el.querySelector('input[formControlName=salaryMin]')).toBeNull();
+      fill(el, 'hourlyRate', '45');
+      fill(el, 'salaryCurrency', 'usd');
+      el.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+
+      const req = http.expectOne('/api/applications');
+      expect(req.request.body).toMatchObject({
+        salaryMin: 45,
+        salaryMax: null,
+        salaryPeriod: 'hour',
+        salaryCurrency: 'USD',
+      });
+      req.flush(anApplication());
+    });
+
+    it('ignores a leftover invalid salary once hourly is chosen', async () => {
+      const { fixture, el } = await create();
+      fill(el, 'salaryMin', '140,000');
+      await choose(fixture, el, 'hourly');
+      fill(el, 'hourlyRate', '50');
+      el.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+
+      const req = http.expectOne('/api/applications');
+      expect(req.request.body).toMatchObject({ salaryMin: 50, salaryPeriod: 'hour' });
+      req.flush(anApplication());
+    });
+
+    it('sends no period when no amount was entered', async () => {
+      const { el } = await create();
+      el.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+
+      const req = http.expectOne('/api/applications');
+      expect(req.request.body).toMatchObject({
+        salaryMin: null,
+        salaryMax: null,
+        salaryPeriod: null,
+      });
+      req.flush(anApplication());
+    });
+
+    it('opens an hourly application on the hourly switch with its rate', async () => {
+      const fixture = TestBed.createComponent(ApplicationForm);
+      fixture.componentRef.setInput('id', 'a1');
+      await fixture.whenStable();
+      http
+        .expectOne('/api/applications/a1')
+        .flush(
+          anApplication({ id: 'a1', salaryMin: 45, salaryPeriod: 'hour', salaryCurrency: 'USD' }),
+        );
+      await fixture.whenStable();
+      const el: HTMLElement = fixture.nativeElement;
+
+      expect(el.querySelector<HTMLInputElement>('input[type=radio][value=hourly]')!.checked).toBe(
+        true,
+      );
+      expect(el.querySelector<HTMLInputElement>('input[formControlName=hourlyRate]')!.value).toBe(
+        '45',
+      );
+    });
+  });
+
   it('rejects a salary with commas before sending', async () => {
     const fixture = TestBed.createComponent(ApplicationForm);
     await fixture.whenStable();

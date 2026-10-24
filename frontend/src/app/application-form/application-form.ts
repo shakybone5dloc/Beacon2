@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -23,14 +24,21 @@ type FieldName =
   | 'salaryMax'
   | 'salaryCurrency'
   | 'salaryText'
+  | 'hourlyRate'
   | 'source'
   | 'jobDescription';
+
+type PayType = 'salary' | 'hourly';
+
+/** Fields that only apply to one pay type; the other type's are disabled. */
+const SALARY_ONLY = ['salaryMin', 'salaryMax', 'salaryPeriod'] as const;
 
 /** Messages for pattern failures, by field. */
 const PATTERN_MESSAGES: Partial<Record<FieldName, string>> = {
   jobUrl: 'Must start with http:// or https://',
   salaryMin: 'Whole number, no commas.',
   salaryMax: 'Whole number, no commas.',
+  hourlyRate: 'Whole number, no commas.',
   salaryCurrency: 'A 3-letter code, like USD.',
 };
 
@@ -56,7 +64,8 @@ export class ApplicationForm implements OnInit {
   protected readonly stale = signal(false);
   /** The posting details section starts open when editing an application that has some. */
   protected readonly detailsOpen = signal(false);
-  protected readonly periods = SALARY_PERIODS;
+  /** Hourly pay has its own switch, so the salary periods leave "hour" out. */
+  protected readonly salaryPeriods = SALARY_PERIODS.filter((p) => p !== 'hour');
 
   private version = 0;
 
@@ -73,12 +82,26 @@ export class ApplicationForm implements OnInit {
     salaryMin: ['', [Validators.pattern(/^\d+$/)]],
     salaryMax: ['', [Validators.pattern(/^\d+$/)]],
     salaryCurrency: ['', [Validators.pattern(/^[A-Za-z]{3}$/)]],
-    salaryPeriod: [''],
+    salaryPeriod: ['year'],
+    /** Hourly pay is one amount, stored as salaryMin with the period "hour". */
+    payType: ['salary' as PayType],
+    hourlyRate: ['', [Validators.pattern(/^\d+$/)]],
     salaryText: ['', [Validators.maxLength(100)]],
     source: ['', [Validators.maxLength(100)]],
     postedOn: [''],
     jobDescription: ['', [Validators.maxLength(100_000)]],
   });
+
+  protected readonly payType = toSignal(this.form.controls.payType.valueChanges, {
+    initialValue: this.form.controls.payType.value,
+  });
+
+  constructor() {
+    this.applyPayType('salary');
+    this.form.controls.payType.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((type) => this.applyPayType(type));
+  }
 
   ngOnInit(): void {
     if (this.isEdit()) {
@@ -121,10 +144,8 @@ export class ApplicationForm implements OnInit {
       followUpOn: v.followUpOn || null,
       location: v.location.trim() || null,
       remote: v.remote === '' ? null : v.remote === 'yes',
-      salaryMin: v.salaryMin ? Number(v.salaryMin) : null,
-      salaryMax: v.salaryMax ? Number(v.salaryMax) : null,
+      ...pay(v),
       salaryCurrency: v.salaryCurrency.trim().toUpperCase() || null,
-      salaryPeriod: v.salaryPeriod || null,
       salaryText: v.salaryText.trim() || null,
       source: v.source.trim() || null,
       postedOn: v.postedOn || null,
@@ -157,6 +178,19 @@ export class ApplicationForm implements OnInit {
     return 'Invalid.';
   }
 
+  /** Only the active pay type's fields take part in validation and submission. */
+  private applyPayType(type: PayType): void {
+    const hourly = type === 'hourly';
+    for (const name of SALARY_ONLY) {
+      const control = this.form.controls[name];
+      if (hourly) control.disable({ emitEvent: false });
+      else control.enable({ emitEvent: false });
+    }
+    const rate = this.form.controls.hourlyRate;
+    if (hourly) rate.enable({ emitEvent: false });
+    else rate.disable({ emitEvent: false });
+  }
+
   private fill(app: ApplicationResponse): void {
     this.version = app.version;
     this.form.reset({
@@ -168,10 +202,8 @@ export class ApplicationForm implements OnInit {
       followUpOn: app.followUpOn ?? '',
       location: app.location ?? '',
       remote: app.remote == null ? '' : app.remote ? 'yes' : 'no',
-      salaryMin: app.salaryMin?.toString() ?? '',
-      salaryMax: app.salaryMax?.toString() ?? '',
+      ...payFields(app),
       salaryCurrency: app.salaryCurrency ?? '',
-      salaryPeriod: app.salaryPeriod ?? '',
       salaryText: app.salaryText ?? '',
       source: app.source ?? '',
       postedOn: app.postedOn ?? '',
@@ -185,7 +217,9 @@ export class ApplicationForm implements OnInit {
 
     if (err.status === 400 && problem?.errors) {
       for (const [field, messages] of Object.entries(problem.errors)) {
-        const control = this.form.get(field);
+        // An hourly rate travels as salaryMin, so its errors belong on the rate field.
+        const name = this.payType() === 'hourly' && field === 'salaryMin' ? 'hourlyRate' : field;
+        const control = this.form.get(name);
         control?.setErrors({ server: messages[0] });
         control?.markAsTouched();
       }
@@ -219,4 +253,45 @@ function hasPostingDetails(app: ApplicationResponse): boolean {
     app.postedOn,
     app.jobDescription,
   ].some((v) => v != null);
+}
+
+type FormValue = ReturnType<ApplicationForm['form']['getRawValue']>;
+
+/** The request's pay fields for whichever pay type is chosen. */
+function pay(
+  v: Pick<FormValue, 'payType' | 'hourlyRate' | 'salaryMin' | 'salaryMax' | 'salaryPeriod'>,
+): Pick<CreateApplicationRequest, 'salaryMin' | 'salaryMax' | 'salaryPeriod'> {
+  if (v.payType === 'hourly') {
+    const rate = v.hourlyRate ? Number(v.hourlyRate) : null;
+    return { salaryMin: rate, salaryMax: null, salaryPeriod: rate == null ? null : 'hour' };
+  }
+  const min = v.salaryMin ? Number(v.salaryMin) : null;
+  const max = v.salaryMax ? Number(v.salaryMax) : null;
+  // The period only means something alongside an amount.
+  return {
+    salaryMin: min,
+    salaryMax: max,
+    salaryPeriod: (min ?? max) ? v.salaryPeriod || 'year' : null,
+  };
+}
+
+/** Form values for an application's stored pay; "hour" means the hourly switch. */
+function payFields(app: ApplicationResponse) {
+  if (app.salaryPeriod === 'hour') {
+    const rate = app.salaryMin ?? app.salaryMax;
+    return {
+      payType: 'hourly' as PayType,
+      hourlyRate: rate?.toString() ?? '',
+      salaryMin: '',
+      salaryMax: '',
+      salaryPeriod: 'year',
+    };
+  }
+  return {
+    payType: 'salary' as PayType,
+    hourlyRate: '',
+    salaryMin: app.salaryMin?.toString() ?? '',
+    salaryMax: app.salaryMax?.toString() ?? '',
+    salaryPeriod: app.salaryPeriod ?? 'year',
+  };
 }

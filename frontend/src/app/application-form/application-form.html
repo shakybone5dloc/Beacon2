@@ -68,8 +68,8 @@
       (toggle)="detailsOpen.set($any($event.target).open)"
     >
       <summary>Posting details</summary>
-      <div class="grid">
-        <label class="wide">
+      <div class="row two">
+        <label>
           Location
           <input formControlName="location" placeholder="Denver, CO" />
           @if (errorFor('location'); as msg) {
@@ -84,6 +84,9 @@
             <option value="no">On-site or hybrid</option>
           </select>
         </label>
+      </div>
+
+      <div class="row two">
         <label>
           Source
           <input formControlName="source" placeholder="Referral, company site..." />
@@ -92,47 +95,84 @@
           }
         </label>
         <label>
-          Salary from
-          <input formControlName="salaryMin" inputmode="numeric" placeholder="120000" />
-          @if (errorFor('salaryMin'); as msg) {
-            <span class="error">{{ msg }}</span>
-          }
+          Posted on
+          <input formControlName="postedOn" type="date" />
         </label>
+      </div>
+
+      <fieldset class="pay">
+        <legend>Pay</legend>
+        <div class="pay-type" role="radiogroup" aria-label="Pay type">
+          <label>
+            <input type="radio" formControlName="payType" value="salary" />
+            <span>Salary</span>
+          </label>
+          <label>
+            <input type="radio" formControlName="payType" value="hourly" />
+            <span>Hourly</span>
+          </label>
+        </div>
+
+        @if (payType() === 'hourly') {
+          <div class="row hourly">
+            <label>
+              Rate per hour
+              <input formControlName="hourlyRate" inputmode="numeric" placeholder="45" />
+              @if (errorFor('hourlyRate'); as msg) {
+                <span class="error">{{ msg }}</span>
+              }
+            </label>
+            <label>
+              Currency
+              <input formControlName="salaryCurrency" placeholder="USD" maxlength="3" />
+              @if (errorFor('salaryCurrency'); as msg) {
+                <span class="error">{{ msg }}</span>
+              }
+            </label>
+          </div>
+        } @else {
+          <div class="row salary">
+            <label>
+              From
+              <input formControlName="salaryMin" inputmode="numeric" placeholder="120000" />
+              @if (errorFor('salaryMin'); as msg) {
+                <span class="error">{{ msg }}</span>
+              }
+            </label>
+            <label>
+              To
+              <input formControlName="salaryMax" inputmode="numeric" placeholder="150000" />
+              @if (errorFor('salaryMax'); as msg) {
+                <span class="error">{{ msg }}</span>
+              }
+            </label>
+            <label>
+              Currency
+              <input formControlName="salaryCurrency" placeholder="USD" maxlength="3" />
+              @if (errorFor('salaryCurrency'); as msg) {
+                <span class="error">{{ msg }}</span>
+              }
+            </label>
+            <label>
+              Per
+              <select formControlName="salaryPeriod">
+                @for (period of salaryPeriods; track period) {
+                  <option [value]="period">{{ period }}</option>
+                }
+              </select>
+            </label>
+          </div>
+        }
+
         <label>
-          Salary to
-          <input formControlName="salaryMax" inputmode="numeric" placeholder="150000" />
-          @if (errorFor('salaryMax'); as msg) {
-            <span class="error">{{ msg }}</span>
-          }
-        </label>
-        <label>
-          Currency
-          <input formControlName="salaryCurrency" placeholder="USD" maxlength="3" />
-          @if (errorFor('salaryCurrency'); as msg) {
-            <span class="error">{{ msg }}</span>
-          }
-        </label>
-        <label>
-          Per
-          <select formControlName="salaryPeriod">
-            <option value="">-</option>
-            @for (period of periods; track period) {
-              <option [value]="period">{{ period }}</option>
-            }
-          </select>
-        </label>
-        <label class="wide">
-          Salary notes
+          Pay notes
           <input formControlName="salaryText" placeholder="DOE, plus equity..." />
           @if (errorFor('salaryText'); as msg) {
             <span class="error">{{ msg }}</span>
           }
         </label>
-        <label>
-          Posted on
-          <input formControlName="postedOn" type="date" />
-        </label>
-      </div>
+      </fieldset>
+
       <label>
         Job description
         <textarea
