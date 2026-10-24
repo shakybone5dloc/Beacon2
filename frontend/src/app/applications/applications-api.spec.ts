@@ -1,15 +1,44 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationsApi } from './applications-api';
+import { CreateApplicationRequest } from './application.model';
 
 describe('ApplicationsApi', () => {
   let service: ApplicationsApi;
+  let http: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     service = TestBed.inject(ApplicationsApi);
+    http = TestBed.inject(HttpTestingController);
   });
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
+  afterEach(() => http.verify());
+
+  it('changeStatus PATCHes the status and version', () => {
+    service.changeStatus('abc', 'APPLIED', 3).subscribe();
+
+    const req = http.expectOne('/api/applications/abc/status');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ status: 'APPLIED', version: 3 });
+    req.flush({});
+  });
+
+  it('create POSTs request to /api/applications', () => {
+    let request = {
+      company: 'Acme',
+      role: 'Engineer',
+      jobUrl: 'http://example.com',
+      notes: 'something here',
+    };
+    service.create(request).subscribe();
+
+    const req = http.expectOne('/api/applications');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(request);
+    req.flush({});
   });
 });

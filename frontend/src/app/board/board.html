@@ -1,4 +1,9 @@
 <h1>Applications</h1>
+<p><a routerLink="/applications/new" class="new">+ New application</a></p>
+
+@if (notice(); as text) {
+    <p class="notice">{{ text }}</p>
+}
 
 @if (error(); as message) {
     <p class="notice">{{ message }}</p>
@@ -17,6 +22,13 @@
                     <article class="card">
                         <strong>{{ app.company }}</strong>
                         <span>{{ app.role }}</span>
+                        @if (app.allowedTransitions.length > 0) {
+                            <div class="actions">
+                                @for (target of app.allowedTransitions; track target) {
+                                    <button type="button" [disabled]="busy()" (click)="move(app, target)">{{ target | titlecase }}</button>
+                                }
+                            </div>
+                        }
                     </article>
                 } @empty {
                     <p class="empty">Nothing here</p>

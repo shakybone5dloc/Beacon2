@@ -21,3 +21,22 @@ export interface ApplicationResponse {
   version: number;
   allowedTransitions: ApplicationStatus[];
 }
+
+export interface CreateApplicationRequest {
+  company: string;
+  role: string;
+  jobUrl: string | null;
+  notes: string | null;
+}
+
+export interface ChangeStatusRequest {
+  status: ApplicationStatus;
+  version: number;
+}
+
+export interface ProblemDetail {
+  title?: string;
+  detail?: string;
+  status?: number;
+  errors?: Record<string, string[]>;
+}
