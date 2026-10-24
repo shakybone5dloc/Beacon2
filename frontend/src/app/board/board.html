@@ -1,0 +1,27 @@
+<h1>Applications</h1>
+
+@if (error(); as message) {
+    <p class="notice">{{ message }}</p>
+} @else if (applications() == null) {
+    <p>Loading...</p>
+} @else {
+    <div class="board">
+        @for (column of columns(); track column.status) {
+            <section class="column">
+                <h2>
+                    {{ column.status | titlecase }}
+                    <span class="count">{{ column.cards.length }}</span>
+                </h2>
+
+                @for (app of column.cards; track app.id) {
+                    <article class="card">
+                        <strong>{{ app.company }}</strong>
+                        <span>{{ app.role }}</span>
+                    </article>
+                } @empty {
+                    <p class="empty">Nothing here</p>
+                }
+            </section>
+        }
+    </div>
+}
