@@ -51,18 +51,83 @@
   font-size: 0.75rem;
   color: var(--muted);
 }
-.card.stale {
+.card.flagged {
   box-shadow:
     inset 3px 0 0 #d97706,
     0 1px 2px rgb(0 0 0 / 0.1);
 }
-.card.stale .age {
+.card.flagged .age {
   color: #b45309;
   font-weight: 600;
 }
-.quiet {
-  color: #b45309;
+
+.dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+.chip {
+  font-size: 0.72rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.chip.urgent {
+  background: #fff4e5;
+  border-color: #f5c26b;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.attention {
+  background: #fffbf3;
+  border: 1px solid #f5c26b;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
   margin: 0 0 1rem;
+}
+.attention h2 {
+  font-size: 0.9rem;
+  margin: 0 0 0.4rem;
+  color: #92400e;
+}
+.attention ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+.attention li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.6rem;
+}
+.attention a {
+  font-weight: 600;
+  color: var(--text);
+}
+.attention .role {
+  color: var(--muted);
+}
+.attention .reason {
+  color: #b45309;
+}
+.attention button {
+  font-size: 0.75rem;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid #f5c26b;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+}
+.attention button:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }
 
 .company {

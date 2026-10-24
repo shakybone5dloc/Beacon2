@@ -10,11 +10,24 @@
 } @else if (applications() == null) {
   <p>Loading...</p>
 } @else {
-  @if (staleCount() > 0) {
-    <p class="quiet">
-      {{ staleCount() }} {{ staleCount() === 1 ? 'application has' : 'applications have' }}
-      gone quiet.
-    </p>
+  @if (needsAttention().length > 0) {
+    <section class="attention" aria-labelledby="attention-heading">
+      <h2 id="attention-heading">Needs attention</h2>
+      <ul>
+        @for (card of needsAttention(); track card.app.id) {
+          <li>
+            <a [routerLink]="['/applications', card.app.id]">{{ card.app.company }}</a>
+            <span class="role">{{ card.app.role }}</span>
+            <span class="reason">{{ card.attention!.reason }}</span>
+            @if (card.attention!.followUp?.urgent) {
+              <button type="button" [disabled]="busy()" (click)="completeFollowUp(card.app)">
+                Done
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    </section>
   }
 
   <div class="board">
@@ -27,18 +40,29 @@
 
         @for (card of column.cards; track card.app.id) {
           @let app = card.app;
-          <article class="card" [class.stale]="card.staleness?.stale">
+          @let a = card.attention;
+          <article class="card" [class.flagged]="a?.needsAttention">
             <div class="title">
               <a [routerLink]="['/applications', app.id]" class="company">{{ app.company }}</a>
-              @if (card.staleness; as s) {
-                <span class="age" [title]="s.description" [attr.aria-label]="s.description">
-                  {{ s.age }}
+              @if (a) {
+                <span class="age" [title]="a.ageDescription" [attr.aria-label]="a.ageDescription">
+                  {{ a.age }}
                 </span>
               }
             </div>
             <span>{{ app.role }}</span>
             @if (column.statuses.length > 1) {
               <span class="badge">{{ app.status | titlecase }}</span>
+            }
+            @if (a?.deadline || a?.followUp) {
+              <div class="dates">
+                @if (a?.deadline; as d) {
+                  <span class="chip deadline" [class.urgent]="d.urgent">{{ d.label }}</span>
+                }
+                @if (a?.followUp; as f) {
+                  <span class="chip follow-up" [class.urgent]="f.urgent">{{ f.label }}</span>
+                }
+              </div>
             }
             @if (app.allowedTransitions.length > 0) {
               <div class="actions">

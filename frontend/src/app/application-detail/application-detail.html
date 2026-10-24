@@ -39,6 +39,30 @@
       }
     </dd>
 
+    @if (app.applyBy; as applyBy) {
+      <dt>Apply by</dt>
+      <dd>
+        {{ applyBy | date: 'mediumDate' }}
+        @if (attention()?.deadline; as d) {
+          <span class="chip" [class.urgent]="d.urgent">{{ d.label }}</span>
+        }
+      </dd>
+    }
+
+    <dt><label for="follow-up">Follow up on</label></dt>
+    <dd class="follow-up">
+      <input id="follow-up" #followUp type="date" [value]="app.followUpOn ?? ''" />
+      <button type="button" [disabled]="busy()" (click)="scheduleFollowUp(app, followUp.value)">
+        Save
+      </button>
+      @if (app.followUpOn) {
+        <button type="button" [disabled]="busy()" (click)="scheduleFollowUp(app, '')">Clear</button>
+      }
+      @if (attention()?.followUp; as f) {
+        <span class="chip" [class.urgent]="f.urgent">{{ f.label }}</span>
+      }
+    </dd>
+
     <dt>Added</dt>
     <dd>{{ app.createdAt | date: 'medium' }}</dd>
 

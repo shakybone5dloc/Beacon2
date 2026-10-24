@@ -49,6 +49,8 @@ describe('ApplicationForm', () => {
         role: 'Engineer',
         jobUrl: null,
         notes: null,
+        applyBy: null,
+        followUpOn: null,
       });
       req.flush(
         { errors: { company: ['already tracked'] } },
@@ -60,6 +62,22 @@ describe('ApplicationForm', () => {
       expect(companyLabel.querySelector('.error')?.textContent).toContain('already tracked');
       expect(el.querySelectorAll('.error').length).toBe(1);
     });
+  });
+
+  it('sends the apply-by and follow-up dates', async () => {
+    const fixture = TestBed.createComponent(ApplicationForm);
+    await fixture.whenStable();
+    const el: HTMLElement = fixture.nativeElement;
+
+    fill(el, 'company', 'Acme');
+    fill(el, 'role', 'Engineer');
+    fill(el, 'applyBy', '2026-11-15');
+    fill(el, 'followUpOn', '2026-11-01');
+    el.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+
+    const req = http.expectOne('/api/applications');
+    expect(req.request.body).toMatchObject({ applyBy: '2026-11-15', followUpOn: '2026-11-01' });
+    req.flush(anApplication());
   });
 
   describe('editing', () => {
@@ -81,6 +99,8 @@ describe('ApplicationForm', () => {
           role: 'Staff Engineer',
           jobUrl: 'https://globex.com/jobs/1',
           notes: 'Referred by Sam',
+          applyBy: '2026-11-15',
+          followUpOn: '2026-11-01',
         }),
       );
 
@@ -89,6 +109,8 @@ describe('ApplicationForm', () => {
       expect(input(el, 'role').value).toBe('Staff Engineer');
       expect(input(el, 'jobUrl').value).toBe('https://globex.com/jobs/1');
       expect(el.querySelector('textarea')!.value).toBe('Referred by Sam');
+      expect(input(el, 'applyBy').value).toBe('2026-11-15');
+      expect(input(el, 'followUpOn').value).toBe('2026-11-01');
     });
 
     it('PUTs the changes with the loaded version and opens the detail page', async () => {
@@ -104,6 +126,8 @@ describe('ApplicationForm', () => {
         role: 'Principal Engineer',
         jobUrl: null,
         notes: null,
+        applyBy: null,
+        followUpOn: null,
         version: 4,
       });
       req.flush(anApplication({ id: 'a1', role: 'Principal Engineer', version: 5 }));

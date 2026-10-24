@@ -5,6 +5,7 @@ import dev.beacon.application.applications.ApplicationService;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.ChangeStatusRequest;
 import dev.beacon.contracts.applications.CreateApplicationRequest;
+import dev.beacon.contracts.applications.FollowUpRequest;
 import dev.beacon.contracts.applications.StatusChangeResponse;
 import dev.beacon.contracts.applications.UpdateApplicationRequest;
 import dev.beacon.domain.applications.ApplicationStatus;
@@ -57,6 +58,14 @@ public class ApplicationController {
         return service.delete(id)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/{id}/follow-up")
+    public ResponseEntity<ApplicationResponse> scheduleFollowUp(
+            @PathVariable UUID id,
+            @Valid @RequestBody FollowUpRequest request
+    ) {
+        return ResponseEntity.of(service.scheduleFollowUp(id, request));
     }
 
     @GetMapping("/{id}/history")

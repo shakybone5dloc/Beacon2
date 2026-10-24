@@ -2,13 +2,14 @@ import { Component, computed, inject, input, OnInit, signal } from '@angular/cor
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
-import { finalize, forkJoin } from 'rxjs';
+import { finalize, forkJoin, Observable } from 'rxjs';
 import { ApplicationsApi } from '../applications/applications-api';
 import {
   ApplicationResponse,
   ApplicationStatus,
   StatusChange,
 } from '../applications/application.model';
+import { attentionFor } from '../applications/attention';
 import { durationBetween } from '../applications/durations';
 
 interface TimelineEntry extends StatusChange {
@@ -41,6 +42,11 @@ export class ApplicationDetail implements OnInit {
     return app ? durationBetween(app.statusChangedAt, new Date()) : null;
   });
 
+  protected readonly attention = computed(() => {
+    const app = this.application();
+    return app ? attentionFor(app, new Date()) : null;
+  });
+
   protected readonly timeline = computed<TimelineEntry[]>(() =>
     this.history().map((change, i, all) => ({
       ...change,
@@ -53,28 +59,40 @@ export class ApplicationDetail implements OnInit {
   }
 
   protected move(app: ApplicationResponse, target: ApplicationStatus): void {
+    this.write(this.api.changeStatus(app.id, target, app.version), 'move', () =>
+      this.api.history(app.id).subscribe((history) => this.history.set(history)),
+    );
+  }
+
+  /** Empty input clears the follow-up. */
+  protected scheduleFollowUp(app: ApplicationResponse, date: string): void {
+    this.write(this.api.scheduleFollowUp(app.id, date || null, app.version), 'update');
+  }
+
+  private write(
+    request: Observable<ApplicationResponse>,
+    verb: string,
+    afterSuccess?: () => void,
+  ): void {
     this.busy.set(true);
     this.notice.set(null);
 
-    this.api
-      .changeStatus(app.id, target, app.version)
-      .pipe(finalize(() => this.busy.set(false)))
-      .subscribe({
-        next: (updated) => {
-          this.application.set(updated);
-          this.api.history(app.id).subscribe((history) => this.history.set(history));
-        },
-        error: (err: HttpErrorResponse) => {
-          if (err.status === 409) {
-            this.notice.set('This application was changed somewhere else. It has been refreshed.');
-            this.load();
-          } else if (err.status === 404) {
-            this.error.set('That application no longer exists.');
-          } else {
-            this.notice.set('Could not move the application. Try again.');
-          }
-        },
-      });
+    request.pipe(finalize(() => this.busy.set(false))).subscribe({
+      next: (updated) => {
+        this.application.set(updated);
+        afterSuccess?.();
+      },
+      error: (err: HttpErrorResponse) => {
+        if (err.status === 409) {
+          this.notice.set('This application was changed somewhere else. It has been refreshed.');
+          this.load();
+        } else if (err.status === 404) {
+          this.error.set('That application no longer exists.');
+        } else {
+          this.notice.set(`Could not ${verb} the application. Try again.`);
+        }
+      },
+    });
   }
 
   protected remove(app: ApplicationResponse): void {

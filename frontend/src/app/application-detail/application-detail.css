@@ -142,3 +142,49 @@ h2 {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+.chip {
+  margin-left: 0.4rem;
+  font-size: 0.75rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.chip.urgent {
+  background: #fff4e5;
+  border-color: #f5c26b;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.follow-up {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.follow-up input {
+  font: inherit;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.follow-up button {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+}
+.follow-up button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.follow-up .chip {
+  margin-left: 0;
+}

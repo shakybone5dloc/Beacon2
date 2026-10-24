@@ -17,6 +17,10 @@ export interface ApplicationResponse {
   role: string;
   jobUrl: string | null;
   notes: string | null;
+  /** Last day the posting accepts applications (YYYY-MM-DD). */
+  applyBy: string | null;
+  /** When to chase this application next (YYYY-MM-DD). */
+  followUpOn: string | null;
   status: ApplicationStatus;
   createdAt: string;
   updatedAt: string;
@@ -38,9 +42,17 @@ export interface CreateApplicationRequest {
   role: string;
   jobUrl: string | null;
   notes: string | null;
+  applyBy: string | null;
+  followUpOn: string | null;
 }
 
 export interface UpdateApplicationRequest extends CreateApplicationRequest {
+  version: number;
+}
+
+export interface FollowUpRequest {
+  /** Null clears the follow-up. */
+  followUpOn: string | null;
   version: number;
 }
 

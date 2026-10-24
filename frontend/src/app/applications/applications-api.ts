@@ -6,6 +6,7 @@ import {
   ApplicationStatus,
   ChangeStatusRequest,
   CreateApplicationRequest,
+  FollowUpRequest,
   StatusChange,
   UpdateApplicationRequest,
 } from './application.model';
@@ -42,6 +43,15 @@ export class ApplicationsApi {
 
   update(id: string, request: UpdateApplicationRequest): Observable<ApplicationResponse> {
     return this.http.put<ApplicationResponse>(`${this.baseUrl}/${id}`, request);
+  }
+
+  scheduleFollowUp(
+    id: string,
+    followUpOn: string | null,
+    version: number,
+  ): Observable<ApplicationResponse> {
+    const body: FollowUpRequest = { followUpOn, version };
+    return this.http.put<ApplicationResponse>(`${this.baseUrl}/${id}/follow-up`, body);
   }
 
   delete(id: string): Observable<void> {

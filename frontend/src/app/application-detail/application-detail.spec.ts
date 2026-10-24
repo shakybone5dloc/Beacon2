@@ -75,6 +75,46 @@ describe('ApplicationDetail', () => {
     expect(el.querySelector('a.edit')?.getAttribute('href')).toBe('/applications/a1/edit');
   });
 
+  it('shows the apply-by date with its countdown', async () => {
+    const { el } = await open(anApplication({ id: 'a1', status: 'SAVED', applyBy: '2099-12-31' }));
+
+    expect(el.textContent).toContain('Apply by');
+    expect(el.textContent).toContain('Dec 31, 2099');
+  });
+
+  it('saves a follow-up date', async () => {
+    const app = anApplication({ id: 'a1', status: 'APPLIED', version: 2 });
+    const { fixture, el } = await open(app);
+
+    const input = el.querySelector<HTMLInputElement>('#follow-up')!;
+    input.value = '2099-11-07';
+    buttonLabelled(el, 'Save').click();
+
+    const req = http.expectOne('/api/applications/a1/follow-up');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ followUpOn: '2099-11-07', version: 2 });
+    req.flush({ ...app, followUpOn: '2099-11-07', version: 3 });
+    await fixture.whenStable();
+
+    expect(el.querySelector('.follow-up .chip')?.textContent).toContain('Follow up in');
+    expect(buttonLabelled(el, 'Clear')).toBeTruthy();
+  });
+
+  it('clears the follow-up date', async () => {
+    const app = anApplication({ id: 'a1', status: 'APPLIED', followUpOn: '2099-11-07' });
+    const { fixture, el } = await open(app);
+
+    buttonLabelled(el, 'Clear').click();
+
+    const req = http.expectOne('/api/applications/a1/follow-up');
+    expect(req.request.body).toEqual({ followUpOn: null, version: 0 });
+    req.flush({ ...app, followUpOn: null, version: 1 });
+    await fixture.whenStable();
+
+    expect(buttonLabelled(el, 'Clear')).toBeUndefined();
+    expect(el.querySelector('.follow-up .chip')).toBeNull();
+  });
+
   it('shows a notice when the application does not exist', async () => {
     const fixture = TestBed.createComponent(ApplicationDetail);
     fixture.componentRef.setInput('id', 'gone');

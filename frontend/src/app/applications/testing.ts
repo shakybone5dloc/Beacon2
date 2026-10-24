@@ -7,6 +7,8 @@ export function anApplication(overrides: Partial<ApplicationResponse> = {}): App
     role: 'Engineer',
     jobUrl: null,
     notes: null,
+    applyBy: null,
+    followUpOn: null,
     status: 'SAVED',
     createdAt: '2026-10-23T12:00:00Z',
     updatedAt: '2026-10-23T12:00:00Z',

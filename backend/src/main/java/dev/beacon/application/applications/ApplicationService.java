@@ -2,6 +2,7 @@ package dev.beacon.application.applications;
 
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.CreateApplicationRequest;
+import dev.beacon.contracts.applications.FollowUpRequest;
 import dev.beacon.contracts.applications.StatusChangeResponse;
 import dev.beacon.contracts.applications.UpdateApplicationRequest;
 import dev.beacon.domain.applications.ApplicationStatus;
@@ -30,13 +31,16 @@ public class ApplicationService {
 
     @Transactional
     public ApplicationResponse create(CreateApplicationRequest request) {
+        var now = Instant.now(clock);
         var application = JobApplication.create(
                 request.company(),
                 request.role(),
                 request.jobUrl(),
                 request.notes(),
-                Instant.now(clock)
+                now
         );
+        application.setApplyBy(request.applyBy(), now);
+        application.scheduleFollowUp(request.followUpOn(), now);
 
         repository.save(application);
         return ApplicationMappings.toResponse(application);
@@ -87,13 +91,31 @@ public class ApplicationService {
         var application = found.get();
         requireVersion(application, request.version());
 
+        var now = Instant.now(clock);
         application.updateDetails(
                 request.company(),
                 request.role(),
                 request.jobUrl(),
                 request.notes(),
-                Instant.now(clock)
+                now
         );
+        application.setApplyBy(request.applyBy(), now);
+        application.scheduleFollowUp(request.followUpOn(), now);
+
+        repository.flush();
+        return Optional.of(ApplicationMappings.toResponse(application));
+    }
+
+    @Transactional
+    public Optional<ApplicationResponse> scheduleFollowUp(UUID id, FollowUpRequest request) {
+        var found = repository.findById(id);
+        if (found.isEmpty()) {
+            return Optional.empty();
+        }
+        var application = found.get();
+        requireVersion(application, request.version());
+
+        application.scheduleFollowUp(request.followUpOn(), Instant.now(clock));
 
         repository.flush();
         return Optional.of(ApplicationMappings.toResponse(application));

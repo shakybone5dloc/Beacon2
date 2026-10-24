@@ -42,6 +42,26 @@
       }
     </label>
 
+    <div class="dates">
+      <label>
+        Apply by
+        <input formControlName="applyBy" type="date" />
+        <span class="hint">If the posting has a closing date</span>
+        @if (errorFor('applyBy'); as msg) {
+          <span class="error">{{ msg }}</span>
+        }
+      </label>
+
+      <label>
+        Follow up on
+        <input formControlName="followUpOn" type="date" />
+        <span class="hint">When to check back</span>
+        @if (errorFor('followUpOn'); as msg) {
+          <span class="error">{{ msg }}</span>
+        }
+      </label>
+    </div>
+
     <label>
       Notes
       <textarea formControlName="notes" rows="5"></textarea>

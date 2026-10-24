@@ -4,6 +4,7 @@ import dev.beacon.domain.DomainException;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +28,12 @@ public class JobApplication {
 
     @Column(length = 4000)
     private String notes;
+
+    /** Last day the posting accepts applications, when it says. */
+    private LocalDate applyBy;
+
+    /** When to chase this application next. */
+    private LocalDate followUpOn;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
@@ -78,6 +85,17 @@ public class JobApplication {
         this.notes = trimToNull(notes);
     }
 
+    public void setApplyBy(LocalDate applyBy, Instant now) {
+        this.applyBy = applyBy;
+        this.updatedAt = now;
+    }
+
+    /** Pass null to clear. Past dates are allowed: they show as overdue. */
+    public void scheduleFollowUp(LocalDate followUpOn, Instant now) {
+        this.followUpOn = followUpOn;
+        this.updatedAt = now;
+    }
+
     public void changeStatus(ApplicationStatus newStatus, Instant now) {
         if (newStatus == status) {
             throw new DomainException("Application is already " + status + ".");
@@ -105,6 +123,8 @@ public class JobApplication {
     public String getRole() { return role; }
     public String getJobUrl() { return jobUrl; }
     public String getNotes() { return notes; }
+    public LocalDate getApplyBy() { return applyBy; }
+    public LocalDate getFollowUpOn() { return followUpOn; }
     public ApplicationStatus getStatus() { return status; }
     public Long getVersion() { return version; }
     public Instant getCreatedAt() { return createdAt; }

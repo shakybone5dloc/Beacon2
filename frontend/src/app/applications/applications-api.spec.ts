@@ -33,6 +33,8 @@ describe('ApplicationsApi', () => {
       role: 'Engineer',
       jobUrl: 'http://example.com',
       notes: 'something here',
+      applyBy: '2026-11-15',
+      followUpOn: null,
     };
     service.create(request).subscribe();
 
@@ -51,12 +53,29 @@ describe('ApplicationsApi', () => {
   });
 
   it('update PUTs the details and version to /api/applications/:id', () => {
-    const request = { company: 'Acme', role: 'Engineer', jobUrl: null, notes: null, version: 2 };
+    const request = {
+      company: 'Acme',
+      role: 'Engineer',
+      jobUrl: null,
+      notes: null,
+      applyBy: null,
+      followUpOn: '2026-11-07',
+      version: 2,
+    };
     service.update('abc', request).subscribe();
 
     const req = http.expectOne('/api/applications/abc');
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual(request);
+    req.flush({});
+  });
+
+  it('scheduleFollowUp PUTs the date and version', () => {
+    service.scheduleFollowUp('abc', '2026-11-07', 2).subscribe();
+
+    const req = http.expectOne('/api/applications/abc/follow-up');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ followUpOn: '2026-11-07', version: 2 });
     req.flush({});
   });
 

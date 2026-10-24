@@ -17,6 +17,8 @@ public final class ApplicationMappings {
                 a.getRole(),
                 a.getJobUrl(),
                 a.getNotes(),
+                a.getApplyBy(),
+                a.getFollowUpOn(),
                 a.getStatus().name(),
                 a.getCreatedAt(),
                 a.getUpdatedAt(),

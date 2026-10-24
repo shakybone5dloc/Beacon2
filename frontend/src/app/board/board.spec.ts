@@ -76,16 +76,21 @@ describe('Board', () => {
     expect(link.getAttribute('href')).toBe('/applications/a1');
   });
 
-  describe('time in status', () => {
-    const daysAgo = (days: number) =>
-      new Date(Date.now() - days * 24 * 60 * 60 * 1000 - 60_000).toISOString();
+  describe('attention', () => {
+    const DAY = 24 * 60 * 60 * 1000;
+    const daysAgo = (days: number) => new Date(Date.now() - days * DAY - 60_000).toISOString();
+    /** Local calendar date `days` from today, as YYYY-MM-DD. */
+    const dateIn = (days: number) => {
+      const d = new Date(Date.now() + days * DAY);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
 
     async function render(...apps: ReturnType<typeof anApplication>[]) {
       const fixture = TestBed.createComponent(Board);
       await fixture.whenStable();
       http.expectOne('/api/applications').flush(apps);
       await fixture.whenStable();
-      return fixture.nativeElement as HTMLElement;
+      return { fixture, el: fixture.nativeElement as HTMLElement };
     }
 
     function cardFor(el: HTMLElement, company: string): HTMLElement {
@@ -95,37 +100,93 @@ describe('Board', () => {
     }
 
     it('shows each active card how long it has been in its status', async () => {
-      const el = await render(
+      const { el } = await render(
         anApplication({ company: 'Acme', status: 'APPLIED', statusChangedAt: daysAgo(3) }),
       );
 
       const age = cardFor(el, 'Acme').querySelector('.age')!;
       expect(age.textContent?.trim()).toBe('3d');
       expect(age.getAttribute('title')).toBe('In Applied for 3 days.');
-      expect(cardFor(el, 'Acme').classList).not.toContain('stale');
+      expect(cardFor(el, 'Acme').classList).not.toContain('flagged');
     });
 
-    it('highlights cards past their status limit and counts them', async () => {
-      const el = await render(
+    it('flags cards and lists them in the attention strip, dated reasons first', async () => {
+      const { el } = await render(
         anApplication({ company: 'Acme', status: 'APPLIED', statusChangedAt: daysAgo(8) }),
-        anApplication({ company: 'Globex', status: 'OFFER', statusChangedAt: daysAgo(4) }),
-        anApplication({ company: 'Initech', status: 'INTERVIEWING', statusChangedAt: daysAgo(30) }),
+        anApplication({ company: 'Globex', status: 'INTERVIEWING', followUpOn: dateIn(-2) }),
+        anApplication({ company: 'Initech', status: 'SAVED', applyBy: dateIn(1) }),
+        anApplication({ company: 'Hooli', status: 'INTERVIEWING', statusChangedAt: daysAgo(30) }),
       );
 
-      expect(cardFor(el, 'Acme').classList).toContain('stale');
-      expect(cardFor(el, 'Globex').classList).toContain('stale');
-      expect(cardFor(el, 'Initech').classList).not.toContain('stale');
-      expect(el.querySelector('.quiet')?.textContent).toContain('2 applications have gone quiet');
+      expect(cardFor(el, 'Acme').classList).toContain('flagged');
+      expect(cardFor(el, 'Globex').classList).toContain('flagged');
+      expect(cardFor(el, 'Initech').classList).toContain('flagged');
+      expect(cardFor(el, 'Hooli').classList).not.toContain('flagged');
+
+      const items = Array.from(el.querySelectorAll('.attention li')).map((li) =>
+        li.textContent!.replace(/\s+/g, ' ').trim(),
+      );
+      expect(items.length).toBe(3);
+      expect(items[0]).toContain('Globex');
+      expect(items[0]).toContain('Follow-up 2d overdue');
+      expect(items[1]).toContain('Initech');
+      expect(items[1]).toContain('Closes in 1d');
+      expect(items[2]).toContain('Acme');
+      expect(items[2]).toContain('No movement in 8 days');
     });
 
-    it('leaves closed cards without an age and out of the count', async () => {
-      const el = await render(
-        anApplication({ company: 'Acme', status: 'REJECTED', statusChangedAt: daysAgo(90) }),
+    it('shows date chips on cards', async () => {
+      const { el } = await render(
+        anApplication({
+          company: 'Acme',
+          status: 'SAVED',
+          applyBy: dateIn(10),
+          followUpOn: dateIn(4),
+        }),
+      );
+
+      const card = cardFor(el, 'Acme');
+      expect(card.querySelector('.chip.deadline')?.textContent).toContain('Closes in 10d');
+      expect(card.querySelector('.chip.follow-up')?.textContent).toContain('Follow up in 4d');
+      expect(card.querySelector('.chip.urgent')).toBeNull();
+      expect(el.querySelector('.attention')).toBeNull();
+    });
+
+    it('clears a due follow-up from the strip with Done', async () => {
+      const app = anApplication({
+        id: 'a1',
+        company: 'Globex',
+        status: 'INTERVIEWING',
+        version: 2,
+        followUpOn: dateIn(0),
+      });
+      const { fixture, el } = await render(app);
+
+      el.querySelector<HTMLButtonElement>('.attention button')!.click();
+
+      const req = http.expectOne('/api/applications/a1/follow-up');
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({ followUpOn: null, version: 2 });
+      req.flush({ ...app, followUpOn: null, version: 3 });
+      await fixture.whenStable();
+
+      expect(el.querySelector('.attention')).toBeNull();
+      expect(cardFor(el, 'Globex').querySelector('.chip')).toBeNull();
+    });
+
+    it('leaves closed cards without an age and out of the strip', async () => {
+      const { el } = await render(
+        anApplication({
+          company: 'Acme',
+          status: 'REJECTED',
+          statusChangedAt: daysAgo(90),
+          followUpOn: dateIn(-5),
+        }),
       );
 
       expect(cardFor(el, 'Acme').querySelector('.age')).toBeNull();
-      expect(cardFor(el, 'Acme').classList).not.toContain('stale');
-      expect(el.querySelector('.quiet')).toBeNull();
+      expect(cardFor(el, 'Acme').classList).not.toContain('flagged');
+      expect(el.querySelector('.attention')).toBeNull();
     });
   });
 

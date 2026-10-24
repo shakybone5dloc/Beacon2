@@ -10,7 +10,7 @@ import {
   ProblemDetail,
 } from '../applications/application.model';
 
-type FieldName = 'company' | 'role' | 'jobUrl' | 'notes';
+type FieldName = 'company' | 'role' | 'jobUrl' | 'notes' | 'applyBy' | 'followUpOn';
 
 @Component({
   selector: 'app-application-form',
@@ -40,6 +40,8 @@ export class ApplicationForm implements OnInit {
     role: ['', [Validators.required, Validators.maxLength(200)]],
     jobUrl: ['', [Validators.maxLength(2048), Validators.pattern(/^https?:\/\/.+/)]],
     notes: ['', [Validators.maxLength(4000)]],
+    applyBy: [''],
+    followUpOn: [''],
   });
 
   ngOnInit(): void {
@@ -79,6 +81,8 @@ export class ApplicationForm implements OnInit {
       role: v.role,
       jobUrl: v.jobUrl.trim() || null,
       notes: v.notes.trim() || null,
+      applyBy: v.applyBy || null,
+      followUpOn: v.followUpOn || null,
     };
 
     this.submitting.set(true);
@@ -114,6 +118,8 @@ export class ApplicationForm implements OnInit {
       role: app.role,
       jobUrl: app.jobUrl ?? '',
       notes: app.notes ?? '',
+      applyBy: app.applyBy ?? '',
+      followUpOn: app.followUpOn ?? '',
     });
   }
 

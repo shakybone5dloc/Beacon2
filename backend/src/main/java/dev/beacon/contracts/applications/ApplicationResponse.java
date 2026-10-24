@@ -1,6 +1,7 @@
 package dev.beacon.contracts.applications;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 import java.util.List;
 
@@ -10,6 +11,8 @@ public record ApplicationResponse (
         String role,
         String jobUrl,
         String notes,
+        LocalDate applyBy,
+        LocalDate followUpOn,
         String status,
         Instant createdAt,
         Instant updatedAt,

@@ -2,6 +2,7 @@ package dev.beacon.domain.applications;
 
 import org.junit.jupiter.api.Test;
 import java.time.Instant;
+import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.*;
 
 class JobApplicationTests {
@@ -51,5 +52,38 @@ class JobApplicationTests {
 
         assertThatIllegalArgumentException()
             .isThrownBy(() -> app.updateDetails("Acme", " ", null, null, NOW));
+    }
+
+    @Test
+    void scheduleFollowUpSetsAndClearsTheDate() {
+        var app = JobApplication.create("Acme", "Engineer", null, null, NOW);
+        var later = NOW.plusSeconds(60);
+
+        app.scheduleFollowUp(LocalDate.parse("2026-11-07"), later);
+        assertThat(app.getFollowUpOn()).isEqualTo(LocalDate.parse("2026-11-07"));
+        assertThat(app.getUpdatedAt()).isEqualTo(later);
+
+        app.scheduleFollowUp(null, later);
+        assertThat(app.getFollowUpOn()).isNull();
+    }
+
+    @Test
+    void followUpMayBeInThePast() {
+        var app = JobApplication.create("Acme", "Engineer", null, null, NOW);
+
+        app.scheduleFollowUp(LocalDate.parse("2020-01-01"), NOW);
+
+        assertThat(app.getFollowUpOn()).isEqualTo(LocalDate.parse("2020-01-01"));
+    }
+
+    @Test
+    void datesDoNotAffectStatus() {
+        var app = JobApplication.create("Acme", "Engineer", null, null, NOW);
+
+        app.setApplyBy(LocalDate.parse("2026-11-15"), NOW);
+        app.scheduleFollowUp(LocalDate.parse("2026-11-01"), NOW);
+
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.SAVED);
+        assertThat(app.getStatusChangedAt()).isEqualTo(NOW);
     }
 }
