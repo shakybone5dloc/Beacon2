@@ -29,9 +29,7 @@ export function aSource(overrides: Partial<JobSource> = {}): JobSource {
     name: 'Remotive',
     coverage: 'Remote jobs',
     attributionUrl: 'https://remotive.com',
-    enabled: true,
-    configured: true,
-    setupHint: null,
+    usesYourKey: false,
     ...overrides,
   };
 }

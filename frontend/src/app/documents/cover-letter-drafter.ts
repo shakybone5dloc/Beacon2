@@ -1,5 +1,6 @@
 import { Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
 import { CoverLettersApi } from './cover-letters-api';
 import { DocumentsApi } from './documents-api';
@@ -9,6 +10,7 @@ import { problemText } from './application-documents';
 /** Drafts a cover letter with AI from the job description and a chosen resume, then saves it as a PDF. */
 @Component({
   selector: 'app-cover-letter-drafter',
+  imports: [RouterLink],
   templateUrl: './cover-letter-drafter.html',
   styleUrl: './cover-letter-drafter.css',
 })

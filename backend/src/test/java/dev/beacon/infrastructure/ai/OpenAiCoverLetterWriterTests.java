@@ -2,7 +2,6 @@ package dev.beacon.infrastructure.ai;
 
 import dev.beacon.application.coverletters.CoverLetterException;
 import dev.beacon.application.coverletters.CoverLetterWriter.CoverLetterInput;
-import dev.beacon.infrastructure.ai.CoverLetterWriterConfig.Provider;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -32,7 +31,7 @@ class OpenAiCoverLetterWriterTests {
     private static Setup setup() {
         var builder = RestClient.builder();
         var server = MockRestServiceServer.bindTo(builder).build();
-        return new Setup(new OpenAiCoverLetterWriter(builder, "sk-test", "gpt-6-sol"), server);
+        return new Setup(new OpenAiCoverLetterWriter(builder, "gpt-6-sol"), server);
     }
 
     private static String error(String code) {
@@ -55,18 +54,8 @@ class OpenAiCoverLetterWriterTests {
                           "message": {"role": "assistant", "content": "  Dear Hiring Team,\\n\\nHello.  ", "refusal": null}}]}
                         """, MediaType.APPLICATION_JSON));
 
-        assertThat(s.writer().draft(INPUT)).isEqualTo("Dear Hiring Team,\n\nHello.");
+        assertThat(s.writer().draft(INPUT, "sk-test")).isEqualTo("Dear Hiring Team,\n\nHello.");
         s.server().verify();
-    }
-
-    @Test
-    void isOffWithoutAKey() {
-        var writer = new OpenAiCoverLetterWriter(" ", "gpt-6-sol");
-
-        assertThat(writer.isConfigured()).isFalse();
-        assertThatThrownBy(() -> writer.draft(INPUT))
-                .isInstanceOf(CoverLetterException.class)
-                .hasMessageContaining("OPENAI_API_KEY");
     }
 
     @Test
@@ -75,7 +64,7 @@ class OpenAiCoverLetterWriterTests {
         s.server().expect(requestTo(URL)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
                 .contentType(MediaType.APPLICATION_JSON).body(error("insufficient_quota")));
 
-        assertThatThrownBy(() -> s.writer().draft(INPUT))
+        assertThatThrownBy(() -> s.writer().draft(INPUT, "sk-test"))
                 .isInstanceOf(CoverLetterException.class)
                 .hasMessageContaining("out of credits")
                 .satisfies(ex -> assertThat(((CoverLetterException) ex).isUpstream()).isFalse());
@@ -87,7 +76,7 @@ class OpenAiCoverLetterWriterTests {
         s.server().expect(requestTo(URL)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
                 .contentType(MediaType.APPLICATION_JSON).body(error("rate_limit_exceeded")));
 
-        assertThatThrownBy(() -> s.writer().draft(INPUT))
+        assertThatThrownBy(() -> s.writer().draft(INPUT, "sk-test"))
                 .hasMessageContaining("busy")
                 .satisfies(ex -> assertThat(((CoverLetterException) ex).isUpstream()).isTrue());
     }
@@ -97,12 +86,12 @@ class OpenAiCoverLetterWriterTests {
         var s = setup();
         s.server().expect(requestTo(URL)).andRespond(withStatus(HttpStatus.UNAUTHORIZED)
                 .contentType(MediaType.APPLICATION_JSON).body(error("invalid_api_key")));
-        assertThatThrownBy(() -> s.writer().draft(INPUT)).hasMessageContaining("OPENAI_API_KEY");
+        assertThatThrownBy(() -> s.writer().draft(INPUT, "sk-test")).hasMessageContaining("under Settings");
 
         var t = setup();
         t.server().expect(requestTo(URL)).andRespond(withStatus(HttpStatus.NOT_FOUND)
                 .contentType(MediaType.APPLICATION_JSON).body(error("model_not_found")));
-        assertThatThrownBy(() -> t.writer().draft(INPUT)).hasMessageContaining("OPENAI_MODEL");
+        assertThatThrownBy(() -> t.writer().draft(INPUT, "sk-test")).hasMessageContaining("OPENAI_MODEL");
     }
 
     @Test
@@ -112,16 +101,6 @@ class OpenAiCoverLetterWriterTests {
                 {"choices": [{"message": {"role": "assistant", "content": null, "refusal": "I can't help with that."}}]}
                 """, MediaType.APPLICATION_JSON));
 
-        assertThatThrownBy(() -> s.writer().draft(INPUT)).hasMessageContaining("declined");
-    }
-
-    @Test
-    void autoPicksWhicheverKeyIsSetPreferringOpenAi() {
-        assertThat(CoverLetterWriterConfig.choose("auto", true, false)).isEqualTo(Provider.OPENAI);
-        assertThat(CoverLetterWriterConfig.choose("auto", true, true)).isEqualTo(Provider.OPENAI);
-        assertThat(CoverLetterWriterConfig.choose("auto", false, true)).isEqualTo(Provider.ANTHROPIC);
-        assertThat(CoverLetterWriterConfig.choose("auto", false, false)).isEqualTo(Provider.OPENAI);
-        assertThat(CoverLetterWriterConfig.choose(" Anthropic ", true, true)).isEqualTo(Provider.ANTHROPIC);
-        assertThat(CoverLetterWriterConfig.choose("openai", false, true)).isEqualTo(Provider.OPENAI);
+        assertThatThrownBy(() -> s.writer().draft(INPUT, "sk-test")).hasMessageContaining("declined");
     }
 }

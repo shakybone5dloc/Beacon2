@@ -4,7 +4,6 @@ import dev.beacon.application.postings.JobPosting;
 import dev.beacon.application.postings.JobSource;
 import dev.beacon.application.postings.PostingMatcher;
 import dev.beacon.application.postings.PostingQuery;
-import dev.beacon.config.PostingsProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -17,12 +16,13 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 
 /**
  * Remote jobs from himalayas.app. Their search is loose (a search for "java"
  * returns designers too), so results also go through the local matcher.
- * Works without a key; a free key raises the rate limit.
+ * Works without a key; a user's own key gets them their own rate limit.
  */
 @Component
 public class HimalayasSource implements JobSource {
@@ -33,11 +33,7 @@ public class HimalayasSource implements JobSource {
     private final RestClient http;
     private final TtlCache<String, List<JobPosting>> cache;
 
-    public HimalayasSource(RestClient.Builder builder, Clock clock, PostingsProperties properties) {
-        var apiKey = properties.himalayas().apiKey();
-        if (apiKey != null && !apiKey.isBlank()) {
-            builder.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey.strip());
-        }
+    public HimalayasSource(RestClient.Builder builder, Clock clock) {
         this.http = builder.baseUrl("https://himalayas.app").build();
         this.cache = new TtlCache<>(QUERY_TTL, clock, 50);
     }
@@ -48,19 +44,22 @@ public class HimalayasSource implements JobSource {
     @Override public String attributionUrl() { return "https://himalayas.app"; }
 
     @Override
-    public List<JobPosting> search(PostingQuery query) {
+    public List<JobPosting> search(PostingQuery query, Map<String, String> credentials) {
         var keywords = query.keywords().toLowerCase(Locale.ROOT);
-        return cache.get(keywords, () -> fetch(keywords)).stream()
+        return cache.get(keywords, () -> fetch(keywords, credentials.get("apiKey"))).stream()
                 .filter(p -> PostingMatcher.matches(p, query))
                 .toList();
     }
 
-    private List<JobPosting> fetch(String keywords) {
+    private List<JobPosting> fetch(String keywords, String apiKey) {
         var postings = new ArrayList<JobPosting>();
         for (int page = 1; page <= PAGES; page++) {
             var pageNumber = page;
             var body = http.get()
                     .uri(uri -> uri.path("/jobs/api/search").queryParam("q", keywords).queryParam("page", pageNumber).build())
+                    .headers(headers -> {
+                        if (apiKey != null) headers.setBearerAuth(apiKey);
+                    })
                     .retrieve()
                     .body(JsonNode.class);
             var jobs = body.path("jobs");

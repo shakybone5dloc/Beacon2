@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.client.ExpectedCount.once;
@@ -42,9 +43,8 @@ class JobSourceAdapterTests {
         @Override public Clock withZone(ZoneId zone) { return this; }
     }
 
-    private static PostingsProperties properties(PostingsProperties.Adzuna adzuna, PostingsProperties.UsaJobs usajobs) {
-        return new PostingsProperties(null, adzuna, usajobs, null);
-    }
+    private static final PostingsProperties PROPERTIES = new PostingsProperties(null, null);
+    private static final Map<String, String> USAJOBS_KEY = Map.of("apiKey", "k1", "email", "me@example.com");
 
     @Nested
     class Remotive {
@@ -69,7 +69,7 @@ class JobSourceAdapterTests {
             server.expect(once(), requestTo("https://remotive.com/api/remote-jobs"))
                     .andRespond(withSuccess(FEED, MediaType.APPLICATION_JSON));
 
-            var results = new RemotiveSource(builder, new MutableClock()).search(JAVA);
+            var results = new RemotiveSource(builder, new MutableClock()).search(JAVA, Map.of());
 
             assertThat(results).singleElement().satisfies(p -> {
                 assertThat(p.source()).isEqualTo("remotive");
@@ -98,12 +98,12 @@ class JobSourceAdapterTests {
             var clock = new MutableClock();
             var source = new RemotiveSource(builder, clock);
 
-            source.search(JAVA);
-            source.search(new PostingQuery("javascript", "", false));
+            source.search(JAVA, Map.of());
+            source.search(new PostingQuery("javascript", "", false), Map.of());
             clock.advance(Duration.ofHours(5));
-            source.search(JAVA);
+            source.search(JAVA, Map.of());
             clock.advance(Duration.ofHours(2));
-            source.search(JAVA);
+            source.search(JAVA, Map.of());
 
             server.verify();
         }
@@ -128,7 +128,7 @@ class JobSourceAdapterTests {
                       "url": "https://remoteOK.com/remote-jobs/12"}]
                     """, MediaType.APPLICATION_JSON));
 
-            var results = new RemoteOkSource(builder, new MutableClock()).search(JAVA);
+            var results = new RemoteOkSource(builder, new MutableClock()).search(JAVA, Map.of());
 
             assertThat(results).hasSize(2);
             assertThat(results.get(0).location()).isNull();
@@ -158,7 +158,7 @@ class JobSourceAdapterTests {
                     ]}
                     """, MediaType.APPLICATION_JSON));
 
-            var results = new JobicySource(builder, new MutableClock()).search(new PostingQuery("java", "USA", false));
+            var results = new JobicySource(builder, new MutableClock()).search(new PostingQuery("java", "USA", false), Map.of());
 
             assertThat(results).singleElement().satisfies(p -> {
                 assertThat(p.company()).isEqualTo("GitLab");
@@ -196,8 +196,8 @@ class JobSourceAdapterTests {
                     .andExpect(queryParam("page", "1"))
                     .andRespond(withSuccess(PAGE, MediaType.APPLICATION_JSON));
 
-            var results = new HimalayasSource(builder, new MutableClock(), properties(null, null))
-                    .search(new PostingQuery("Java", "USA", false));
+            var results = new HimalayasSource(builder, new MutableClock())
+                    .search(new PostingQuery("Java", "USA", false), Map.of());
 
             assertThat(results).singleElement().satisfies(p -> {
                 assertThat(p.title()).isEqualTo("Senior Full Stack Java Engineer");
@@ -218,9 +218,7 @@ class JobSourceAdapterTests {
             server.expect(requestTo(startsWith("https://himalayas.app/jobs/api/search")))
                     .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer secret"))
                     .andRespond(withSuccess("{\"jobs\": []}", MediaType.APPLICATION_JSON));
-            var props = new PostingsProperties(null, null, null, new PostingsProperties.Himalayas("secret"));
-
-            new HimalayasSource(builder, new MutableClock(), props).search(JAVA);
+            new HimalayasSource(builder, new MutableClock()).search(JAVA, Map.of("apiKey", "secret"));
 
             server.verify();
         }
@@ -228,14 +226,6 @@ class JobSourceAdapterTests {
 
     @Nested
     class Adzuna {
-
-        @Test
-        void isOffWithoutCredentials() {
-            var source = new AdzunaSource(RestClient.builder(), new MutableClock(), properties(null, null));
-
-            assertThat(source.isConfigured()).isFalse();
-            assertThat(source.setupHint()).contains("ADZUNA_APP_ID");
-        }
 
         @Test
         void passesTheQueryAndIgnoresPredictedSalaries() {
@@ -256,10 +246,8 @@ class JobSourceAdapterTests {
                                "category": {"label": "IT Jobs"}}
                             ]}
                             """, MediaType.APPLICATION_JSON));
-            var props = properties(new PostingsProperties.Adzuna("id1", "key1", null), null);
-
-            var results = new AdzunaSource(builder, new MutableClock(), props)
-                    .search(new PostingQuery("java", "Denver", true));
+            var results = new AdzunaSource(builder, new MutableClock(), PROPERTIES)
+                    .search(new PostingQuery("java", "Denver", true), Map.of("appId", "id1", "appKey", "key1"));
 
             assertThat(results).singleElement().satisfies(p -> {
                 assertThat(p.title()).isEqualTo("Java Developer");
@@ -279,14 +267,6 @@ class JobSourceAdapterTests {
     class UsaJobs {
 
         @Test
-        void isOffWithoutCredentials() {
-            var source = new UsaJobsSource(RestClient.builder(), new MutableClock(), properties(null, null));
-
-            assertThat(source.isConfigured()).isFalse();
-            assertThat(source.setupHint()).contains("USAJOBS_API_KEY");
-        }
-
-        @Test
         void dropsAnnouncementsThatOnlyMentionTheKeywordInPassing() {
             var builder = RestClient.builder();
             var server = MockRestServiceServer.bindTo(builder).build();
@@ -302,9 +282,7 @@ class JobSourceAdapterTests {
                                 "UserArea": {"Details": {"JobSummary": "Serve food and beverages in the club."}}}}
                             ]}}
                             """.formatted(longSummary), MediaType.APPLICATION_JSON));
-            var props = properties(null, new PostingsProperties.UsaJobs("k1", "me@example.com"));
-
-            var results = new UsaJobsSource(builder, new MutableClock(), props).search(JAVA);
+            var results = new UsaJobsSource(builder, new MutableClock()).search(JAVA, USAJOBS_KEY);
 
             // Kept even though "Java" sits past the snippet's cut-off.
             assertThat(results).singleElement().satisfies(p -> {
@@ -336,9 +314,7 @@ class JobSourceAdapterTests {
                               }}
                             ]}}
                             """, MediaType.APPLICATION_JSON));
-            var props = properties(null, new PostingsProperties.UsaJobs("k1", "me@example.com"));
-
-            var results = new UsaJobsSource(builder, new MutableClock(), props).search(new PostingQuery("java", "", true));
+            var results = new UsaJobsSource(builder, new MutableClock()).search(new PostingQuery("java", "", true), USAJOBS_KEY);
 
             assertThat(results).singleElement().satisfies(p -> {
                 assertThat(p.title()).isEqualTo("IT Specialist (Java)");

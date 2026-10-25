@@ -139,6 +139,9 @@ class ApiKeysApiTests extends SignedInApiTests {
         assertThat(result).bodyJson().extractingPath("$[?(@.id == 'usajobs')].fields[*].name").asArray()
                 .containsExactly("apiKey", "email");
         assertThat(result).bodyJson().extractingPath("$[?(@.id == 'openai')].kind").asArray().containsExactly("AI");
+        // Adzuna is turned off by default (BEACON_DISABLED_SOURCES).
+        assertThat(result).bodyJson().extractingPath("$[?(@.id == 'adzuna')].turnedOff").asArray().containsExactly(true);
+        assertThat(result).bodyJson().extractingPath("$[?(@.id == 'usajobs')].turnedOff").asArray().containsExactly(false);
     }
 
     private static MvcTestResult save(MockMvcTester as, String provider, String json) {

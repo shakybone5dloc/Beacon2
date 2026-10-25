@@ -63,3 +63,7 @@ h2 {
 .add {
   font-weight: 600;
 }
+.off {
+  font-size: 0.85rem;
+  color: #8a4600;
+}

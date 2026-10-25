@@ -18,8 +18,8 @@ import java.util.Map;
 
 /**
  * Adzuna aggregates ads from many job boards and employer sites, including
- * on-site roles. Needs an app id and key (API access is a paid plan); limits allow a few
- * hundred calls a day, so each query is cached for an hour.
+ * on-site roles. Each user brings their own app id and key (API access is a paid plan);
+ * limits allow a few hundred calls a day, so each query is cached for an hour.
  */
 @Component
 public class AdzunaSource implements JobSource {
@@ -44,27 +44,21 @@ public class AdzunaSource implements JobSource {
     @Override public String name() { return "Adzuna"; }
     @Override public String coverage() { return "Aggregated ads from many boards and employers, on-site and remote."; }
     @Override public String attributionUrl() { return "https://www.adzuna.com"; }
-    @Override public boolean isConfigured() { return config.configured(); }
 
     @Override
-    public String setupHint() {
-        return "Get a key at developer.adzuna.com (paid plans), then set ADZUNA_APP_ID and ADZUNA_APP_KEY in .env.";
+    public List<JobPosting> search(PostingQuery query, Map<String, String> credentials) {
+        return cache.get(query, () -> fetch(query, credentials));
     }
 
-    @Override
-    public List<JobPosting> search(PostingQuery query) {
-        return cache.get(query, () -> fetch(query));
-    }
-
-    private List<JobPosting> fetch(PostingQuery query) {
+    private List<JobPosting> fetch(PostingQuery query, Map<String, String> credentials) {
         // Adzuna has no remote filter; asking for the word is the closest match.
         var what = query.remoteOnly() ? query.keywords() + " remote" : query.keywords();
 
         var body = http.get()
                 .uri(uri -> {
                     uri.path("/v1/api/jobs/{country}/search/1")
-                            .queryParam("app_id", config.appId())
-                            .queryParam("app_key", config.appKey())
+                            .queryParam("app_id", credentials.get("appId"))
+                            .queryParam("app_key", credentials.get("appKey"))
                             .queryParam("results_per_page", RESULTS)
                             .queryParam("what", what)
                             .queryParam("content-type", "application/json");

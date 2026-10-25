@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { CoverLetterDrafter } from './cover-letter-drafter';
 import { aDocument } from './testing';
 import { DocumentResponse } from './document.model';
@@ -11,7 +12,7 @@ describe('CoverLetterDrafter', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [CoverLetterDrafter],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     http = TestBed.inject(HttpTestingController);
   });
@@ -45,11 +46,11 @@ describe('CoverLetterDrafter', () => {
     return Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.trim() === label)!;
   }
 
-  it('explains how to switch drafting on when it is not configured', async () => {
+  it('points to the API key settings when the user has no AI key', async () => {
     const { el } = await render(false);
 
-    expect(el.textContent).toContain('OPENAI_API_KEY');
-    expect(el.textContent).toContain('ANTHROPIC_API_KEY');
+    expect(el.textContent).toContain('add an OpenAI or Anthropic key');
+    expect(el.querySelector('a[href="/settings/api-keys"]')).not.toBeNull();
     expect(el.querySelector('button.start')).toBeNull();
   });
 

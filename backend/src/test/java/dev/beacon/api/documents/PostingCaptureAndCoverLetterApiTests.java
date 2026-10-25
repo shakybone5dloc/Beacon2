@@ -6,6 +6,7 @@ import dev.beacon.DocumentTestDoubles.FakeCoverLetterWriter;
 import dev.beacon.DocumentTestDoubles.FakePdfPrinter;
 import dev.beacon.SignedInApiTests;
 import dev.beacon.TestcontainersConfiguration;
+import dev.beacon.application.apikeys.ApiKeyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,11 +38,14 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Autowired FakePdfPrinter printer;
     @Autowired FakeCoverLetterWriter writer;
+    @Autowired ApiKeyService keys;
 
     @BeforeEach
     void resetFakes() {
         printer.reset();
         writer.lastInput = null;
+        writer.lastApiKey = null;
+        keys.save(signedIn.id(), "openai", Map.of("apiKey", "sk-test-users-own"));
     }
 
     // --- posting capture ---
@@ -168,9 +173,24 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
     // --- cover letters ---
 
     @Test
-    void statusReportsWhetherDraftingIsAvailable() {
+    void statusReportsWhetherThisUserHasAnAiKey() {
         assertThat(mvc.get().uri("/api/cover-letters/status").exchange())
                 .bodyJson().extractingPath("$.configured").isEqualTo(true);
+        assertThat(as(register()).get().uri("/api/cover-letters/status").exchange())
+                .bodyJson().extractingPath("$.configured").isEqualTo(false);
+    }
+
+    @Test
+    void draftWithoutAnAiKeyPointsToSettings() {
+        keys.delete(signedIn.id(), "openai");
+        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Engineer\", \"jobDescription\": \"Build services.\"}");
+        var resumeId = uploadToLibrary("resume.txt", "Jordan Smith".getBytes());
+
+        var result = draft(appId, resumeId, null);
+
+        assertThat(result).hasStatus(HttpStatus.valueOf(422));
+        assertThat(result).bodyJson().extractingPath("$.detail").asString().contains("under Settings");
+        assertThat(writer.lastInput).isNull();
     }
 
     @Test
@@ -185,6 +205,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
         assertThat(writer.lastInput.jobDescription()).isEqualTo("Build services.");
         assertThat(writer.lastInput.resume()).contains("Jordan Smith").contains("Java developer, 8 years");
         assertThat(writer.lastInput.instructions()).isEqualTo("Mention Denver");
+        assertThat(writer.lastApiKey).isEqualTo("sk-test-users-own");
     }
 
     @Test

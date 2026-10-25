@@ -25,8 +25,8 @@ public class CoverLetterController {
     }
 
     @GetMapping("/api/cover-letters/status")
-    public CoverLetterStatusResponse status() {
-        return new CoverLetterStatusResponse(service.isConfigured());
+    public CoverLetterStatusResponse status(@AuthenticationPrincipal SignedInUser user) {
+        return new CoverLetterStatusResponse(service.isConfigured(user.id()));
     }
 
     /** Returns a draft for the user to edit; nothing is saved. */

@@ -1,5 +1,6 @@
 package dev.beacon.api.providers;
 
+import dev.beacon.application.postings.PostingSearchService;
 import dev.beacon.application.providers.Provider;
 import dev.beacon.application.providers.ProviderCatalog;
 import dev.beacon.contracts.providers.ProviderResponse;
@@ -13,18 +14,21 @@ import java.util.List;
 public class ProvidersController {
 
     private final ProviderCatalog catalog;
+    private final PostingSearchService postings;
 
-    public ProvidersController(ProviderCatalog catalog) {
+    public ProvidersController(ProviderCatalog catalog, PostingSearchService postings) {
         this.catalog = catalog;
+        this.postings = postings;
     }
 
     @GetMapping("/api/providers")
     public List<ProviderResponse> list() {
-        return catalog.all().stream().map(ProvidersController::toResponse).toList();
+        return catalog.all().stream().map(this::toResponse).toList();
     }
 
-    private static ProviderResponse toResponse(Provider p) {
-        return new ProviderResponse(p.id(), p.name(), p.kind().name(), p.cost().name(), p.needsKey(), p.coverage(),
+    private ProviderResponse toResponse(Provider p) {
+        var turnedOff = p.kind() == Provider.Kind.JOB_SOURCE && postings.isTurnedOff(p.id());
+        return new ProviderResponse(p.id(), p.name(), p.kind().name(), p.cost().name(), p.needsKey(), turnedOff, p.coverage(),
                 p.signUpUrl(), p.pricing(), p.steps(),
                 p.fields().stream()
                         .map(f -> new ProviderResponse.FieldResponse(f.name(), f.label(), f.secret(), f.required()))

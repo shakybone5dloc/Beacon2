@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
  * come back out for Beacon's own calls to the provider, never to the browser.
  */
 @Service
-public class ApiKeyService {
+public class ApiKeyService implements UserCredentials {
 
     static final int MAX_VALUE_LENGTH = 500;
     private static final int HINT_LENGTH = 4;
@@ -87,10 +88,14 @@ public class ApiKeyService {
         return found.isPresent();
     }
 
-    /**
-     * The decrypted values, for calling the provider. Empty when none are saved.
-     * Throws {@link KeyCipher.UnreadableKeyException} when the server's secret key changed since.
-     */
+    @Override
+    @Transactional(readOnly = true)
+    public Set<String> savedProviders(UUID userId) {
+        return keys.findAllByUserId(userId).stream().map(UserApiKey::getProvider).collect(Collectors.toUnmodifiableSet());
+    }
+
+    /** The decrypted values, for Beacon's own calls to the provider. */
+    @Override
     @Transactional(readOnly = true)
     public Optional<Map<String, String>> credentials(UUID userId, String providerId) {
         return keys.findByUserIdAndProvider(userId, providerId).map(key -> {

@@ -14,15 +14,19 @@ import com.anthropic.models.beta.messages.BetaStopReason;
 import com.anthropic.models.beta.messages.MessageCreateParams;
 import dev.beacon.application.coverletters.CoverLetterException;
 import dev.beacon.application.coverletters.CoverLetterWriter;
+import dev.beacon.application.providers.ProviderCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
 
 /**
- * Drafts cover letters with Claude through the Messages API. Created by
- * {@link CoverLetterWriterConfig} when Claude is the chosen provider.
+ * Drafts cover letters with Claude through the Messages API. The client is
+ * built per draft from the user's key; drafts are rare enough that this costs nothing.
  */
+@Component
 public class ClaudeCoverLetterWriter implements CoverLetterWriter {
 
     private static final Logger log = LoggerFactory.getLogger(ClaudeCoverLetterWriter.class);
@@ -30,27 +34,19 @@ public class ClaudeCoverLetterWriter implements CoverLetterWriter {
     /** Server-side refusal fallback: if a safety classifier declines, the API retries on another model. */
     private static final String FALLBACK_BETA = "server-side-fallback-2026-07-01";
 
-    private final AnthropicClient client;
     private final String model;
 
-    public ClaudeCoverLetterWriter(String apiKey, String model) {
-        this.client = apiKey == null || apiKey.isBlank()
-                ? null
-                : AnthropicOkHttpClient.builder().apiKey(apiKey.strip()).build();
+    public ClaudeCoverLetterWriter(@Value("${beacon.ai.anthropic-model:claude-opus-5-5}") String model) {
         this.model = model;
     }
 
     @Override
-    public boolean isConfigured() {
-        return client != null;
+    public String provider() {
+        return ProviderCatalog.ANTHROPIC;
     }
 
     @Override
-    public String draft(CoverLetterInput input) {
-        if (client == null) {
-            throw new CoverLetterException("Set OPENAI_API_KEY or ANTHROPIC_API_KEY in .env to draft cover letters.", false);
-        }
-
+    public String draft(CoverLetterInput input, String apiKey) {
         var params = MessageCreateParams.builder()
                 .model(model)
                 .maxTokens(16000L)
@@ -64,10 +60,11 @@ public class ClaudeCoverLetterWriter implements CoverLetterWriter {
                 .build();
 
         BetaMessage response;
+        AnthropicClient client = AnthropicOkHttpClient.builder().apiKey(apiKey).build();
         try {
             response = client.beta().messages().create(params);
         } catch (UnauthorizedException ex) {
-            throw new CoverLetterException("The Anthropic API key was rejected. Check ANTHROPIC_API_KEY in .env.", false);
+            throw new CoverLetterException("Anthropic rejected your API key. Check it under Settings.", false);
         } catch (BadRequestException ex) {
             log.warn("Cover letter request rejected", ex);
             throw new CoverLetterException("The AI service rejected the request: " + ex.getMessage(), true);
@@ -79,6 +76,8 @@ public class ClaudeCoverLetterWriter implements CoverLetterWriter {
         } catch (AnthropicIoException ex) {
             log.warn("Could not reach the AI service", ex);
             throw new CoverLetterException("Could not reach the AI service. Check your connection.", true);
+        } finally {
+            client.close();
         }
 
         if (response.stopReason().map(reason -> reason.equals(BetaStopReason.REFUSAL)).orElse(false)) {

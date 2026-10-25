@@ -3,8 +3,10 @@ package dev.beacon.api.postings;
 import dev.beacon.api.errors.RequestValidationException;
 import dev.beacon.application.postings.PostingQuery;
 import dev.beacon.application.postings.PostingSearchService;
+import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.postings.JobSourceResponse;
 import dev.beacon.contracts.postings.PostingSearchResponse;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,13 +26,14 @@ public class PostingsController {
     }
 
     @GetMapping("/sources")
-    public List<JobSourceResponse> sources() {
-        return service.sources();
+    public List<JobSourceResponse> sources(@AuthenticationPrincipal SignedInUser user) {
+        return service.sources(user.id());
     }
 
-    /** {@code sources} is a comma-separated list of source ids; omit it to search every configured source. */
+    /** {@code sources} is a comma-separated list of source ids; omit it to search every source the user can. */
     @GetMapping("/search")
     public PostingSearchResponse search(
+            @AuthenticationPrincipal SignedInUser user,
             @RequestParam(defaultValue = "") String keywords,
             @RequestParam(defaultValue = "") String location,
             @RequestParam(defaultValue = "false") boolean remoteOnly,
@@ -45,6 +48,6 @@ public class PostingsController {
                 throw new RequestValidationException("sources", "'" + id + "' is not a known job source");
             }
         }
-        return service.search(new PostingQuery(keywords, location, remoteOnly), ids);
+        return service.search(user.id(), new PostingQuery(keywords, location, remoteOnly), ids);
     }
 }

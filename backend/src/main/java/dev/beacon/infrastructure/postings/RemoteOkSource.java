@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /** Remote jobs from remoteok.com. The feed has no search, so it is cached and filtered locally. */
 @Component
@@ -34,7 +35,7 @@ public class RemoteOkSource implements JobSource {
     @Override public String attributionUrl() { return "https://remoteok.com"; }
 
     @Override
-    public List<JobPosting> search(PostingQuery query) {
+    public List<JobPosting> search(PostingQuery query, Map<String, String> credentials) {
         return feed.get("all", this::fetchAll).stream()
                 .filter(p -> PostingMatcher.matches(p, query))
                 .toList();

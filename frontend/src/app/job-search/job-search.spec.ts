@@ -14,14 +14,6 @@ describe('JobSearch', () => {
   const sources: JobSource[] = [
     aSource({ id: 'remotive', name: 'Remotive' }),
     aSource({ id: 'jobicy', name: 'Jobicy', attributionUrl: 'https://jobicy.com' }),
-    aSource({
-      id: 'adzuna',
-      name: 'Adzuna',
-      attributionUrl: 'https://www.adzuna.com',
-      configured: false,
-      setupHint: 'Set ADZUNA_APP_ID.',
-    }),
-    aSource({ id: 'usajobs', name: 'USAJOBS', enabled: false, configured: true }),
   ];
 
   beforeEach(() => {
@@ -69,25 +61,13 @@ describe('JobSearch', () => {
     return req;
   }
 
-  it('lists sources and disables the ones that need a key', async () => {
+  it('lists the sources the server says this user can search, all ticked', async () => {
     const { el } = await render();
 
     expect(sourceBox(el, 'Remotive').checked).toBe(true);
-    expect(sourceBox(el, 'Remotive').disabled).toBe(false);
-    expect(sourceBox(el, 'Adzuna').disabled).toBe(true);
-    expect(sourceBox(el, 'Adzuna').checked).toBe(false);
-    expect(el.textContent).toContain('Needs an API key. Set ADZUNA_APP_ID.');
-  });
-
-  it('shows a turned-off source as unavailable even when its keys are set', async () => {
-    const { fixture, el } = await render();
-
-    expect(sourceBox(el, 'USAJOBS').disabled).toBe(true);
-    expect(sourceBox(el, 'USAJOBS').checked).toBe(false);
-    expect(el.textContent).toContain('Turned off for now.');
-
-    const req = await searchFor(fixture, []);
-    expect(req.request.params.get('sources')).toBe('remotive,jobicy');
+    expect(sourceBox(el, 'Jobicy').checked).toBe(true);
+    expect(el.querySelectorAll('label.source').length).toBe(2);
+    expect(el.querySelector('a.more')?.getAttribute('href')).toBe('/providers');
   });
 
   it('does not search without keywords', async () => {
@@ -100,7 +80,7 @@ describe('JobSearch', () => {
     expect(el.textContent).toContain('Enter at least one keyword.');
   });
 
-  it('searches only the ticked, configured sources', async () => {
+  it('searches only the ticked sources', async () => {
     const { fixture, el } = await render();
     sourceBox(el, 'Jobicy').click();
     fill(el, 'location', 'USA');

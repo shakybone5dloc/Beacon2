@@ -25,19 +25,20 @@
   <fieldset class="sources">
     <legend>Sources</legend>
     @for (source of sources(); track source.id) {
-      <label class="source" [class.off]="!usable(source)" [title]="sourceNote(source)">
+      <label class="source">
         <input
           type="checkbox"
-          [checked]="usable(source) && isSelected(source.id)"
-          [disabled]="!usable(source)"
+          [checked]="isSelected(source.id)"
           (change)="toggleSource(source.id)"
         />
         <span class="name">{{ source.name }}</span>
-        <span class="coverage">
-          {{ sourceNote(source) }}
-        </span>
+        <span class="coverage">{{ source.coverage }}</span>
+        @if (source.usesYourKey) {
+          <span class="your-key">your key</span>
+        }
       </label>
     }
+    <a routerLink="/providers" class="more">Add API keys to search more sources →</a>
   </fieldset>
 }
 

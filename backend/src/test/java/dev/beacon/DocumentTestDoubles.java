@@ -3,6 +3,7 @@ package dev.beacon;
 import dev.beacon.application.coverletters.CoverLetterWriter;
 import dev.beacon.application.documents.PdfPrinter;
 import dev.beacon.application.documents.PostingCaptureException;
+import dev.beacon.application.providers.ProviderCatalog;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -11,6 +12,7 @@ import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.Ordered;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -19,7 +21,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Stand-ins for the headless browser and Claude, so tests never launch either. */
+/** Stand-ins for the headless browser and the AI writer, so tests never call either. */
 @TestConfiguration(proxyBeanMethods = false)
 public class DocumentTestDoubles {
 
@@ -30,7 +32,6 @@ public class DocumentTestDoubles {
     }
 
     @Bean
-    @Primary
     FakeCoverLetterWriter fakeCoverLetterWriter() {
         return new FakeCoverLetterWriter();
     }
@@ -95,17 +96,25 @@ public class DocumentTestDoubles {
         }
     }
 
-    public static class FakeCoverLetterWriter implements CoverLetterWriter {
+    /** Stands in for OpenAI; ordered first so it wins over the real writer for the same provider. */
+    public static class FakeCoverLetterWriter implements CoverLetterWriter, Ordered {
         public CoverLetterInput lastInput;
+        public String lastApiKey;
 
         @Override
-        public boolean isConfigured() {
-            return true;
+        public String provider() {
+            return ProviderCatalog.OPENAI;
         }
 
         @Override
-        public String draft(CoverLetterInput input) {
+        public int getOrder() {
+            return Ordered.HIGHEST_PRECEDENCE;
+        }
+
+        @Override
+        public String draft(CoverLetterInput input, String apiKey) {
             lastInput = input;
+            lastApiKey = apiKey;
             return "Dear Hiring Team,\n\nI would like to join " + input.company() + ".";
         }
     }

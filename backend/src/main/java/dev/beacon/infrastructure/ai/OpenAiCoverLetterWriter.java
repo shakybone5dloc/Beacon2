@@ -2,11 +2,15 @@ package dev.beacon.infrastructure.ai;
 
 import dev.beacon.application.coverletters.CoverLetterException;
 import dev.beacon.application.coverletters.CoverLetterWriter;
+import dev.beacon.application.providers.ProviderCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
@@ -20,23 +24,22 @@ import java.util.regex.Pattern;
 
 /**
  * Drafts cover letters with OpenAI's Chat Completions API over plain HTTP.
- * Created by {@link CoverLetterWriterConfig} when OpenAI is the chosen provider.
  */
+@Component
 public class OpenAiCoverLetterWriter implements CoverLetterWriter {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAiCoverLetterWriter.class);
     private static final Pattern ERROR_CODE = Pattern.compile("\"code\"\\s*:\\s*\"([^\"]+)\"");
 
     private final RestClient http;
-    private final String apiKey;
     private final String model;
 
-    public OpenAiCoverLetterWriter(String apiKey, String model) {
-        this(defaultBuilder(), apiKey, model);
+    @Autowired
+    public OpenAiCoverLetterWriter(@Value("${beacon.ai.openai-model:gpt-6-sol}") String model) {
+        this(defaultBuilder(), model);
     }
 
-    OpenAiCoverLetterWriter(RestClient.Builder builder, String apiKey, String model) {
-        this.apiKey = apiKey == null || apiKey.isBlank() ? null : apiKey.strip();
+    OpenAiCoverLetterWriter(RestClient.Builder builder, String model) {
         this.model = model;
         this.http = builder.baseUrl("https://api.openai.com").build();
     }
@@ -50,15 +53,12 @@ public class OpenAiCoverLetterWriter implements CoverLetterWriter {
     }
 
     @Override
-    public boolean isConfigured() {
-        return apiKey != null;
+    public String provider() {
+        return ProviderCatalog.OPENAI;
     }
 
     @Override
-    public String draft(CoverLetterInput input) {
-        if (apiKey == null) {
-            throw new CoverLetterException("Set OPENAI_API_KEY or ANTHROPIC_API_KEY in .env to draft cover letters.", false);
-        }
+    public String draft(CoverLetterInput input, String apiKey) {
 
         // "developer" is the instructions role for current OpenAI models (it replaced "system").
         var body = Map.of(
@@ -102,7 +102,7 @@ public class OpenAiCoverLetterWriter implements CoverLetterWriter {
         var status = ex.getStatusCode().value();
         var code = errorCode(ex);
         if (status == 401) {
-            return new CoverLetterException("The OpenAI API key was rejected. Check OPENAI_API_KEY in .env.", false);
+            return new CoverLetterException("OpenAI rejected your API key. Check it under Settings.", false);
         }
         if (status == 429 && "insufficient_quota".equals(code)) {
             return new CoverLetterException("Your OpenAI account is out of credits. Add billing at platform.openai.com.", false);
@@ -112,7 +112,7 @@ public class OpenAiCoverLetterWriter implements CoverLetterWriter {
         }
         if (status == 404 && "model_not_found".equals(code)) {
             return new CoverLetterException("OpenAI doesn't offer the model '" + model
-                    + "' to this account. Set OPENAI_MODEL in .env to one it does.", false);
+                    + "' to this account. Ask whoever runs Beacon to set OPENAI_MODEL to one it does.", false);
         }
         log.warn("OpenAI rejected the request: {}", ex.getResponseBodyAsString());
         return new CoverLetterException("The AI service rejected the request.", true);

@@ -34,6 +34,11 @@
     </header>
     <p>{{ p.coverage }}</p>
     <p class="pricing">{{ p.pricing }}</p>
+    @if (p.turnedOff) {
+      <p class="off">
+        Turned off on this Beacon for now, so a key won't add it to your searches yet.
+      </p>
+    }
     @if (p.steps.length) {
       <ol>
         @for (step of p.steps; track $index) {

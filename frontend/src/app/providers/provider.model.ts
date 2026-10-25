@@ -16,6 +16,8 @@ export interface Provider {
   cost: ProviderCost;
   /** True when the provider can't be used until its fields are filled in. */
   needsKey: boolean;
+  /** True when this server has switched the provider off for everyone; a key won't help. */
+  turnedOff: boolean;
   coverage: string;
   signUpUrl: string;
   pricing: string;

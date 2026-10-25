@@ -41,26 +41,15 @@ beacon:
   secret-key: ${BEACON_SECRET_KEY:}
   postings:
     user-agent: "Beacon personal job tracker"
-    # Sources listed here stay off, whatever keys are set. Comma-separated ids.
+    # Sources listed here stay off for everyone, whatever keys users add. Comma-separated ids.
     disabled-sources: ${BEACON_DISABLED_SOURCES:adzuna}
-    # Sources that need keys stay switched off until these are set in ../.env
+    # Keys for keyed sources are per user, added under Settings in the app.
     adzuna:
-      app-id: ${ADZUNA_APP_ID:}
-      app-key: ${ADZUNA_APP_KEY:}
       country: ${ADZUNA_COUNTRY:us}
-    usajobs:
-      api-key: ${USAJOBS_API_KEY:}
-      email: ${USAJOBS_EMAIL:}
-    himalayas:
-      api-key: ${HIMALAYAS_API_KEY:}
   capture:
     # Chrome or Edge used to print postings to PDF; found automatically when blank.
     browser: ${CAPTURE_BROWSER:}
   ai:
-    # Cover letter drafting stays off until a key is set in ../.env.
-    # "auto" uses OpenAI when its key is set, otherwise Claude; or force "openai" / "anthropic".
-    provider: ${BEACON_AI_PROVIDER:auto}
-    openai-api-key: ${OPENAI_API_KEY:}
+    # Each user drafts with their own OpenAI or Anthropic key (OpenAI when they have both).
     openai-model: ${OPENAI_MODEL:gpt-6-sol}
-    anthropic-api-key: ${ANTHROPIC_API_KEY:}
     anthropic-model: ${ANTHROPIC_MODEL:claude-opus-5-5}

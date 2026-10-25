@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Remote jobs from remotive.com. Their terms ask for at most ~4 calls a day,
@@ -38,7 +39,7 @@ public class RemotiveSource implements JobSource {
     @Override public String attributionUrl() { return "https://remotive.com"; }
 
     @Override
-    public List<JobPosting> search(PostingQuery query) {
+    public List<JobPosting> search(PostingQuery query, Map<String, String> credentials) {
         return feed.get("all", this::fetchAll).stream()
                 .filter(p -> PostingMatcher.matches(p, query))
                 .toList();

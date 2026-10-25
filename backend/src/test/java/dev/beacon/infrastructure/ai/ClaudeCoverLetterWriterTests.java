@@ -1,26 +1,14 @@
 package dev.beacon.infrastructure.ai;
 
-import dev.beacon.application.coverletters.CoverLetterException;
 import dev.beacon.application.coverletters.CoverLetterWriter.CoverLetterInput;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ClaudeCoverLetterWriterTests {
 
     private static final CoverLetterInput INPUT =
             new CoverLetterInput("Acme", "Java Engineer", "Build services.", "Jordan Smith\nJava, 8 years", "Mention Denver");
-
-    @Test
-    void isOffWithoutAKeyAndSaysHowToFixIt() {
-        var writer = new ClaudeCoverLetterWriter("", "claude-opus-5-5");
-
-        assertThat(writer.isConfigured()).isFalse();
-        assertThatThrownBy(() -> writer.draft(INPUT))
-                .isInstanceOf(CoverLetterException.class)
-                .hasMessageContaining("ANTHROPIC_API_KEY");
-    }
 
     @Test
     void promptWrapsTheDocumentsInTagsAndAddsGuidance() {

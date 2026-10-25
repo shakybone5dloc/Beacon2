@@ -1,12 +1,15 @@
 package dev.beacon.application.coverletters;
 
+import dev.beacon.application.apikeys.UserCredentials;
 import dev.beacon.application.documents.DocumentService;
 import dev.beacon.application.documents.PdfPrinter;
 import dev.beacon.application.documents.PostingCaptureException;
+import dev.beacon.application.providers.ProviderCatalog;
 import dev.beacon.contracts.documents.DocumentResponse;
 import dev.beacon.domain.documents.DocumentKind;
 import dev.beacon.infrastructure.documents.DocumentText;
 import dev.beacon.infrastructure.persistence.JobApplicationRepository;
+import dev.beacon.infrastructure.security.KeyCipher;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
@@ -14,8 +17,10 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -25,23 +30,29 @@ public class CoverLetterService {
 
     private static final DateTimeFormatter LETTER_DATE = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.US);
 
+    /** Tried in this order: a user with both keys gets OpenAI. */
+    private static final List<String> PREFERENCE = List.of(ProviderCatalog.OPENAI, ProviderCatalog.ANTHROPIC);
+
     private final JobApplicationRepository applications;
     private final DocumentService documents;
-    private final CoverLetterWriter writer;
+    private final List<CoverLetterWriter> writers;
+    private final UserCredentials credentials;
     private final PdfPrinter printer;
     private final Clock clock;
 
-    public CoverLetterService(JobApplicationRepository applications, DocumentService documents, CoverLetterWriter writer,
-                              PdfPrinter printer, Clock clock) {
+    public CoverLetterService(JobApplicationRepository applications, DocumentService documents,
+                              List<CoverLetterWriter> writers, UserCredentials credentials, PdfPrinter printer, Clock clock) {
         this.applications = applications;
         this.documents = documents;
-        this.writer = writer;
+        this.writers = writers;
+        this.credentials = credentials;
         this.printer = printer;
         this.clock = clock;
     }
 
-    public boolean isConfigured() {
-        return writer.isConfigured();
+    /** True when the user has saved a key for any AI provider Beacon can draft with. */
+    public boolean isConfigured(UUID userId) {
+        return chooseProvider(credentials.savedProviders(userId)).isPresent();
     }
 
     /**
@@ -64,8 +75,29 @@ public class CoverLetterService {
                 .orElseThrow(() -> new CoverLetterException(
                         "Beacon can read PDF, text and Markdown resumes. Upload your resume in one of those formats to draft from it.", false));
 
-        return Optional.of(writer.draft(new CoverLetterWriter.CoverLetterInput(
-                application.getCompany(), application.getRole(), application.getJobDescription(), resumeText, instructions)));
+        var provider = chooseProvider(credentials.savedProviders(ownerId)).orElseThrow(() -> new CoverLetterException(
+                "Add an OpenAI or Anthropic API key under Settings to draft cover letters.", false));
+        String apiKey;
+        try {
+            apiKey = credentials.credentials(ownerId, provider).map(values -> values.get("apiKey")).orElseThrow();
+        } catch (KeyCipher.UnreadableKeyException ex) {
+            throw new CoverLetterException(ex.getMessage(), false);
+        }
+
+        return Optional.of(writer(provider).draft(new CoverLetterWriter.CoverLetterInput(
+                application.getCompany(), application.getRole(), application.getJobDescription(), resumeText, instructions),
+                apiKey));
+    }
+
+    private Optional<String> chooseProvider(Set<String> saved) {
+        return PREFERENCE.stream()
+                .filter(saved::contains)
+                .filter(id -> writers.stream().anyMatch(w -> w.provider().equals(id)))
+                .findFirst();
+    }
+
+    private CoverLetterWriter writer(String provider) {
+        return writers.stream().filter(w -> w.provider().equals(provider)).findFirst().orElseThrow();
     }
 
     /** Empty when the application does not exist. */

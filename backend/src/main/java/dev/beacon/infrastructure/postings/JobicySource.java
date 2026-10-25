@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 
 /**
@@ -38,7 +39,7 @@ public class JobicySource implements JobSource {
     @Override public String attributionUrl() { return "https://jobicy.com"; }
 
     @Override
-    public List<JobPosting> search(PostingQuery query) {
+    public List<JobPosting> search(PostingQuery query, Map<String, String> credentials) {
         return feed.get("all", this::fetchAll).stream()
                 .filter(p -> PostingMatcher.matches(p, query))
                 .toList();

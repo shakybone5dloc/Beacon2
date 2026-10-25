@@ -13,6 +13,7 @@ function aProvider(overrides: Partial<Provider> = {}): Provider {
     kind: 'JOB_SOURCE',
     cost: 'FREE',
     needsKey: false,
+    turnedOff: false,
     coverage: 'Remote jobs.',
     signUpUrl: 'https://remotive.com',
     pricing: 'Free.',

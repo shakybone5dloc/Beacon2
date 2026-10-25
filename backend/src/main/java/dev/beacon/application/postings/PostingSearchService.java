@@ -1,14 +1,19 @@
 package dev.beacon.application.postings;
 
+import dev.beacon.application.apikeys.UserCredentials;
+import dev.beacon.application.providers.Provider;
+import dev.beacon.application.providers.ProviderCatalog;
 import dev.beacon.contracts.postings.JobPostingResponse;
 import dev.beacon.contracts.postings.JobSourceResponse;
 import dev.beacon.contracts.postings.PostingSearchResponse;
 import dev.beacon.contracts.postings.SourceResultResponse;
+import dev.beacon.infrastructure.security.KeyCipher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -17,7 +22,9 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -25,7 +32,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-/** Fans a search out to the selected sources in parallel and merges what comes back. */
+/**
+ * Fans a search out to the selected sources in parallel and merges what comes back.
+ * Each user sees the sources that need no key, plus the keyed ones they have
+ * added a key for; sources switched off by configuration are hidden from everyone.
+ */
 @Service
 public class PostingSearchService {
 
@@ -37,50 +48,64 @@ public class PostingSearchService {
     private final List<JobSource> sources;
     /** Source ids switched off by configuration, whatever keys are set (BEACON_DISABLED_SOURCES). */
     private final Set<String> disabled;
+    private final ProviderCatalog catalog;
+    private final UserCredentials credentials;
     private final Duration sourceTimeout;
 
     @Autowired
     public PostingSearchService(List<JobSource> sources,
-                                @Value("${beacon.postings.disabled-sources:}") Set<String> disabled) {
-        this(sources, disabled, SOURCE_TIMEOUT);
+                                @Value("${beacon.postings.disabled-sources:}") Set<String> disabled,
+                                ProviderCatalog catalog, UserCredentials credentials) {
+        this(sources, disabled, catalog, credentials, SOURCE_TIMEOUT);
     }
 
-    PostingSearchService(List<JobSource> sources) {
-        this(sources, Set.of(), SOURCE_TIMEOUT);
-    }
-
-    PostingSearchService(List<JobSource> sources, Set<String> disabled, Duration sourceTimeout) {
+    PostingSearchService(List<JobSource> sources, Set<String> disabled, ProviderCatalog catalog,
+                         UserCredentials credentials, Duration sourceTimeout) {
         this.sources = sources.stream().sorted(Comparator.comparing(JobSource::name)).toList();
         this.disabled = disabled.stream()
                 .map(id -> id.strip().toLowerCase(Locale.ROOT))
                 .filter(id -> !id.isEmpty())
                 .collect(Collectors.toUnmodifiableSet());
+        this.catalog = catalog;
+        this.credentials = credentials;
         this.sourceTimeout = sourceTimeout;
     }
 
-    public List<JobSourceResponse> sources() {
-        return sources.stream()
-                .map(s -> new JobSourceResponse(s.id(), s.name(), s.coverage(), s.attributionUrl(),
-                        !isDisabled(s), s.isConfigured(), s.isConfigured() ? null : s.setupHint()))
+    /** The sources this user can search. */
+    public List<JobSourceResponse> sources(UUID userId) {
+        var saved = credentials.savedProviders(userId);
+        return available(saved).stream()
+                .map(s -> new JobSourceResponse(s.id(), s.name(), s.coverage(), s.attributionUrl(), saved.contains(s.id())))
                 .toList();
     }
 
-    private boolean isDisabled(JobSource source) {
-        return disabled.contains(source.id());
+    /** Switched on, and either free of keys or keyed with one the user has saved. */
+    private List<JobSource> available(Set<String> saved) {
+        return sources.stream()
+                .filter(s -> !disabled.contains(s.id()))
+                .filter(s -> !needsKey(s) || saved.contains(s.id()))
+                .toList();
     }
 
-    /** Searchable: switched on and with whatever credentials it needs. */
-    private boolean isUsable(JobSource source) {
-        return !isDisabled(source) && source.isConfigured();
+    private boolean needsKey(JobSource source) {
+        return catalog.find(source.id()).map(Provider::needsKey).orElse(false);
+    }
+
+    /** Switched off for everyone by configuration (BEACON_DISABLED_SOURCES). */
+    public boolean isTurnedOff(String id) {
+        return disabled.contains(id);
     }
 
     public boolean isKnownSource(String id) {
         return sources.stream().anyMatch(s -> s.id().equals(id));
     }
 
-    /** An empty selection means every usable source; unknown ids are ignored. */
-    public PostingSearchResponse search(PostingQuery query, Set<String> sourceIds) {
-        var selected = select(sourceIds);
+    /** An empty selection means every source the user can search; ids they can't are ignored. */
+    public PostingSearchResponse search(UUID userId, PostingQuery query, Set<String> sourceIds) {
+        var saved = credentials.savedProviders(userId);
+        var selected = available(saved).stream()
+                .filter(s -> sourceIds.isEmpty() || sourceIds.contains(s.id()))
+                .toList();
 
         var results = new ArrayList<SourceResultResponse>();
         var postings = new ArrayList<JobPosting>();
@@ -88,13 +113,17 @@ public class PostingSearchService {
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var futures = new LinkedHashMap<JobSource, Future<List<JobPosting>>>();
             for (var source : selected) {
-                if (isDisabled(source)) {
-                    results.add(new SourceResultResponse(source.id(), 0, source.name() + " is turned off."));
-                } else if (source.isConfigured()) {
-                    futures.put(source, executor.submit(() -> source.search(query)));
-                } else {
-                    results.add(new SourceResultResponse(source.id(), 0, "Needs an API key. " + source.setupHint()));
+                Map<String, String> keys;
+                try {
+                    keys = saved.contains(source.id())
+                            ? credentials.credentials(userId, source.id()).orElse(Map.of())
+                            : Map.of();
+                } catch (KeyCipher.UnreadableKeyException ex) {
+                    results.add(new SourceResultResponse(source.id(), 0, "Your saved " + source.name()
+                            + " key can't be read any more. Add it again under Settings."));
+                    continue;
                 }
+                futures.put(source, executor.submit(() -> source.search(query, keys)));
             }
 
             var deadline = Instant.now().plus(sourceTimeout);
@@ -109,7 +138,7 @@ public class PostingSearchService {
                     results.add(new SourceResultResponse(source.id(), 0, source.name() + " took too long to answer."));
                 } catch (ExecutionException ex) {
                     log.warn("Job source {} failed", source.id(), ex.getCause());
-                    results.add(new SourceResultResponse(source.id(), 0, "Could not reach " + source.name() + "."));
+                    results.add(new SourceResultResponse(source.id(), 0, failureMessage(source, ex.getCause(), saved)));
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                     results.add(new SourceResultResponse(source.id(), 0, "Search was interrupted."));
@@ -125,11 +154,14 @@ public class PostingSearchService {
         return new PostingSearchResponse(merged, results);
     }
 
-    private List<JobSource> select(Set<String> sourceIds) {
-        if (sourceIds.isEmpty()) {
-            return sources.stream().filter(this::isUsable).toList();
+    /** A rejected key is the user's to fix, so it gets its own message. */
+    private static String failureMessage(JobSource source, Throwable cause, Set<String> saved) {
+        var rejected = cause instanceof HttpClientErrorException.Unauthorized
+                || cause instanceof HttpClientErrorException.Forbidden;
+        if (rejected && saved.contains(source.id())) {
+            return source.name() + " rejected your API key. Check it under Settings.";
         }
-        return sources.stream().filter(s -> sourceIds.contains(s.id())).toList();
+        return "Could not reach " + source.name() + ".";
     }
 
     /** The same ad often appears on several boards; keep the first copy of each company + title. */

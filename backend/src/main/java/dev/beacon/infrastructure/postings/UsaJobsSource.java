@@ -4,7 +4,6 @@ import dev.beacon.application.postings.JobPosting;
 import dev.beacon.application.postings.JobSource;
 import dev.beacon.application.postings.PostingMatcher;
 import dev.beacon.application.postings.PostingQuery;
-import dev.beacon.config.PostingsProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -17,11 +16,12 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 
 /**
- * US federal government jobs from USAJOBS. Needs a free key, and their API
- * requires the key's email address as the User-Agent. Every posting has a
+ * US federal government jobs from USAJOBS. Each user brings their own free key,
+ * and the API requires the key's email address as the User-Agent. Every posting has a
  * real application close date.
  */
 @Component
@@ -31,15 +31,9 @@ public class UsaJobsSource implements JobSource {
     private static final int RESULTS = 50;
 
     private final RestClient http;
-    private final PostingsProperties.UsaJobs config;
     private final TtlCache<PostingQuery, List<JobPosting>> cache;
 
-    public UsaJobsSource(RestClient.Builder builder, Clock clock, PostingsProperties properties) {
-        this.config = properties.usajobs();
-        if (config.configured()) {
-            builder.defaultHeader(HttpHeaders.USER_AGENT, config.email().strip())
-                    .defaultHeader("Authorization-Key", config.apiKey().strip());
-        }
+    public UsaJobsSource(RestClient.Builder builder, Clock clock) {
         this.http = builder.baseUrl("https://data.usajobs.gov").build();
         this.cache = new TtlCache<>(QUERY_TTL, clock, 50);
     }
@@ -48,19 +42,13 @@ public class UsaJobsSource implements JobSource {
     @Override public String name() { return "USAJOBS"; }
     @Override public String coverage() { return "US federal government jobs, with application deadlines."; }
     @Override public String attributionUrl() { return "https://www.usajobs.gov"; }
-    @Override public boolean isConfigured() { return config.configured(); }
 
     @Override
-    public String setupHint() {
-        return "Request a free key at developer.usajobs.gov, then set USAJOBS_API_KEY and USAJOBS_EMAIL in .env.";
+    public List<JobPosting> search(PostingQuery query, Map<String, String> credentials) {
+        return cache.get(query, () -> fetch(query, credentials));
     }
 
-    @Override
-    public List<JobPosting> search(PostingQuery query) {
-        return cache.get(query, () -> fetch(query));
-    }
-
-    private List<JobPosting> fetch(PostingQuery query) {
+    private List<JobPosting> fetch(PostingQuery query, Map<String, String> credentials) {
         var body = http.get()
                 .uri(uri -> {
                     uri.path("/api/Search")
@@ -70,6 +58,8 @@ public class UsaJobsSource implements JobSource {
                     if (query.remoteOnly()) uri.queryParam("RemoteIndicator", "True");
                     return uri.build();
                 })
+                .header(HttpHeaders.USER_AGENT, credentials.get("email"))
+                .header("Authorization-Key", credentials.get("apiKey"))
                 .retrieve()
                 .body(JsonNode.class);
 
