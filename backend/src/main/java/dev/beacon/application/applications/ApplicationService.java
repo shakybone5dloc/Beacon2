@@ -18,6 +18,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Applications belong to one user. Every method takes the owner's id, and another
+ * user's application behaves exactly like one that doesn't exist.
+ */
 @Service
 public class ApplicationService {
 
@@ -30,9 +34,10 @@ public class ApplicationService {
     }
 
     @Transactional
-    public ApplicationResponse create(CreateApplicationRequest request) {
+    public ApplicationResponse create(UUID ownerId, CreateApplicationRequest request) {
         var now = Instant.now(clock);
         var application = JobApplication.create(
+                ownerId,
                 request.company(),
                 request.role(),
                 request.jobUrl(),
@@ -49,29 +54,29 @@ public class ApplicationService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<ApplicationResponse> getById(UUID id) {
-        return repository.findById(id).map(ApplicationMappings::toResponse);
+    public Optional<ApplicationResponse> getById(UUID ownerId, UUID id) {
+        return repository.findByIdAndOwnerId(id, ownerId).map(ApplicationMappings::toResponse);
     }
 
     @Transactional(readOnly = true)
-    public List<ApplicationResponse> list() {
-        return repository.findAllByOrderByCreatedAtDesc()
+    public List<ApplicationResponse> list(UUID ownerId) {
+        return repository.findAllByOwnerIdOrderByCreatedAtDesc(ownerId)
                 .stream()
                 .map(ApplicationMappings::toSummary)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public Optional<List<StatusChangeResponse>> history(UUID id) {
-        return repository.findById(id).map(application -> application.getStatusHistory()
+    public Optional<List<StatusChangeResponse>> history(UUID ownerId, UUID id) {
+        return repository.findByIdAndOwnerId(id, ownerId).map(application -> application.getStatusHistory()
                 .stream()
                 .map(ApplicationMappings::toResponse)
                 .toList());
     }
 
     @Transactional
-    public Optional<ApplicationResponse> changeStatus(UUID id, ApplicationStatus newStatus, long expectedVersion) {
-        var found = repository.findById(id);
+    public Optional<ApplicationResponse> changeStatus(UUID ownerId, UUID id, ApplicationStatus newStatus, long expectedVersion) {
+        var found = repository.findByIdAndOwnerId(id, ownerId);
         if (found.isEmpty()) {
             return Optional.empty();
         }
@@ -85,8 +90,8 @@ public class ApplicationService {
     }
 
     @Transactional
-    public Optional<ApplicationResponse> update(UUID id, UpdateApplicationRequest request) {
-        var found = repository.findById(id);
+    public Optional<ApplicationResponse> update(UUID ownerId, UUID id, UpdateApplicationRequest request) {
+        var found = repository.findByIdAndOwnerId(id, ownerId);
         if (found.isEmpty()) {
             return Optional.empty();
         }
@@ -111,8 +116,8 @@ public class ApplicationService {
     }
 
     @Transactional
-    public Optional<ApplicationResponse> scheduleFollowUp(UUID id, FollowUpRequest request) {
-        var found = repository.findById(id);
+    public Optional<ApplicationResponse> scheduleFollowUp(UUID ownerId, UUID id, FollowUpRequest request) {
+        var found = repository.findByIdAndOwnerId(id, ownerId);
         if (found.isEmpty()) {
             return Optional.empty();
         }
@@ -126,12 +131,10 @@ public class ApplicationService {
     }
 
     @Transactional
-    public boolean delete(UUID id) {
-        if (!repository.existsById(id)) {
-            return false;
-        }
-        repository.deleteById(id);
-        return true;
+    public boolean delete(UUID ownerId, UUID id) {
+        var found = repository.findByIdAndOwnerId(id, ownerId);
+        found.ifPresent(repository::delete);
+        return found.isPresent();
     }
 
     private static void requireVersion(JobApplication application, long expectedVersion) {

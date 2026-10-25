@@ -1,18 +1,17 @@
 package dev.beacon.api.postings;
 
+import dev.beacon.SignedInApiTests;
 import dev.beacon.TestcontainersConfiguration;
 import dev.beacon.application.postings.JobPosting;
 import dev.beacon.application.postings.JobSource;
 import dev.beacon.application.postings.PostingQuery;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -23,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import({TestcontainersConfiguration.class, PostingsApiTests.FakeSourceConfig.class})
-class PostingsApiTests {
+class PostingsApiTests extends SignedInApiTests {
 
     /** Searches go to this instead of the real job sites. */
     @TestConfiguration
@@ -47,7 +46,6 @@ class PostingsApiTests {
         }
     }
 
-    @Autowired MockMvcTester mvc;
 
     @Test
     void listsEverySourceWithWhetherItIsReady() {

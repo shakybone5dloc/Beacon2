@@ -4,6 +4,7 @@ import com.jayway.jsonpath.JsonPath;
 import dev.beacon.DocumentTestDoubles;
 import dev.beacon.DocumentTestDoubles.FakeCoverLetterWriter;
 import dev.beacon.DocumentTestDoubles.FakePdfPrinter;
+import dev.beacon.SignedInApiTests;
 import dev.beacon.TestcontainersConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,12 +29,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureMockMvc
 @Import({TestcontainersConfiguration.class, DocumentTestDoubles.class})
 @Transactional
-class PostingCaptureAndCoverLetterApiTests {
+class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     // A public IP literal, so the private-address check passes without a DNS lookup.
     private static final String JOB_URL = "https://1.1.1.1/jobs/42";
 
-    @Autowired MockMvcTester mvc;
     @Autowired FakePdfPrinter printer;
     @Autowired FakeCoverLetterWriter writer;
 

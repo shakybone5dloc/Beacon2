@@ -17,6 +17,10 @@ public class JobApplication {
     @Id
     private UUID id;
 
+    /** The user this application belongs to. Rows from before accounts existed have none. */
+    @Column(name = "owner_id", updatable = false)
+    private UUID ownerId;
+
     @Column(nullable = false, length = 200)
     private String company;
 
@@ -84,9 +88,11 @@ public class JobApplication {
 
     protected JobApplication() { }
 
-    public static JobApplication create(String company, String role, String jobUrl, String notes, Instant now) {
+    public static JobApplication create(UUID ownerId, String company, String role, String jobUrl, String notes, Instant now) {
+        if (ownerId == null) throw new IllegalArgumentException("An application needs an owner");
         var app = new JobApplication();
         app.id = UUID.randomUUID();
+        app.ownerId = ownerId;
         app.applyDetails(company, role, jobUrl, notes);
         app.createdAt = now;
         app.updatedAt = now;

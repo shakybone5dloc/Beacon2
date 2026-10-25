@@ -3,9 +3,11 @@ package dev.beacon.api.documents;
 import dev.beacon.application.documents.DocumentService;
 import dev.beacon.application.documents.PostingCaptureService;
 import dev.beacon.application.documents.PostingSummaryService;
+import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.documents.CaptureResponse;
 import dev.beacon.contracts.documents.DocumentResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,18 +31,19 @@ public class ApplicationDocumentsController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DocumentResponse>> list(@PathVariable UUID applicationId) {
-        return ResponseEntity.of(documents.listForApplication(applicationId));
+    public ResponseEntity<List<DocumentResponse>> list(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId) {
+        return ResponseEntity.of(documents.listForApplication(user.id(), applicationId));
     }
 
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<DocumentResponse> upload(
+            @AuthenticationPrincipal SignedInUser user,
             @PathVariable UUID applicationId,
             @RequestParam(required = false) MultipartFile file,
             @RequestParam(defaultValue = "OTHER") String kind
     ) {
         var upload = DocumentFiles.validate(file, kind);
-        return documents.addToApplication(applicationId, upload.kind(), upload.filename(), upload.contentType(), upload.content())
+        return documents.addToApplication(user.id(), applicationId, upload.kind(), upload.filename(), upload.contentType(), upload.content())
                 .map(saved -> ResponseEntity
                         .created(URI.create("/api/applications/" + applicationId + "/documents/" + saved.id() + "/content"))
                         .body(saved))
@@ -49,14 +52,14 @@ public class ApplicationDocumentsController {
 
     /** Prints the application's job URL to PDF and attaches it as a POSTING document. */
     @PostMapping("/posting-capture")
-    public ResponseEntity<CaptureResponse> capturePosting(@PathVariable UUID applicationId) {
-        return ResponseEntity.of(capture.capture(applicationId));
+    public ResponseEntity<CaptureResponse> capturePosting(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId) {
+        return ResponseEntity.of(capture.capture(user.id(), applicationId));
     }
 
     /** Prints Beacon's own copy of the posting, from the stored details, as a POSTING document. */
     @PostMapping("/posting-summary")
-    public ResponseEntity<DocumentResponse> savePostingSummary(@PathVariable UUID applicationId) {
-        return summary.save(applicationId)
+    public ResponseEntity<DocumentResponse> savePostingSummary(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId) {
+        return summary.save(user.id(), applicationId)
                 .map(saved -> ResponseEntity
                         .created(URI.create("/api/applications/" + applicationId + "/documents/" + saved.id() + "/content"))
                         .body(saved))
@@ -64,15 +67,15 @@ public class ApplicationDocumentsController {
     }
 
     @GetMapping("/{documentId}/content")
-    public ResponseEntity<byte[]> download(@PathVariable UUID applicationId, @PathVariable UUID documentId) {
-        return documents.find(applicationId, documentId)
+    public ResponseEntity<byte[]> download(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId, @PathVariable UUID documentId) {
+        return documents.find(user.id(), applicationId, documentId)
                 .map(DocumentFiles::download)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{documentId}")
-    public ResponseEntity<Void> delete(@PathVariable UUID applicationId, @PathVariable UUID documentId) {
-        return documents.delete(applicationId, documentId)
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId, @PathVariable UUID documentId) {
+        return documents.delete(user.id(), applicationId, documentId)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
     }

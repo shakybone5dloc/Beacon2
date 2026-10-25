@@ -1,13 +1,19 @@
 <header class="top">
   <a routerLink="/" class="brand">Beacon</a>
-  <nav>
-    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
-      >Board</a
-    >
-    <a routerLink="/jobs" routerLinkActive="active">Find jobs</a>
-    <a routerLink="/documents" routerLinkActive="active">Documents</a>
-    <a routerLink="/applications/new" routerLinkActive="active">New application</a>
-  </nav>
+  @if (auth.user(); as user) {
+    <nav>
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+        >Board</a
+      >
+      <a routerLink="/jobs" routerLinkActive="active">Find jobs</a>
+      <a routerLink="/documents" routerLinkActive="active">Documents</a>
+      <a routerLink="/applications/new" routerLinkActive="active">New application</a>
+    </nav>
+    <div class="account">
+      <span class="who" [title]="user.email">{{ user.displayName ?? user.email }}</span>
+      <button type="button" class="link" (click)="signOut()">Sign out</button>
+    </div>
+  }
 </header>
 
 <main>

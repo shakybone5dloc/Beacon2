@@ -23,6 +23,10 @@ public class Document {
     @Column(name = "application_id", updatable = false)
     private UUID applicationId;
 
+    /** The user this document belongs to. Rows from before accounts existed have none. */
+    @Column(name = "owner_id", updatable = false)
+    private UUID ownerId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private DocumentKind kind;
@@ -44,14 +48,16 @@ public class Document {
 
     protected Document() { }
 
-    public static Document create(UUID applicationId, DocumentKind kind, String filename, String contentType,
-                                  byte[] content, Instant now) {
+    public static Document create(UUID ownerId, UUID applicationId, DocumentKind kind, String filename,
+                                  String contentType, byte[] content, Instant now) {
+        if (ownerId == null) throw new IllegalArgumentException("A document needs an owner");
         if (content == null || content.length == 0) throw new IllegalArgumentException("Document is empty");
         if (content.length > MAX_BYTES) throw new IllegalArgumentException("Document is over the size limit");
 
         var document = new Document();
         document.id = UUID.randomUUID();
         document.applicationId = applicationId;
+        document.ownerId = ownerId;
         document.kind = kind;
         document.filename = filename;
         document.contentType = contentType;

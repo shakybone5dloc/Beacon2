@@ -1,6 +1,7 @@
 package dev.beacon.api.coverletters;
 
 import dev.beacon.application.coverletters.CoverLetterService;
+import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.coverletters.CoverLetterDraftRequest;
 import dev.beacon.contracts.coverletters.CoverLetterDraftResponse;
 import dev.beacon.contracts.coverletters.CoverLetterStatusResponse;
@@ -8,6 +9,7 @@ import dev.beacon.contracts.coverletters.SaveCoverLetterRequest;
 import dev.beacon.contracts.documents.DocumentResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -30,20 +32,22 @@ public class CoverLetterController {
     /** Returns a draft for the user to edit; nothing is saved. */
     @PostMapping("/api/applications/{applicationId}/cover-letter/draft")
     public ResponseEntity<CoverLetterDraftResponse> draft(
+            @AuthenticationPrincipal SignedInUser user,
             @PathVariable UUID applicationId,
             @Valid @RequestBody CoverLetterDraftRequest request
     ) {
-        return ResponseEntity.of(service.draft(applicationId, request.resumeDocumentId(), request.instructions())
+        return ResponseEntity.of(service.draft(user.id(), applicationId, request.resumeDocumentId(), request.instructions())
                 .map(CoverLetterDraftResponse::new));
     }
 
     /** Saves the (possibly edited) letter as a PDF cover letter document. */
     @PostMapping("/api/applications/{applicationId}/cover-letter")
     public ResponseEntity<DocumentResponse> save(
+            @AuthenticationPrincipal SignedInUser user,
             @PathVariable UUID applicationId,
             @Valid @RequestBody SaveCoverLetterRequest request
     ) {
-        return service.save(applicationId, request.text())
+        return service.save(user.id(), applicationId, request.text())
                 .map(saved -> ResponseEntity
                         .created(URI.create("/api/applications/" + applicationId + "/documents/" + saved.id() + "/content"))
                         .body(saved))

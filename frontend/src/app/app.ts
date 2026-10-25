@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthState } from './auth/auth-state';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +8,11 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App {}
+export class App {
+  private readonly router = inject(Router);
+  protected readonly auth = inject(AuthState);
+
+  protected signOut(): void {
+    this.auth.logout().subscribe(() => this.router.navigate(['/login']));
+  }
+}

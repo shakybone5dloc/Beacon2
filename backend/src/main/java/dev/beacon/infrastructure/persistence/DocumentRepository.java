@@ -9,27 +9,28 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/** Every finder takes the owner, so one user's documents can't leak into another's queries. */
 public interface DocumentRepository extends JpaRepository<Document, UUID> {
 
     @Query("""
             select new dev.beacon.domain.documents.DocumentInfo(
                 d.id, d.applicationId, d.kind, d.filename, d.contentType, d.sizeBytes, d.createdAt)
             from Document d
-            where d.applicationId = :applicationId
+            where d.ownerId = :ownerId and d.applicationId = :applicationId
             order by d.createdAt desc
             """)
-    List<DocumentInfo> findInfoByApplicationId(UUID applicationId);
+    List<DocumentInfo> findInfoByApplication(UUID ownerId, UUID applicationId);
 
     @Query("""
             select new dev.beacon.domain.documents.DocumentInfo(
                 d.id, d.applicationId, d.kind, d.filename, d.contentType, d.sizeBytes, d.createdAt)
             from Document d
-            where d.applicationId is null
+            where d.ownerId = :ownerId and d.applicationId is null
             order by d.createdAt desc
             """)
-    List<DocumentInfo> findLibraryInfo();
+    List<DocumentInfo> findLibraryInfo(UUID ownerId);
 
-    Optional<Document> findByIdAndApplicationId(UUID id, UUID applicationId);
+    Optional<Document> findByIdAndApplicationIdAndOwnerId(UUID id, UUID applicationId, UUID ownerId);
 
-    Optional<Document> findByIdAndApplicationIdIsNull(UUID id);
+    Optional<Document> findByIdAndApplicationIdIsNullAndOwnerId(UUID id, UUID ownerId);
 }

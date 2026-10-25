@@ -5,11 +5,14 @@ import dev.beacon.domain.applications.PostingDetails;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.UUID;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PostingSummaryServiceTests {
+
+    private static final UUID OWNER = UUID.randomUUID();
 
     private static final Instant NOW = Instant.parse("2026-10-24T12:00:00Z");
 
@@ -28,7 +31,7 @@ class PostingSummaryServiceTests {
 
     @Test
     void htmlShowsTheFactsAndEscapesEverything() {
-        var app = JobApplication.create("Acme <Labs>", "Senior Java Engineer", "https://acme.dev/jobs/1", null, NOW);
+        var app = JobApplication.create(OWNER, "Acme <Labs>", "Senior Java Engineer", "https://acme.dev/jobs/1", null, NOW);
         app.setPostingDetails(new PostingDetails("Denver, CO", true, 140000, 170000, "USD", "year", null,
                 "Himalayas", LocalDate.parse("2026-10-20")), NOW);
         app.setApplyBy(LocalDate.parse("2026-11-15"), NOW);
@@ -48,7 +51,7 @@ class PostingSummaryServiceTests {
 
     @Test
     void htmlLeavesOutNonWebLinksAndSaysWhenThereIsNoDescription() {
-        var app = JobApplication.create("Acme", "Engineer", "javascript:alert(1)", null, NOW);
+        var app = JobApplication.create(OWNER, "Acme", "Engineer", "javascript:alert(1)", null, NOW);
 
         var html = PostingSummaryService.postingHtml(app);
 

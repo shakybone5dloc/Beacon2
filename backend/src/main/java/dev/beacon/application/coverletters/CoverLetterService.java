@@ -48,8 +48,8 @@ public class CoverLetterService {
      * Empty when the application does not exist. The resume may belong to this
      * application or to the library.
      */
-    public Optional<String> draft(UUID applicationId, UUID resumeDocumentId, String instructions) {
-        var found = applications.findById(applicationId);
+    public Optional<String> draft(UUID ownerId, UUID applicationId, UUID resumeDocumentId, String instructions) {
+        var found = applications.findByIdAndOwnerId(applicationId, ownerId);
         if (found.isEmpty()) return Optional.empty();
         var application = found.get();
 
@@ -57,8 +57,8 @@ public class CoverLetterService {
             throw new CoverLetterException("Save the posting as a PDF or paste the job description into this application first.", false);
         }
 
-        var resume = documents.find(applicationId, resumeDocumentId)
-                .or(() -> documents.find(null, resumeDocumentId))
+        var resume = documents.find(ownerId, applicationId, resumeDocumentId)
+                .or(() -> documents.find(ownerId, null, resumeDocumentId))
                 .orElseThrow(() -> new CoverLetterException("That resume was not found.", false));
         var resumeText = DocumentText.extract(resume.getContent(), resume.getContentType())
                 .orElseThrow(() -> new CoverLetterException(
@@ -69,8 +69,8 @@ public class CoverLetterService {
     }
 
     /** Empty when the application does not exist. */
-    public Optional<DocumentResponse> save(UUID applicationId, String text) {
-        var found = applications.findById(applicationId);
+    public Optional<DocumentResponse> save(UUID ownerId, UUID applicationId, String text) {
+        var found = applications.findByIdAndOwnerId(applicationId, ownerId);
         if (found.isEmpty()) return Optional.empty();
         var application = found.get();
 
@@ -82,7 +82,7 @@ public class CoverLetterService {
         }
 
         var filename = "cover-letter-" + slug(application.getCompany()) + "-" + LocalDate.now(clock) + ".pdf";
-        return documents.addToApplication(applicationId, DocumentKind.COVER_LETTER, filename, "application/pdf", pdf);
+        return documents.addToApplication(ownerId, applicationId, DocumentKind.COVER_LETTER, filename, "application/pdf", pdf);
     }
 
     /** A plain business letter: date, then the text with blank lines as paragraph breaks. */

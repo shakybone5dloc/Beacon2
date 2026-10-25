@@ -1,0 +1,36 @@
+<section class="auth">
+  <h1>Sign in</h1>
+
+  @if (formError(); as message) {
+    <p class="notice">{{ message }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      Email
+      <input formControlName="email" type="email" autocomplete="username" />
+      @if (errorFor('email'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+
+    <label>
+      Password
+      <input formControlName="password" type="password" autocomplete="current-password" />
+      @if (errorFor('password'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+
+    <button type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Signing in...' : 'Sign in' }}
+    </button>
+  </form>
+
+  <p class="switch">
+    New to Beacon?
+    <a routerLink="/register" [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : {}"
+      >Create an account</a
+    >
+  </p>
+</section>

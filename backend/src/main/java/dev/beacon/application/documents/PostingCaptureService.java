@@ -40,8 +40,8 @@ public class PostingCaptureService {
     }
 
     /** Empty when the application does not exist; throws {@link PostingCaptureException} when the page can't be saved. */
-    public Optional<CaptureResponse> capture(UUID applicationId) {
-        var found = applications.findById(applicationId);
+    public Optional<CaptureResponse> capture(UUID ownerId, UUID applicationId) {
+        var found = applications.findByIdAndOwnerId(applicationId, ownerId);
         if (found.isEmpty()) return Optional.empty();
 
         // Printing takes seconds, so it happens outside any transaction.
@@ -55,12 +55,12 @@ public class PostingCaptureService {
         }
 
         return Optional.of(transaction.execute(status -> {
-            var application = applications.findById(applicationId).orElseThrow(() ->
+            var application = applications.findByIdAndOwnerId(applicationId, ownerId).orElseThrow(() ->
                     new PostingCaptureException("The application was deleted while its posting was being saved.", false));
             var now = Instant.now(clock);
 
             var filename = "posting-" + slug(application.getCompany()) + "-" + LocalDate.now(clock) + ".pdf";
-            var document = Document.create(applicationId, DocumentKind.POSTING, filename, "application/pdf", pdf, now);
+            var document = Document.create(ownerId, applicationId, DocumentKind.POSTING, filename, "application/pdf", pdf, now);
             documents.save(document);
 
             // Never overwrite a description the user already has, and skip pages with barely any

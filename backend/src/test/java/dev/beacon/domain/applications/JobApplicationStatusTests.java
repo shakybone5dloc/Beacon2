@@ -4,17 +4,20 @@ import dev.beacon.domain.DomainException;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.UUID;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.*;
 
 class JobApplicationStatusTests {
 
+    private static final UUID OWNER = UUID.randomUUID();
+
     private static final Instant NOW = Instant.parse("2026-10-23T12:00:00.00Z");
     private static final Instant LATER = NOW.plusSeconds(3600);
 
     private static JobApplication newApp() {
-        return JobApplication.create("Acme", "Engineer", null, null, NOW);
+        return JobApplication.create(OWNER, "Acme", "Engineer", null, null, NOW);
     }
 
     @Test

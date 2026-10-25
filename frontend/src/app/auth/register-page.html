@@ -1,0 +1,45 @@
+<section class="auth">
+  <h1>Create an account</h1>
+
+  @if (formError(); as message) {
+    <p class="notice">{{ message }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      <span>Name <span class="hint">(optional)</span></span>
+      <input formControlName="displayName" autocomplete="name" />
+      @if (errorFor('displayName'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+
+    <label>
+      Email
+      <input formControlName="email" type="email" autocomplete="username" />
+      @if (errorFor('email'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+
+    <label>
+      Password
+      <input formControlName="password" type="password" autocomplete="new-password" />
+      <span class="hint"
+        >At least {{ minPassword }} characters. A few unrelated words works well.</span
+      >
+      @if (errorFor('password'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+
+    <button type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Creating account...' : 'Create account' }}
+    </button>
+  </form>
+
+  <p class="switch">
+    Already have an account?
+    <a routerLink="/login" [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : {}">Sign in</a>
+  </p>
+</section>

@@ -44,14 +44,14 @@ public class PostingSummaryService {
     }
 
     /** Empty when the application does not exist. */
-    public Optional<DocumentResponse> save(UUID applicationId) {
-        var found = applications.findById(applicationId);
+    public Optional<DocumentResponse> save(UUID ownerId, UUID applicationId) {
+        var found = applications.findByIdAndOwnerId(applicationId, ownerId);
         if (found.isEmpty()) return Optional.empty();
         var application = found.get();
 
         var pdf = printer.printHtml(postingHtml(application));
         var filename = "posting-" + PostingCaptureService.slug(application.getCompany()) + "-summary-" + LocalDate.now(clock) + ".pdf";
-        return documents.addToApplication(applicationId, DocumentKind.POSTING, filename, "application/pdf", pdf);
+        return documents.addToApplication(ownerId, applicationId, DocumentKind.POSTING, filename, "application/pdf", pdf);
     }
 
     static String postingHtml(JobApplication app) {

@@ -2,9 +2,9 @@ package dev.beacon.api.documents;
 
 import com.jayway.jsonpath.JsonPath;
 import dev.beacon.DocumentTestDoubles;
+import dev.beacon.SignedInApiTests;
 import dev.beacon.TestcontainersConfiguration;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -12,7 +12,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,9 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureMockMvc
 @Import({TestcontainersConfiguration.class, DocumentTestDoubles.class})
 @Transactional
-class DocumentsApiTests {
-
-    @Autowired MockMvcTester mvc;
+class DocumentsApiTests extends SignedInApiTests {
 
     @Test
     void uploadListDownloadAndDeleteAnApplicationDocument() {

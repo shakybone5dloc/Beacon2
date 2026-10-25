@@ -1,15 +1,14 @@
 package dev.beacon.api.applications;
 
+import dev.beacon.SignedInApiTests;
 import dev.beacon.TestcontainersConfiguration;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 @Transactional
-class ApplicationPostingDetailsApiTests {
-
-    @Autowired MockMvcTester mvc;
+class ApplicationPostingDetailsApiTests extends SignedInApiTests {
 
     private static final String WITH_DETAILS = """
             {"company": "Acme", "role": "Engineer", "location": " Denver, CO ", "remote": true,

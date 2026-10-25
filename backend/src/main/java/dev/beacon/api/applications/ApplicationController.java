@@ -2,6 +2,7 @@ package dev.beacon.api.applications;
 
 import dev.beacon.api.errors.RequestValidationException;
 import dev.beacon.application.applications.ApplicationService;
+import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.ChangeStatusRequest;
 import dev.beacon.contracts.applications.CreateApplicationRequest;
@@ -12,6 +13,7 @@ import dev.beacon.contracts.applications.UpdateApplicationRequest;
 import dev.beacon.domain.applications.ApplicationStatus;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -29,60 +31,63 @@ public class ApplicationController {
     }
 
     @PostMapping
-    public ResponseEntity<ApplicationResponse> create(@Valid @RequestBody CreateApplicationRequest request) {
+    public ResponseEntity<ApplicationResponse> create(@AuthenticationPrincipal SignedInUser user, @Valid @RequestBody CreateApplicationRequest request) {
         requireOrderedSalary(request);
-        var response = service.create(request);
+        var response = service.create(user.id(), request);
         return ResponseEntity
                 .created(URI.create("/api/applications/" + response.id()))
                 .body(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApplicationResponse> getById(@PathVariable UUID id) {
-        return ResponseEntity.of(service.getById(id));
+    public ResponseEntity<ApplicationResponse> getById(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID id) {
+        return ResponseEntity.of(service.getById(user.id(), id));
     }
 
     @GetMapping
-    public List<ApplicationResponse> getAll() {
-        return service.list();
+    public List<ApplicationResponse> getAll(@AuthenticationPrincipal SignedInUser user) {
+        return service.list(user.id());
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApplicationResponse> update(
+            @AuthenticationPrincipal SignedInUser user,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateApplicationRequest request
     ) {
         requireOrderedSalary(request);
-        return ResponseEntity.of(service.update(id, request));
+        return ResponseEntity.of(service.update(user.id(), id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        return service.delete(id)
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID id) {
+        return service.delete(user.id(), id)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{id}/follow-up")
     public ResponseEntity<ApplicationResponse> scheduleFollowUp(
+            @AuthenticationPrincipal SignedInUser user,
             @PathVariable UUID id,
             @Valid @RequestBody FollowUpRequest request
     ) {
-        return ResponseEntity.of(service.scheduleFollowUp(id, request));
+        return ResponseEntity.of(service.scheduleFollowUp(user.id(), id, request));
     }
 
     @GetMapping("/{id}/history")
-    public ResponseEntity<List<StatusChangeResponse>> history(@PathVariable UUID id) {
-        return ResponseEntity.of(service.history(id));
+    public ResponseEntity<List<StatusChangeResponse>> history(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID id) {
+        return ResponseEntity.of(service.history(user.id(), id));
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApplicationResponse> changeStatus(
+            @AuthenticationPrincipal SignedInUser user,
             @PathVariable UUID id,
             @Valid @RequestBody ChangeStatusRequest request
     ) {
         var status = parseStatus(request.status());
-        return ResponseEntity.of(service.changeStatus(id, status, request.version()));
+        return ResponseEntity.of(service.changeStatus(user.id(), id, status, request.version()));
     }
 
     private static void requireOrderedSalary(PostingFields fields) {

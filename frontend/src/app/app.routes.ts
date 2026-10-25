@@ -5,14 +5,38 @@ import { ApplicationDetail } from './application-detail/application-detail';
 import { JobSearch } from './job-search/job-search';
 import { DocumentLibrary } from './documents/document-library';
 import { PrintablePosting } from './posting-view/printable-posting';
+import { LoginPage } from './auth/login-page';
+import { RegisterPage } from './auth/register-page';
+import { authGuard, guestGuard } from './auth/auth.guards';
 
 export const routes: Routes = [
-  { path: '', component: Board, title: 'Beacon · Board' },
-  { path: 'jobs', component: JobSearch, title: 'Beacon · Find jobs' },
-  { path: 'documents', component: DocumentLibrary, title: 'Beacon · Documents' },
-  { path: 'applications/new', component: ApplicationForm, title: 'Beacon · New application' },
-  { path: 'applications/:id', component: ApplicationDetail, title: 'Beacon · Application' },
-  { path: 'applications/:id/posting', component: PrintablePosting, title: 'Beacon · Job posting' },
-  { path: 'applications/:id/edit', component: ApplicationForm, title: 'Beacon · Edit application' },
+  { path: 'login', component: LoginPage, canActivate: [guestGuard], title: 'Beacon · Sign in' },
+  {
+    path: 'register',
+    component: RegisterPage,
+    canActivate: [guestGuard],
+    title: 'Beacon · Create an account',
+  },
+  {
+    path: '',
+    canActivateChild: [authGuard],
+    children: [
+      { path: '', component: Board, title: 'Beacon · Board' },
+      { path: 'jobs', component: JobSearch, title: 'Beacon · Find jobs' },
+      { path: 'documents', component: DocumentLibrary, title: 'Beacon · Documents' },
+      { path: 'applications/new', component: ApplicationForm, title: 'Beacon · New application' },
+      { path: 'applications/:id', component: ApplicationDetail, title: 'Beacon · Application' },
+      {
+        path: 'applications/:id/posting',
+        component: PrintablePosting,
+        title: 'Beacon · Job posting',
+      },
+      {
+        path: 'applications/:id/edit',
+        component: ApplicationForm,
+        title: 'Beacon · Edit application',
+      },
+    ],
+  },
   { path: '**', redirectTo: '' },
 ];
