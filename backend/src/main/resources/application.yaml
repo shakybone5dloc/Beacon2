@@ -36,6 +36,9 @@ management:
       probes:
         enabled: true
 beacon:
+  # Encrypts the API keys users save. 32 random bytes, base64-encoded; Beacon won't start without it.
+  # Changing it makes saved keys unreadable, and users have to add them again.
+  secret-key: ${BEACON_SECRET_KEY:}
   postings:
     user-agent: "Beacon personal job tracker"
     # Sources listed here stay off, whatever keys are set. Comma-separated ids.

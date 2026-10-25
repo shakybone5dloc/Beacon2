@@ -1,0 +1,12 @@
+.intro {
+  color: var(--muted);
+  max-width: 720px;
+}
+h2 {
+  margin-top: 2rem;
+}
+.list {
+  display: grid;
+  gap: 1rem;
+  max-width: 640px;
+}

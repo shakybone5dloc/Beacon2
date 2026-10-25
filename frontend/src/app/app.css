@@ -28,6 +28,7 @@ nav a.active {
 main {
   padding: 1.5rem;
 }
+
 .account {
   margin-left: auto;
   display: flex;
@@ -49,4 +50,12 @@ main {
   font: inherit;
   color: var(--accent);
   cursor: pointer;
+}
+.account a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.account a.active {
+  color: var(--accent);
+  font-weight: 600;
 }

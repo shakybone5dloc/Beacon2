@@ -1,0 +1,4 @@
+# Layered over the main application.yaml for tests and the throwaway test-run app.
+beacon:
+  # A fixed key for tests only; never use it for real data.
+  secret-key: "dGVzdC1vbmx5LXNlY3JldC1rZXktMzItYnl0ZXMhISE="

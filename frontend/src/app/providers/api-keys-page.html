@@ -1,0 +1,26 @@
+<h1>API keys</h1>
+<p class="intro">
+  Your own keys for paid and keyed providers. They are stored encrypted, used only for your searches
+  and cover letters, and never shown again after you save them.
+  <a routerLink="/providers">How to get each key →</a>
+</p>
+
+@if (loading()) {
+  <p>Loading...</p>
+} @else if (loadError()) {
+  <p class="notice">Could not load your keys. Try again in a moment.</p>
+} @else {
+  <h2>Cover letter writers</h2>
+  <div class="list">
+    @for (e of aiWriters(); track e.provider.id) {
+      <app-api-key-editor [provider]="e.provider" [status]="e.status" (changed)="update($event)" />
+    }
+  </div>
+
+  <h2>Job sources</h2>
+  <div class="list">
+    @for (e of jobSources(); track e.provider.id) {
+      <app-api-key-editor [provider]="e.provider" [status]="e.status" (changed)="update($event)" />
+    }
+  </div>
+}

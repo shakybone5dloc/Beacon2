@@ -8,6 +8,8 @@ import { PrintablePosting } from './posting-view/printable-posting';
 import { LoginPage } from './auth/login-page';
 import { RegisterPage } from './auth/register-page';
 import { authGuard, guestGuard } from './auth/auth.guards';
+import { ProviderGuide } from './providers/provider-guide';
+import { ApiKeysPage } from './providers/api-keys-page';
 
 export const routes: Routes = [
   { path: 'login', component: LoginPage, canActivate: [guestGuard], title: 'Beacon · Sign in' },
@@ -24,6 +26,8 @@ export const routes: Routes = [
       { path: '', component: Board, title: 'Beacon · Board' },
       { path: 'jobs', component: JobSearch, title: 'Beacon · Find jobs' },
       { path: 'documents', component: DocumentLibrary, title: 'Beacon · Documents' },
+      { path: 'providers', component: ProviderGuide, title: 'Beacon · Getting API keys' },
+      { path: 'settings/api-keys', component: ApiKeysPage, title: 'Beacon · API keys' },
       { path: 'applications/new', component: ApplicationForm, title: 'Beacon · New application' },
       { path: 'applications/:id', component: ApplicationDetail, title: 'Beacon · Application' },
       {

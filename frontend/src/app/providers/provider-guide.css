@@ -1,0 +1,65 @@
+.intro {
+  color: var(--muted);
+  max-width: 720px;
+}
+h2 {
+  margin-top: 2rem;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  max-width: 1100px;
+}
+.card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+}
+.card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.card p {
+  margin: 0.5rem 0 0;
+}
+.pricing {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.card ol {
+  margin: 0.6rem 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+}
+.card footer {
+  margin-top: auto;
+  padding-top: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #dafbe1;
+  color: #116329;
+}
+.badge.paid {
+  background: #fff4e5;
+  color: #8a4600;
+}
+.add {
+  font-weight: 600;
+}

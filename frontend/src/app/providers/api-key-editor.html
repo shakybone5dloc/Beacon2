@@ -1,0 +1,65 @@
+<section class="editor" [id]="provider().id">
+  <header>
+    <h3>{{ provider().name }}</h3>
+    <span class="access">{{ accessLabel(provider()) }}</span>
+  </header>
+
+  @if (status().saved && !replacing()) {
+    <p class="saved">
+      Added
+      @if (status().hint; as hint) {
+        · ends in <code>{{ hint }}</code>
+      }
+      @if (status().updatedAt; as updated) {
+        · {{ updated | date: 'mediumDate' }}
+      }
+    </p>
+    <div class="buttons">
+      <button type="button" (click)="startReplace()" [disabled]="busy()">Replace</button>
+      <button type="button" class="danger" (click)="remove()" [disabled]="busy()">Remove</button>
+    </div>
+  }
+
+  @if (editing()) {
+    <form [formGroup]="form()" (ngSubmit)="save()" novalidate>
+      @for (field of provider().fields; track field.name) {
+        <label>
+          <span
+            >{{ field.label }}
+            @if (!field.required) {
+              <span class="hint">(optional)</span>
+            }
+          </span>
+          <span class="input-row">
+            <input
+              [formControlName]="field.name"
+              [type]="field.secret && !revealed().has(field.name) ? 'password' : 'text'"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            @if (field.secret) {
+              <button type="button" class="reveal" (click)="toggleReveal(field.name)">
+                {{ revealed().has(field.name) ? 'Hide' : 'Show' }}
+              </button>
+            }
+          </span>
+          @if (errorFor(field.name); as msg) {
+            <span class="error">{{ msg }}</span>
+          }
+        </label>
+      }
+      <div class="buttons">
+        <button type="submit" class="primary" [disabled]="busy()">
+          {{ busy() ? 'Saving...' : 'Save' }}
+        </button>
+        @if (replacing()) {
+          <button type="button" (click)="cancelReplace()" [disabled]="busy()">Cancel</button>
+        }
+      </div>
+    </form>
+  }
+
+  @if (error(); as message) {
+    <p class="error">{{ message }}</p>
+  }
+</section>

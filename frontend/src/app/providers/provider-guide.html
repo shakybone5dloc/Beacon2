@@ -1,0 +1,51 @@
+<h1>Getting API keys</h1>
+<p class="intro">
+  Free job sources work straight away. The others need a key of your own, which you add under
+  <a routerLink="/settings/api-keys">Settings · API keys</a>. Keys are stored encrypted and only
+  used for your own searches and cover letters.
+</p>
+
+@if (providers() === undefined) {
+  <p>Loading...</p>
+} @else if (providers()!.error) {
+  <p class="notice">Could not load the providers. Try again in a moment.</p>
+} @else {
+  <h2>Job sources</h2>
+  <div class="cards">
+    @for (p of jobSources(); track p.id) {
+      <ng-container *ngTemplateOutlet="card; context: { $implicit: p }" />
+    }
+  </div>
+
+  <h2>Cover letter writers</h2>
+  <p class="intro">Beacon uses OpenAI when you have added both.</p>
+  <div class="cards">
+    @for (p of aiWriters(); track p.id) {
+      <ng-container *ngTemplateOutlet="card; context: { $implicit: p }" />
+    }
+  </div>
+}
+
+<ng-template #card let-p>
+  <article class="card" [id]="p.id">
+    <header>
+      <h3>{{ p.name }}</h3>
+      <span class="badge" [class.paid]="p.cost === 'PAID'">{{ accessLabel(p) }}</span>
+    </header>
+    <p>{{ p.coverage }}</p>
+    <p class="pricing">{{ p.pricing }}</p>
+    @if (p.steps.length) {
+      <ol>
+        @for (step of p.steps; track $index) {
+          <li>{{ step }}</li>
+        }
+      </ol>
+    }
+    <footer>
+      <a [href]="p.signUpUrl" target="_blank" rel="noopener noreferrer">{{ p.name }} site ↗</a>
+      @if (p.fields.length) {
+        <a routerLink="/settings/api-keys" [fragment]="p.id" class="add">Add key</a>
+      }
+    </footer>
+  </article>
+</ng-template>
