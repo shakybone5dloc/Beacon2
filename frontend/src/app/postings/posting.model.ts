@@ -4,6 +4,9 @@ export interface JobSource {
   coverage: string;
   /** Credit link shown with every result; most free feeds require it. */
   attributionUrl: string;
+  /** False when switched off on the server (BEACON_DISABLED_SOURCES). */
+  enabled: boolean;
+  /** False when the source needs credentials that are not set. */
   configured: boolean;
   /** How to switch the source on; null once configured. */
   setupHint: string | null;
@@ -47,6 +50,6 @@ export interface PostingQuery {
   keywords: string;
   location: string;
   remoteOnly: boolean;
-  /** Empty means every configured source. */
+  /** Empty means every usable source. */
   sources: string[];
 }

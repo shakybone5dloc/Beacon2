@@ -21,6 +21,7 @@ describe('JobSearch', () => {
       configured: false,
       setupHint: 'Set ADZUNA_APP_ID.',
     }),
+    aSource({ id: 'usajobs', name: 'USAJOBS', enabled: false, configured: true }),
   ];
 
   beforeEach(() => {
@@ -76,6 +77,17 @@ describe('JobSearch', () => {
     expect(sourceBox(el, 'Adzuna').disabled).toBe(true);
     expect(sourceBox(el, 'Adzuna').checked).toBe(false);
     expect(el.textContent).toContain('Needs an API key. Set ADZUNA_APP_ID.');
+  });
+
+  it('shows a turned-off source as unavailable even when its keys are set', async () => {
+    const { fixture, el } = await render();
+
+    expect(sourceBox(el, 'USAJOBS').disabled).toBe(true);
+    expect(sourceBox(el, 'USAJOBS').checked).toBe(false);
+    expect(el.textContent).toContain('Turned off for now.');
+
+    const req = await searchFor(fixture, []);
+    expect(req.request.params.get('sources')).toBe('remotive,jobicy');
   });
 
   it('does not search without keywords', async () => {

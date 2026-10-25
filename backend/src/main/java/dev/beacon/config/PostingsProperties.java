@@ -18,7 +18,7 @@ public record PostingsProperties(
         himalayas = himalayas == null ? new Himalayas(null) : himalayas;
     }
 
-    /** Free key from developer.adzuna.com. */
+    /** Key from developer.adzuna.com; API access is a paid plan. */
     public record Adzuna(String appId, String appKey, String country) {
         public Adzuna {
             country = country == null || country.isBlank() ? "us" : country.strip().toLowerCase();

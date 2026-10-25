@@ -60,6 +60,11 @@ class PostingsApiTests {
                 .containsExactly(true);
         assertThat(result).bodyJson().extractingPath("$[?(@.id == 'remotive')].attributionUrl").asArray()
                 .containsExactly("https://remotive.com");
+        // Adzuna is turned off by default (BEACON_DISABLED_SOURCES).
+        assertThat(result).bodyJson().extractingPath("$[?(@.id == 'adzuna')].enabled").asArray()
+                .containsExactly(false);
+        assertThat(result).bodyJson().extractingPath("$[?(@.id == 'remotive')].enabled").asArray()
+                .containsExactly(true);
     }
 
     @Test

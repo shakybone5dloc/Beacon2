@@ -18,7 +18,7 @@ import java.util.Map;
 
 /**
  * Adzuna aggregates ads from many job boards and employer sites, including
- * on-site roles. Needs a free app id and key; the free tier allows a few
+ * on-site roles. Needs an app id and key (API access is a paid plan); limits allow a few
  * hundred calls a day, so each query is cached for an hour.
  */
 @Component
@@ -48,7 +48,7 @@ public class AdzunaSource implements JobSource {
 
     @Override
     public String setupHint() {
-        return "Get a free key at developer.adzuna.com, then set ADZUNA_APP_ID and ADZUNA_APP_KEY in .env.";
+        return "Get a key at developer.adzuna.com (paid plans), then set ADZUNA_APP_ID and ADZUNA_APP_KEY in .env.";
     }
 
     @Override

@@ -109,13 +109,26 @@ class PostingSearchServiceTests {
                         Thread.currentThread().interrupt();
                     }
                     return List.of();
-                })), Duration.ofMillis(200));
+                })), Set.of(), Duration.ofMillis(200));
 
         var response = service.search(QUERY, Set.of());
 
         assertThat(response.postings()).hasSize(1);
         assertThat(response.sources()).filteredOn(s -> s.id().equals("slow"))
                 .singleElement().satisfies(s -> assertThat(s.error()).contains("took too long"));
+    }
+
+    @Test
+    void aTurnedOffSourceIsListedButNeverSearched() {
+        var service = new PostingSearchService(List.of(
+                returning("a", posting("a", "Acme", "A", null)),
+                new FakeSource("off", true, q -> { throw new AssertionError("should not be called"); })),
+                Set.of(" OFF "), Duration.ofSeconds(5));
+
+        assertThat(service.sources()).extracting(s -> s.id() + ":" + s.enabled() + ":" + s.configured())
+                .containsExactly("a:true:true", "off:false:true");
+        assertThat(service.search(QUERY, Set.of()).sources()).extracting(s -> s.id()).containsExactly("a");
+        assertThat(service.search(QUERY, Set.of("off")).sources().getFirst().error()).isEqualTo("OFF is turned off.");
     }
 
     @Test

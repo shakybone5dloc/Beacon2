@@ -30,6 +30,8 @@ management:
 beacon:
   postings:
     user-agent: "Beacon personal job tracker"
+    # Sources listed here stay off, whatever keys are set. Comma-separated ids.
+    disabled-sources: ${BEACON_DISABLED_SOURCES:adzuna}
     # Sources that need keys stay switched off until these are set in ../.env
     adzuna:
       app-id: ${ADZUNA_APP_ID:}

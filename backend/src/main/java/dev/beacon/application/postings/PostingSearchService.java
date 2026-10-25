@@ -7,6 +7,7 @@ import dev.beacon.contracts.postings.SourceResultResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -17,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -33,30 +35,50 @@ public class PostingSearchService {
     static final int MAX_RESULTS = 300;
 
     private final List<JobSource> sources;
+    /** Source ids switched off by configuration, whatever keys are set (BEACON_DISABLED_SOURCES). */
+    private final Set<String> disabled;
     private final Duration sourceTimeout;
 
     @Autowired
-    public PostingSearchService(List<JobSource> sources) {
-        this(sources, SOURCE_TIMEOUT);
+    public PostingSearchService(List<JobSource> sources,
+                                @Value("${beacon.postings.disabled-sources:}") Set<String> disabled) {
+        this(sources, disabled, SOURCE_TIMEOUT);
     }
 
-    PostingSearchService(List<JobSource> sources, Duration sourceTimeout) {
+    PostingSearchService(List<JobSource> sources) {
+        this(sources, Set.of(), SOURCE_TIMEOUT);
+    }
+
+    PostingSearchService(List<JobSource> sources, Set<String> disabled, Duration sourceTimeout) {
         this.sources = sources.stream().sorted(Comparator.comparing(JobSource::name)).toList();
+        this.disabled = disabled.stream()
+                .map(id -> id.strip().toLowerCase(Locale.ROOT))
+                .filter(id -> !id.isEmpty())
+                .collect(Collectors.toUnmodifiableSet());
         this.sourceTimeout = sourceTimeout;
     }
 
     public List<JobSourceResponse> sources() {
         return sources.stream()
                 .map(s -> new JobSourceResponse(s.id(), s.name(), s.coverage(), s.attributionUrl(),
-                        s.isConfigured(), s.isConfigured() ? null : s.setupHint()))
+                        !isDisabled(s), s.isConfigured(), s.isConfigured() ? null : s.setupHint()))
                 .toList();
+    }
+
+    private boolean isDisabled(JobSource source) {
+        return disabled.contains(source.id());
+    }
+
+    /** Searchable: switched on and with whatever credentials it needs. */
+    private boolean isUsable(JobSource source) {
+        return !isDisabled(source) && source.isConfigured();
     }
 
     public boolean isKnownSource(String id) {
         return sources.stream().anyMatch(s -> s.id().equals(id));
     }
 
-    /** An empty selection means every configured source; unknown ids are ignored. */
+    /** An empty selection means every usable source; unknown ids are ignored. */
     public PostingSearchResponse search(PostingQuery query, Set<String> sourceIds) {
         var selected = select(sourceIds);
 
@@ -66,7 +88,9 @@ public class PostingSearchService {
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var futures = new LinkedHashMap<JobSource, Future<List<JobPosting>>>();
             for (var source : selected) {
-                if (source.isConfigured()) {
+                if (isDisabled(source)) {
+                    results.add(new SourceResultResponse(source.id(), 0, source.name() + " is turned off."));
+                } else if (source.isConfigured()) {
                     futures.put(source, executor.submit(() -> source.search(query)));
                 } else {
                     results.add(new SourceResultResponse(source.id(), 0, "Needs an API key. " + source.setupHint()));
@@ -103,7 +127,7 @@ public class PostingSearchService {
 
     private List<JobSource> select(Set<String> sourceIds) {
         if (sourceIds.isEmpty()) {
-            return sources.stream().filter(JobSource::isConfigured).toList();
+            return sources.stream().filter(this::isUsable).toList();
         }
         return sources.stream().filter(s -> sourceIds.contains(s.id())).toList();
     }

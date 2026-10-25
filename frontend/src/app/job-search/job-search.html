@@ -25,20 +25,16 @@
   <fieldset class="sources">
     <legend>Sources</legend>
     @for (source of sources(); track source.id) {
-      <label
-        class="source"
-        [class.off]="!source.configured"
-        [title]="source.setupHint ?? source.coverage"
-      >
+      <label class="source" [class.off]="!usable(source)" [title]="sourceNote(source)">
         <input
           type="checkbox"
-          [checked]="source.configured && isSelected(source.id)"
-          [disabled]="!source.configured"
+          [checked]="usable(source) && isSelected(source.id)"
+          [disabled]="!usable(source)"
           (change)="toggleSource(source.id)"
         />
         <span class="name">{{ source.name }}</span>
         <span class="coverage">
-          {{ source.configured ? source.coverage : 'Needs an API key. ' + source.setupHint }}
+          {{ sourceNote(source) }}
         </span>
       </label>
     }

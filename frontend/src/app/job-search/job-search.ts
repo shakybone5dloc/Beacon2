@@ -41,7 +41,7 @@ export class JobSearch implements OnInit {
 
   protected readonly selectedSources = computed(() =>
     this.sources()
-      .filter((s) => s.configured && !this.state.excludedSources().has(s.id))
+      .filter((s) => this.usable(s) && !this.state.excludedSources().has(s.id))
       .map((s) => s.id),
   );
 
@@ -171,6 +171,18 @@ export class JobSearch implements OnInit {
             ),
           ),
       });
+  }
+
+  /** Switched on and with whatever credentials it needs. */
+  protected usable(source: JobSource): boolean {
+    return source.enabled && source.configured;
+  }
+
+  /** What the source covers, or why it can't be searched. */
+  protected sourceNote(source: JobSource): string {
+    if (!source.enabled) return 'Turned off for now.';
+    if (!source.configured) return `Needs an API key. ${source.setupHint ?? ''}`.trim();
+    return source.coverage;
   }
 
   protected source(id: string): JobSource | undefined {
