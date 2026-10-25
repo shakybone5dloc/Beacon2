@@ -1,6 +1,8 @@
 services:
   db:
     image: pgvector/pgvector:pg17
+    # Comes back up whenever Docker starts, unless it was stopped by hand.
+    restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: beacon
