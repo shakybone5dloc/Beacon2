@@ -7,7 +7,7 @@ import { DocumentResponse } from './document.model';
 export class CoverLettersApi {
   private readonly http = inject(HttpClient);
 
-  /** False until an Anthropic API key is configured on the server. */
+  /** False until an OpenAI or Anthropic API key is configured on the server. */
   isConfigured(): Observable<boolean> {
     return this.http
       .get<{ configured: boolean }>('/api/cover-letters/status')

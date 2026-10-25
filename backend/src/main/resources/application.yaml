@@ -44,6 +44,10 @@ beacon:
     # Chrome or Edge used to print postings to PDF; found automatically when blank.
     browser: ${CAPTURE_BROWSER:}
   ai:
-    # Cover letter drafting stays off until a key is set in ../.env
+    # Cover letter drafting stays off until a key is set in ../.env.
+    # "auto" uses OpenAI when its key is set, otherwise Claude; or force "openai" / "anthropic".
+    provider: ${BEACON_AI_PROVIDER:auto}
+    openai-api-key: ${OPENAI_API_KEY:}
+    openai-model: ${OPENAI_MODEL:gpt-6-sol}
     anthropic-api-key: ${ANTHROPIC_API_KEY:}
-    model: ${BEACON_AI_MODEL:claude-opus-5-5}
+    anthropic-model: ${ANTHROPIC_MODEL:claude-opus-5-5}

@@ -48,6 +48,7 @@ describe('CoverLetterDrafter', () => {
   it('explains how to switch drafting on when it is not configured', async () => {
     const { el } = await render(false);
 
+    expect(el.textContent).toContain('OPENAI_API_KEY');
     expect(el.textContent).toContain('ANTHROPIC_API_KEY');
     expect(el.querySelector('button.start')).toBeNull();
   });

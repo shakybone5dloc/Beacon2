@@ -23,8 +23,8 @@ class ClaudeCoverLetterWriterTests {
     }
 
     @Test
-    void userMessageWrapsTheDocumentsInTagsAndAddsGuidance() {
-        var message = ClaudeCoverLetterWriter.userMessage(INPUT);
+    void promptWrapsTheDocumentsInTagsAndAddsGuidance() {
+        var message = CoverLetterPrompt.userMessage(INPUT);
 
         assertThat(message).contains("Company: Acme").contains("Role: Java Engineer");
         assertThat(message).contains("<job_description>\nBuild services.\n</job_description>");
@@ -33,8 +33,8 @@ class ClaudeCoverLetterWriterTests {
     }
 
     @Test
-    void userMessageOmitsBlankGuidance() {
-        var message = ClaudeCoverLetterWriter.userMessage(new CoverLetterInput("Acme", "Engineer", "JD", "CV", "  "));
+    void promptOmitsBlankGuidance() {
+        var message = CoverLetterPrompt.userMessage(new CoverLetterInput("Acme", "Engineer", "JD", "CV", "  "));
 
         assertThat(message).doesNotContain("Additional guidance");
     }

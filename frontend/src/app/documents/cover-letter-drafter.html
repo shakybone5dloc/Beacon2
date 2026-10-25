@@ -1,7 +1,7 @@
 @if (configured() === false) {
   <p class="muted">
-    To draft cover letters with AI, add <code>ANTHROPIC_API_KEY</code> to <code>.env</code> and
-    restart the API.
+    To draft cover letters with AI, add <code>OPENAI_API_KEY</code> (or
+    <code>ANTHROPIC_API_KEY</code>) to <code>.env</code> and restart the API.
   </p>
 } @else if (configured()) {
   @if (!open()) {
