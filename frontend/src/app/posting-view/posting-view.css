@@ -59,18 +59,52 @@ header h1 {
   color: var(--muted);
 }
 
+/* Print sizes are fixed in points so the page reads like a document, whatever the screen zoom. */
 @media print {
   .posting {
     font-size: 10.5pt;
+    line-height: 1.4;
   }
+  header h1 {
+    font-size: 15pt;
+  }
+  .company {
+    font-size: 11pt;
+  }
+  /* The facts become a few short lines instead of a boxed grid. */
   .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 1.5rem;
+    margin: 0.5rem 0 0.75rem;
+    padding: 0;
     background: none;
-    border: 1px solid #ccc;
+  }
+  .facts div {
+    display: flex;
+    gap: 0.35rem;
+    align-items: baseline;
+  }
+  .facts dt {
+    font-size: 8pt;
+  }
+  .facts dd {
+    font-weight: normal;
+  }
+  .tag {
+    border: 0;
+    padding: 0;
+    font-size: inherit;
+  }
+  .original {
+    font-size: 8.5pt;
   }
   .original a {
     color: inherit;
   }
+  /* Paragraphs may split across pages; keeping them whole pushed long ones to page 2. */
   .description p {
-    break-inside: avoid;
+    orphans: 3;
+    widows: 3;
   }
 }
