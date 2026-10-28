@@ -1,17 +1,16 @@
-import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
+import { BeaconApi } from '../api/beacon-api';
+import { draftCoverLetter, getCoverLetterStatus, saveCoverLetter } from '../api/functions';
 import { DocumentResponse } from './document.model';
 
 @Injectable({ providedIn: 'root' })
 export class CoverLettersApi {
-  private readonly http = inject(HttpClient);
+  private readonly api = inject(BeaconApi);
 
   /** False until the user saves an OpenAI or Anthropic API key. */
   isConfigured(): Observable<boolean> {
-    return this.http
-      .get<{ configured: boolean }>('/api/cover-letters/status')
-      .pipe(map((r) => r.configured));
+    return this.api.invoke(getCoverLetterStatus).pipe(map((r) => r.configured));
   }
 
   draft(
@@ -19,18 +18,13 @@ export class CoverLettersApi {
     resumeDocumentId: string,
     instructions: string | null,
   ): Observable<string> {
-    return this.http
-      .post<{ text: string }>(`/api/applications/${applicationId}/cover-letter/draft`, {
-        resumeDocumentId,
-        instructions,
-      })
+    return this.api
+      .invoke(draftCoverLetter, { applicationId, body: { resumeDocumentId, instructions } })
       .pipe(map((r) => r.text));
   }
 
   /** Saves the letter as a PDF cover letter document. */
   save(applicationId: string, text: string): Observable<DocumentResponse> {
-    return this.http.post<DocumentResponse>(`/api/applications/${applicationId}/cover-letter`, {
-      text,
-    });
+    return this.api.invoke(saveCoverLetter, { applicationId, body: { text } });
   }
 }

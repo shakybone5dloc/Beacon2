@@ -1,25 +1,26 @@
-import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { BeaconApi } from '../api/beacon-api';
+import { deleteApiKey, listApiKeys, listProviders, saveApiKey } from '../api/functions';
 import { ApiKeyStatus, Provider } from './provider.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProvidersApi {
-  private readonly http = inject(HttpClient);
+  private readonly api = inject(BeaconApi);
 
   providers(): Observable<Provider[]> {
-    return this.http.get<Provider[]>('/api/providers');
+    return this.api.invoke(listProviders);
   }
 
   keys(): Observable<ApiKeyStatus[]> {
-    return this.http.get<ApiKeyStatus[]>('/api/me/api-keys');
+    return this.api.invoke(listApiKeys);
   }
 
   saveKey(provider: string, values: Record<string, string>): Observable<ApiKeyStatus> {
-    return this.http.put<ApiKeyStatus>(`/api/me/api-keys/${provider}`, { values });
+    return this.api.invoke(saveApiKey, { provider, body: { values } });
   }
 
   removeKey(provider: string): Observable<void> {
-    return this.http.delete<void>(`/api/me/api-keys/${provider}`);
+    return this.api.invoke(deleteApiKey, { provider });
   }
 }

@@ -6,6 +6,7 @@ import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.apikeys.ApiKeyResponse;
 import dev.beacon.contracts.apikeys.SaveApiKeyRequest;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,7 @@ public class ApiKeysController {
     }
 
     @Operation(operationId = "deleteApiKey")
+    @ApiResponse(responseCode = "204")
     @DeleteMapping("/{provider}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal SignedInUser user, @PathVariable String provider) {
         return keys.delete(user.id(), provider)

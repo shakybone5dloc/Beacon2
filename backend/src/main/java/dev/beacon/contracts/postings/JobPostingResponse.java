@@ -1,5 +1,7 @@
 package dev.beacon.contracts.postings;
 
+import jakarta.annotation.Nullable;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -8,19 +10,19 @@ public record JobPostingResponse(
         String source,
         String id,
         String title,
-        String company,
-        String location,
+        @Nullable String company,
+        @Nullable String location,
         boolean remote,
         String url,
-        Instant postedAt,
-        LocalDate closesOn,
-        Integer salaryMin,
-        Integer salaryMax,
-        String salaryCurrency,
-        String salaryPeriod,
-        String salaryText,
+        @Nullable Instant postedAt,
+        @Nullable LocalDate closesOn,
+        @Nullable Integer salaryMin,
+        @Nullable Integer salaryMax,
+        @Nullable String salaryCurrency,
+        @Nullable String salaryPeriod,
+        @Nullable String salaryText,
         List<String> tags,
-        String snippet,
-        String description
+        @Nullable String snippet,
+        @Nullable String description
 ) {
 }

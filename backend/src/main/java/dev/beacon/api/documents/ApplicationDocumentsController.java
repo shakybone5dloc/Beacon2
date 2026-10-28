@@ -9,7 +9,9 @@ import dev.beacon.contracts.documents.DocumentResponse;
 import dev.beacon.domain.documents.DocumentKind;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -43,6 +45,7 @@ public class ApplicationDocumentsController {
     }
 
     @Operation(operationId = "uploadApplicationDocument")
+    @ApiResponse(responseCode = "201", useReturnTypeSchema = true)
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<DocumentResponse> upload(
             @AuthenticationPrincipal SignedInUser user,
@@ -67,6 +70,7 @@ public class ApplicationDocumentsController {
 
     /** Prints Beacon's own copy of the posting, from the stored details, as a POSTING document. */
     @Operation(operationId = "savePostingSummary")
+    @ApiResponse(responseCode = "201", useReturnTypeSchema = true)
     @PostMapping("/posting-summary")
     public ResponseEntity<DocumentResponse> savePostingSummary(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId) {
         return summary.save(user.id(), applicationId)
@@ -77,6 +81,8 @@ public class ApplicationDocumentsController {
     }
 
     @Operation(operationId = "downloadApplicationDocument")
+    @ApiResponse(responseCode = "200", description = "The file, inline for PDFs and images",
+            content = @Content(mediaType = "application/octet-stream", schema = @Schema(type = "string", format = "binary")))
     @GetMapping("/{documentId}/content")
     public ResponseEntity<byte[]> download(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId, @PathVariable UUID documentId) {
         return documents.find(user.id(), applicationId, documentId)
@@ -85,6 +91,7 @@ public class ApplicationDocumentsController {
     }
 
     @Operation(operationId = "deleteApplicationDocument")
+    @ApiResponse(responseCode = "204")
     @DeleteMapping("/{documentId}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId, @PathVariable UUID documentId) {
         return documents.delete(user.id(), applicationId, documentId)

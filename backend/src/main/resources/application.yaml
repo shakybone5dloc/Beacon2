@@ -55,6 +55,10 @@ beacon:
     anthropic-model: ${ANTHROPIC_MODEL:claude-opus-5-5}
 
 springdoc:
+  # Sorted output, so the spec committed for the frontend only changes when the API does.
+  writer-with-order-by-keys: true
+  # Responses are JSON unless an endpoint says otherwise (file downloads do).
+  default-produces-media-type: application/json
   swagger-ui:
     csrf:
       enabled: true

@@ -8,6 +8,7 @@ import dev.beacon.contracts.coverletters.CoverLetterStatusResponse;
 import dev.beacon.contracts.coverletters.SaveCoverLetterRequest;
 import dev.beacon.contracts.documents.DocumentResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,7 @@ public class CoverLetterController {
 
     /** Saves the (possibly edited) letter as a PDF cover letter document. */
     @Operation(operationId = "saveCoverLetter")
+    @ApiResponse(responseCode = "201", useReturnTypeSchema = true)
     @PostMapping("/api/applications/{applicationId}/cover-letter")
     public ResponseEntity<DocumentResponse> save(
             @AuthenticationPrincipal SignedInUser user,

@@ -37,7 +37,7 @@ describe('PostingsApi', () => {
     expect(req.request.params.get('keywords')).toBe('java spring');
     expect(req.request.params.get('location')).toBe('USA');
     expect(req.request.params.get('remoteOnly')).toBe('true');
-    expect(req.request.params.get('sources')).toBe('remotive,jobicy');
+    expect(req.request.params.getAll('sources')).toEqual(['remotive', 'jobicy']);
     req.flush({ postings: [], sources: [] });
   });
 

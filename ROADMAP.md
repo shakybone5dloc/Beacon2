@@ -19,7 +19,7 @@ Rebuilt from the .NET Beacon, then extended.
 | - | Posting details, documents, posting capture, printable posting / PDF | df3de91, 7b823e8, 8926cf6, 943fa38 |
 | - | AI cover letters (Claude and OpenAI) | df3de91, 81da3bc |
 | - | User accounts (Spring Security), per-user ownership, per-user encrypted API keys, provider guide | 3c31d80, d35c5b5, 59eb080 |
-| X1.1 | OpenAPI spec with springdoc: operationIds, tags, enums, required response fields | 9ebee81 |
+| X1 | OpenAPI spec with springdoc, generated Angular client (ng-openapi-gen) behind the existing `*Api` services | 9ebee81 onward |
 
 ## Next: Companies and people
 
@@ -170,11 +170,11 @@ Reuses the inbox queue from E4: matches land there to accept or dismiss, same as
 
 ## Engineering (any time; earlier is cheaper)
 
-### X1. OpenAPI + generated Angular client
-- Springdoc generates the OpenAPI spec; generate TypeScript models and services from it.
-- Ends hand-syncing TypeScript interfaces with Java records.
-- Step 1 (backend prep) done in 9ebee81; the remaining steps are in `docs/research/x1-openapi.md`.
-- Turn on `"strict": true` in `frontend/tsconfig.json`, so the generated types' nullability is actually checked.
+### X1. OpenAPI + generated Angular client (done)
+- Springdoc serves the spec at `/v3/api-docs`; a copy lives in `frontend/openapi.json`, and `OpenApiSpecTests` fails when the two differ.
+- `npm run generate:api` (also run before `start`, `build` and `test`) generates `src/app/api/` (git-ignored); the app's `*Api` services call it, and the `*.model.ts` files alias its types.
+- After an API change: `./mvnw test -Dtest=OpenApiSpecTests -Dopenapi.update=true`, then rerun the frontend.
+- Nullable fields carry `@Nullable` in the Java records. TypeScript 6 has strict mode on by default, so nulls are checked.
 
 ### X2. Observability
 - Micrometer metrics, structured JSON logs, tracing (OpenTelemetry).

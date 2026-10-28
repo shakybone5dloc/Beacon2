@@ -1,14 +1,6 @@
-export interface CurrentUser {
-  id: string;
-  email: string;
-  displayName: string | null;
-}
+import * as api from '../api/models';
 
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface RegisterRequest extends LoginRequest {
-  displayName: string | null;
-}
+/** Generated from the API; the names here are the ones the app uses. */
+export type CurrentUser = api.CurrentUserResponse;
+export type LoginRequest = api.LoginRequest;
+export type RegisterRequest = api.RegisterRequest;

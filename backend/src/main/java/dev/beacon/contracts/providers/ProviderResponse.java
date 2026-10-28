@@ -26,5 +26,6 @@ public record ProviderResponse(
         List<FieldResponse> fields
 ) {
 
+    @Schema(name = "ProviderFieldResponse")
     public record FieldResponse(String name, String label, boolean secret, boolean required) { }
 }

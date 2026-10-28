@@ -1,0 +1,1591 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "description" : "Job-search assistant: applications, documents, postings, cover letters.",
+    "title" : "Beacon API",
+    "version" : "v1"
+  },
+  "servers" : [ {
+    "url" : ""
+  } ],
+  "paths" : {
+    "/api/applications" : {
+      "get" : {
+        "operationId" : "listApplications",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ApplicationResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Applications" ]
+      },
+      "post" : {
+        "operationId" : "createApplication",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateApplicationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApplicationResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Applications" ]
+      }
+    },
+    "/api/applications/{applicationId}/cover-letter" : {
+      "post" : {
+        "operationId" : "saveCoverLetter",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveCoverLetterRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DocumentResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Cover letters" ]
+      }
+    },
+    "/api/applications/{applicationId}/cover-letter/draft" : {
+      "post" : {
+        "operationId" : "draftCoverLetter",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CoverLetterDraftRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CoverLetterDraftResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Cover letters" ]
+      }
+    },
+    "/api/applications/{applicationId}/documents" : {
+      "get" : {
+        "operationId" : "listApplicationDocuments",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/DocumentResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Application documents" ]
+      },
+      "post" : {
+        "operationId" : "uploadApplicationDocument",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "query",
+          "name" : "kind",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "POSTING", "RESUME", "COVER_LETTER", "OTHER" ]
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "file" : {
+                    "type" : "string",
+                    "format" : "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DocumentResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Application documents" ]
+      }
+    },
+    "/api/applications/{applicationId}/documents/posting-capture" : {
+      "post" : {
+        "operationId" : "capturePosting",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CaptureResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Application documents" ]
+      }
+    },
+    "/api/applications/{applicationId}/documents/posting-summary" : {
+      "post" : {
+        "operationId" : "savePostingSummary",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DocumentResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Application documents" ]
+      }
+    },
+    "/api/applications/{applicationId}/documents/{documentId}" : {
+      "delete" : {
+        "operationId" : "deleteApplicationDocument",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "path",
+          "name" : "documentId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "Application documents" ]
+      }
+    },
+    "/api/applications/{applicationId}/documents/{documentId}/content" : {
+      "get" : {
+        "operationId" : "downloadApplicationDocument",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "path",
+          "name" : "documentId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/octet-stream" : {
+                "schema" : {
+                  "type" : "string",
+                  "format" : "binary"
+                }
+              }
+            },
+            "description" : "The file, inline for PDFs and images"
+          }
+        },
+        "tags" : [ "Application documents" ]
+      }
+    },
+    "/api/applications/{id}" : {
+      "delete" : {
+        "operationId" : "deleteApplication",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "Applications" ]
+      },
+      "get" : {
+        "operationId" : "getApplication",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApplicationResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Applications" ]
+      },
+      "put" : {
+        "operationId" : "updateApplication",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateApplicationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApplicationResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Applications" ]
+      }
+    },
+    "/api/applications/{id}/follow-up" : {
+      "put" : {
+        "operationId" : "scheduleFollowUp",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/FollowUpRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApplicationResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Applications" ]
+      }
+    },
+    "/api/applications/{id}/history" : {
+      "get" : {
+        "operationId" : "getApplicationHistory",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/StatusChangeResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Applications" ]
+      }
+    },
+    "/api/applications/{id}/status" : {
+      "patch" : {
+        "operationId" : "changeApplicationStatus",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangeStatusRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApplicationResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Applications" ]
+      }
+    },
+    "/api/auth/csrf" : {
+      "get" : {
+        "operationId" : "getCsrfToken",
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "Auth" ]
+      }
+    },
+    "/api/auth/login" : {
+      "post" : {
+        "operationId" : "login",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CurrentUserResponse"
+                }
+              }
+            },
+            "description" : "Signed in"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Wrong email or password"
+          }
+        },
+        "tags" : [ "Auth" ]
+      }
+    },
+    "/api/auth/me" : {
+      "get" : {
+        "operationId" : "getCurrentUser",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CurrentUserResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Auth" ]
+      }
+    },
+    "/api/auth/register" : {
+      "post" : {
+        "operationId" : "register",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CurrentUserResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Auth" ]
+      }
+    },
+    "/api/cover-letters/status" : {
+      "get" : {
+        "operationId" : "getCoverLetterStatus",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CoverLetterStatusResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Cover letters" ]
+      }
+    },
+    "/api/documents" : {
+      "get" : {
+        "operationId" : "listLibraryDocuments",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/DocumentResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Library documents" ]
+      },
+      "post" : {
+        "operationId" : "uploadLibraryDocument",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "kind",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "POSTING", "RESUME", "COVER_LETTER", "OTHER" ]
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "file" : {
+                    "type" : "string",
+                    "format" : "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DocumentResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Library documents" ]
+      }
+    },
+    "/api/documents/{documentId}" : {
+      "delete" : {
+        "operationId" : "deleteLibraryDocument",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "documentId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "Library documents" ]
+      }
+    },
+    "/api/documents/{documentId}/content" : {
+      "get" : {
+        "operationId" : "downloadLibraryDocument",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "documentId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/octet-stream" : {
+                "schema" : {
+                  "type" : "string",
+                  "format" : "binary"
+                }
+              }
+            },
+            "description" : "The file, inline for PDFs and images"
+          }
+        },
+        "tags" : [ "Library documents" ]
+      }
+    },
+    "/api/me/api-keys" : {
+      "get" : {
+        "operationId" : "listApiKeys",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ApiKeyResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "API Keys" ]
+      }
+    },
+    "/api/me/api-keys/{provider}" : {
+      "delete" : {
+        "operationId" : "deleteApiKey",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "provider",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "API Keys" ]
+      },
+      "put" : {
+        "operationId" : "saveApiKey",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "provider",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveApiKeyRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "API Keys" ]
+      }
+    },
+    "/api/postings/search" : {
+      "get" : {
+        "operationId" : "searchPostings",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "keywords",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        }, {
+          "in" : "query",
+          "name" : "location",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        }, {
+          "in" : "query",
+          "name" : "remoteOnly",
+          "required" : false,
+          "schema" : {
+            "type" : "boolean",
+            "default" : false
+          }
+        }, {
+          "in" : "query",
+          "name" : "sources",
+          "required" : false,
+          "schema" : {
+            "type" : "array",
+            "default" : [ ],
+            "items" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PostingSearchResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Postings" ]
+      }
+    },
+    "/api/postings/sources" : {
+      "get" : {
+        "operationId" : "listJobSources",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/JobSourceResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Postings" ]
+      }
+    },
+    "/api/providers" : {
+      "get" : {
+        "operationId" : "listProviders",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ProviderResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Providers" ]
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "ApiKeyResponse" : {
+        "type" : "object",
+        "properties" : {
+          "hint" : {
+            "type" : [ "string", "null" ]
+          },
+          "provider" : {
+            "type" : "string"
+          },
+          "saved" : {
+            "type" : "boolean"
+          },
+          "updatedAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "hint", "provider", "saved", "updatedAt" ]
+      },
+      "ApplicationResponse" : {
+        "type" : "object",
+        "properties" : {
+          "allowedTransitions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "SAVED", "APPLIED", "INTERVIEWING", "OFFER", "ACCEPTED", "DECLINED", "REJECTED", "WITHDRAWN" ]
+            }
+          },
+          "appliedAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "applyBy" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "company" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "followUpOn" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "jobDescription" : {
+            "type" : [ "string", "null" ]
+          },
+          "jobUrl" : {
+            "type" : [ "string", "null" ]
+          },
+          "location" : {
+            "type" : [ "string", "null" ]
+          },
+          "notes" : {
+            "type" : [ "string", "null" ]
+          },
+          "postedOn" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "remote" : {
+            "type" : [ "boolean", "null" ]
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "salaryCurrency" : {
+            "type" : [ "string", "null" ]
+          },
+          "salaryMax" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "salaryMin" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "salaryPeriod" : {
+            "type" : [ "string", "null" ]
+          },
+          "salaryText" : {
+            "type" : [ "string", "null" ]
+          },
+          "source" : {
+            "type" : [ "string", "null" ]
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "SAVED", "APPLIED", "INTERVIEWING", "OFFER", "ACCEPTED", "DECLINED", "REJECTED", "WITHDRAWN" ]
+          },
+          "statusChangedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "allowedTransitions", "appliedAt", "applyBy", "company", "createdAt", "followUpOn", "id", "jobDescription", "jobUrl", "location", "notes", "postedOn", "remote", "role", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "source", "status", "statusChangedAt", "updatedAt", "version" ]
+      },
+      "CaptureResponse" : {
+        "type" : "object",
+        "properties" : {
+          "descriptionSaved" : {
+            "type" : "boolean"
+          },
+          "document" : {
+            "$ref" : "#/components/schemas/DocumentResponse"
+          }
+        },
+        "required" : [ "descriptionSaved", "document" ]
+      },
+      "ChangeStatusRequest" : {
+        "type" : "object",
+        "properties" : {
+          "status" : {
+            "type" : "string",
+            "enum" : [ "SAVED", "APPLIED", "INTERVIEWING", "OFFER", "ACCEPTED", "DECLINED", "REJECTED", "WITHDRAWN" ],
+            "minLength" : 1
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "status", "version" ]
+      },
+      "CoverLetterDraftRequest" : {
+        "type" : "object",
+        "properties" : {
+          "instructions" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 1000,
+            "minLength" : 0
+          },
+          "resumeDocumentId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "resumeDocumentId" ]
+      },
+      "CoverLetterDraftResponse" : {
+        "type" : "object",
+        "properties" : {
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "text" ]
+      },
+      "CoverLetterStatusResponse" : {
+        "type" : "object",
+        "properties" : {
+          "configured" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "configured" ]
+      },
+      "CreateApplicationRequest" : {
+        "type" : "object",
+        "properties" : {
+          "applyBy" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "company" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "followUpOn" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "jobDescription" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 100000,
+            "minLength" : 0
+          },
+          "jobUrl" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 2048,
+            "minLength" : 0
+          },
+          "location" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 500,
+            "minLength" : 0
+          },
+          "notes" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 4000,
+            "minLength" : 0
+          },
+          "postedOn" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "remote" : {
+            "type" : [ "boolean", "null" ]
+          },
+          "role" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "salaryCurrency" : {
+            "type" : [ "string", "null" ],
+            "pattern" : "[A-Za-z]{3}"
+          },
+          "salaryMax" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "salaryMin" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "salaryPeriod" : {
+            "type" : [ "string", "null" ],
+            "pattern" : "year|month|week|day|hour"
+          },
+          "salaryText" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "source" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 100,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "company", "role" ]
+      },
+      "CurrentUserResponse" : {
+        "type" : "object",
+        "properties" : {
+          "displayName" : {
+            "type" : [ "string", "null" ]
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "displayName", "email", "id" ]
+      },
+      "DocumentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "applicationId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "contentType" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "filename" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "kind" : {
+            "type" : "string",
+            "enum" : [ "POSTING", "RESUME", "COVER_LETTER", "OTHER" ]
+          },
+          "sizeBytes" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "applicationId", "contentType", "createdAt", "filename", "id", "kind", "sizeBytes" ]
+      },
+      "FollowUpRequest" : {
+        "type" : "object",
+        "properties" : {
+          "followUpOn" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "version" ]
+      },
+      "JobPostingResponse" : {
+        "type" : "object",
+        "properties" : {
+          "closesOn" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "company" : {
+            "type" : [ "string", "null" ]
+          },
+          "description" : {
+            "type" : [ "string", "null" ]
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : [ "string", "null" ]
+          },
+          "postedAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "remote" : {
+            "type" : "boolean"
+          },
+          "salaryCurrency" : {
+            "type" : [ "string", "null" ]
+          },
+          "salaryMax" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "salaryMin" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "salaryPeriod" : {
+            "type" : [ "string", "null" ]
+          },
+          "salaryText" : {
+            "type" : [ "string", "null" ]
+          },
+          "snippet" : {
+            "type" : [ "string", "null" ]
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "closesOn", "company", "description", "id", "location", "postedAt", "remote", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "snippet", "source", "tags", "title", "url" ]
+      },
+      "JobSourceResponse" : {
+        "type" : "object",
+        "properties" : {
+          "attributionUrl" : {
+            "type" : "string"
+          },
+          "coverage" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "usesYourKey" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "attributionUrl", "coverage", "id", "name", "usesYourKey" ]
+      },
+      "LoginRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "password" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "email", "password" ]
+      },
+      "PostingSearchResponse" : {
+        "type" : "object",
+        "properties" : {
+          "postings" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/JobPostingResponse"
+            }
+          },
+          "sources" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SourceResultResponse"
+            }
+          }
+        },
+        "required" : [ "postings", "sources" ]
+      },
+      "ProblemDetail" : {
+        "type" : "object",
+        "properties" : {
+          "detail" : {
+            "type" : "string"
+          },
+          "instance" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "properties" : {
+            "type" : "object",
+            "additionalProperties" : { }
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "format" : "uri"
+          }
+        }
+      },
+      "ProviderFieldResponse" : {
+        "type" : "object",
+        "properties" : {
+          "label" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "required" : {
+            "type" : "boolean"
+          },
+          "secret" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "label", "name", "required", "secret" ]
+      },
+      "ProviderResponse" : {
+        "type" : "object",
+        "properties" : {
+          "cost" : {
+            "type" : "string",
+            "enum" : [ "FREE", "PAID" ]
+          },
+          "coverage" : {
+            "type" : "string"
+          },
+          "fields" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ProviderFieldResponse"
+            }
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string",
+            "enum" : [ "JOB_SOURCE", "AI" ]
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "needsKey" : {
+            "type" : "boolean"
+          },
+          "pricing" : {
+            "type" : "string"
+          },
+          "signUpUrl" : {
+            "type" : "string"
+          },
+          "steps" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "turnedOff" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "cost", "coverage", "fields", "id", "kind", "name", "needsKey", "pricing", "signUpUrl", "steps", "turnedOff" ]
+      },
+      "RegisterRequest" : {
+        "type" : "object",
+        "properties" : {
+          "displayName" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "email" : {
+            "type" : "string",
+            "format" : "email",
+            "maxLength" : 320,
+            "minLength" : 0
+          },
+          "password" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 12
+          }
+        },
+        "required" : [ "email", "password" ]
+      },
+      "SaveApiKeyRequest" : {
+        "type" : "object",
+        "properties" : {
+          "values" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          }
+        },
+        "required" : [ "values" ]
+      },
+      "SaveCoverLetterRequest" : {
+        "type" : "object",
+        "properties" : {
+          "text" : {
+            "type" : "string",
+            "maxLength" : 20000,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "text" ]
+      },
+      "SourceResultResponse" : {
+        "type" : "object",
+        "properties" : {
+          "count" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "error" : {
+            "type" : [ "string", "null" ]
+          },
+          "id" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "count", "error", "id" ]
+      },
+      "StatusChangeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "changedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "fromStatus" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "SAVED", "APPLIED", "INTERVIEWING", "OFFER", "ACCEPTED", "DECLINED", "REJECTED", "WITHDRAWN" ]
+          },
+          "toStatus" : {
+            "type" : "string",
+            "enum" : [ "SAVED", "APPLIED", "INTERVIEWING", "OFFER", "ACCEPTED", "DECLINED", "REJECTED", "WITHDRAWN" ]
+          }
+        },
+        "required" : [ "changedAt", "fromStatus", "toStatus" ]
+      },
+      "UpdateApplicationRequest" : {
+        "type" : "object",
+        "properties" : {
+          "applyBy" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "company" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "followUpOn" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "jobDescription" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 100000,
+            "minLength" : 0
+          },
+          "jobUrl" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 2048,
+            "minLength" : 0
+          },
+          "location" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 500,
+            "minLength" : 0
+          },
+          "notes" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 4000,
+            "minLength" : 0
+          },
+          "postedOn" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "remote" : {
+            "type" : [ "boolean", "null" ]
+          },
+          "role" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "salaryCurrency" : {
+            "type" : [ "string", "null" ],
+            "pattern" : "[A-Za-z]{3}"
+          },
+          "salaryMax" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "salaryMin" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "salaryPeriod" : {
+            "type" : [ "string", "null" ],
+            "pattern" : "year|month|week|day|hour"
+          },
+          "salaryText" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "source" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "company", "role", "version" ]
+      }
+    }
+  }
+}

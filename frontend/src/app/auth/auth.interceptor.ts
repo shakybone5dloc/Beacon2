@@ -2,10 +2,11 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { getCurrentUser, login } from '../api/functions';
 import { AuthState } from './auth-state';
 
 /** These answer 401 as part of their normal job, so they don't mean the session ended. */
-const EXPECTS_401 = ['/api/auth/login', '/api/auth/me'];
+const EXPECTS_401 = [login.PATH, getCurrentUser.PATH];
 
 /** A 401 from the API means the session ended: forget the user and go to sign-in. */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {

@@ -27,16 +27,17 @@ describe('DocumentsApi', () => {
     http.expectOne('/api/documents').flush([]);
   });
 
-  it('uploads the file and kind as form data', () => {
+  it('uploads the file as form data, with the kind in the query string', () => {
     const file = new File(['hello'], 'resume.pdf', { type: 'application/pdf' });
 
     api.upload('a1', file, 'RESUME').subscribe();
 
-    const req = http.expectOne('/api/applications/a1/documents');
-    expect(req.request.method).toBe('POST');
+    const req = http.expectOne(
+      (r) => r.method === 'POST' && r.url === '/api/applications/a1/documents',
+    );
     const body = req.request.body as FormData;
     expect((body.get('file') as File).name).toBe('resume.pdf');
-    expect(body.get('kind')).toBe('RESUME');
+    expect(req.request.params.get('kind')).toBe('RESUME');
     req.flush(aDocument());
   });
 

@@ -3,6 +3,7 @@ package dev.beacon.contracts.applications;
 import dev.beacon.domain.applications.ApplicationStatus;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.annotation.Nullable;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -13,23 +14,23 @@ public record ApplicationResponse (
         UUID id,
         String company,
         String role,
-        String jobUrl,
-        String notes,
-        LocalDate applyBy,
-        LocalDate followUpOn,
-        String location,
-        Boolean remote,
-        Integer salaryMin,
-        Integer salaryMax,
-        String salaryCurrency,
-        String salaryPeriod,
-        String salaryText,
-        String source,
-        LocalDate postedOn,
+        @Nullable String jobUrl,
+        @Nullable String notes,
+        @Nullable LocalDate applyBy,
+        @Nullable LocalDate followUpOn,
+        @Nullable String location,
+        @Nullable Boolean remote,
+        @Nullable Integer salaryMin,
+        @Nullable Integer salaryMax,
+        @Nullable String salaryCurrency,
+        @Nullable String salaryPeriod,
+        @Nullable String salaryText,
+        @Nullable String source,
+        @Nullable LocalDate postedOn,
         /** Null in list responses to keep the board light; present when fetching one application. */
-        String jobDescription,
+        @Nullable String jobDescription,
         /** When the application first moved to APPLIED; null if it never has. */
-        Instant appliedAt,
+        @Nullable Instant appliedAt,
         @Schema(implementation = ApplicationStatus.class)
         String status,
         Instant createdAt,

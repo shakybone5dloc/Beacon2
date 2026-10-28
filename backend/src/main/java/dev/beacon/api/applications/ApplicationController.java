@@ -12,6 +12,7 @@ import dev.beacon.contracts.applications.StatusChangeResponse;
 import dev.beacon.contracts.applications.UpdateApplicationRequest;
 import dev.beacon.domain.applications.ApplicationStatus;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,7 @@ public class ApplicationController {
     }
 
     @Operation(operationId = "createApplication")
+    @ApiResponse(responseCode = "201", useReturnTypeSchema = true)
     @PostMapping
     public ResponseEntity<ApplicationResponse> create(@AuthenticationPrincipal SignedInUser user, @Valid @RequestBody CreateApplicationRequest request) {
         requireOrderedSalary(request);
@@ -67,6 +69,7 @@ public class ApplicationController {
     }
 
     @Operation(operationId = "deleteApplication")
+    @ApiResponse(responseCode = "204")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID id) {
         return service.delete(user.id(), id)

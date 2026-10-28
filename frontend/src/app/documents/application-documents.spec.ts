@@ -89,8 +89,10 @@ describe('ApplicationDocuments', () => {
     Object.defineProperty(input, 'files', { value: [new File(['x'], 'letter.pdf')] });
     input.dispatchEvent(new Event('change'));
 
-    const req = http.expectOne('/api/applications/a1/documents');
-    expect((req.request.body as FormData).get('kind')).toBe('COVER_LETTER');
+    const req = http.expectOne(
+      (r) => r.method === 'POST' && r.url === '/api/applications/a1/documents',
+    );
+    expect(req.request.params.get('kind')).toBe('COVER_LETTER');
     req.flush(aDocument({ kind: 'COVER_LETTER', filename: 'letter.pdf' }));
     await fixture.whenStable();
 
@@ -104,7 +106,7 @@ describe('ApplicationDocuments', () => {
     input.dispatchEvent(new Event('change'));
 
     http
-      .expectOne('/api/applications/a1/documents')
+      .expectOne((r) => r.method === 'POST' && r.url === '/api/applications/a1/documents')
       .flush(
         { errors: { file: ['Upload a PDF, Word, ... file'] } },
         { status: 400, statusText: 'Bad Request' },

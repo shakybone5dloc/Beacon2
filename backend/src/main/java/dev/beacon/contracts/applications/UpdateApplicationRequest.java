@@ -13,7 +13,7 @@ import java.time.LocalDate;
 public record UpdateApplicationRequest(
     @NotBlank @Size(max = 200) String company,
     @NotBlank @Size(max = 200) String role,
-    @URL @Size(max = 2048) String jobUrl,
+    @Nullable @URL @Size(max = 2048) String jobUrl,
     @Nullable @Size(max = 4000) String notes,
     @Nullable LocalDate applyBy,
     @Nullable LocalDate followUpOn,

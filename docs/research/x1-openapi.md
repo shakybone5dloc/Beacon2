@@ -8,6 +8,7 @@ Read-only inventory of the code as of commit bc76b8a (2026-10-28). Tools in scop
 - No response field is marked required, so every generated response field would be optional (`?`).
 - Default operationIds repeat (`list` x4, `delete` x4, `upload` x2, `download` x2, `save` x2) and would get unstable `_1`/`_2` suffixes. Every endpoint needs an explicit `@Operation(operationId = ...)`, plus `@Tag` per controller.
 - `frontend/tsconfig.json` has no `"strict": true`, so null checks are off; nullability in the generated types won't be enforced until strict mode is turned on.
+  - Correction (checked during the migration): TypeScript 6 turns strict mode on by default, so null checks were already on.
 
 ## Backend endpoints
 

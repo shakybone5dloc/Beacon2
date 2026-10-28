@@ -1,3 +1,16 @@
+import * as api from '../api/models';
+
+/** Generated from the API; the names here are the ones the app uses. */
+export type ApplicationResponse = api.ApplicationResponse;
+export type StatusChange = api.StatusChangeResponse;
+export type CreateApplicationRequest = api.CreateApplicationRequest;
+export type UpdateApplicationRequest = api.UpdateApplicationRequest;
+export type FollowUpRequest = api.FollowUpRequest;
+export type ChangeStatusRequest = api.ChangeStatusRequest;
+
+export type ApplicationStatus = ApplicationResponse['status'];
+
+/** Board column order. */
 export const STATUSES = [
   'SAVED',
   'APPLIED',
@@ -7,84 +20,38 @@ export const STATUSES = [
   'DECLINED',
   'REJECTED',
   'WITHDRAWN',
-] as const;
+] as const satisfies readonly ApplicationStatus[];
 
-export type ApplicationStatus = (typeof STATUSES)[number];
+// Fails to compile if the API gains a status the board doesn't list.
+const everyStatusListed: Exclude<ApplicationStatus, (typeof STATUSES)[number]> extends never
+  ? true
+  : never = true;
+void everyStatusListed;
 
 export const SALARY_PERIODS = ['year', 'month', 'week', 'day', 'hour'] as const;
 export type SalaryPeriod = (typeof SALARY_PERIODS)[number];
 
 /** Facts copied from the job ad; shared by responses and requests. */
-export interface PostingDetails {
-  location: string | null;
-  remote: boolean | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  /** 3-letter code, e.g. USD. */
-  salaryCurrency: string | null;
-  salaryPeriod: string | null;
-  /** Free-text pay for ads without numbers. */
-  salaryText: string | null;
-  /** Where it was found: a job board, "Referral", "Company site"... */
-  source: string | null;
-  /** YYYY-MM-DD */
-  postedOn: string | null;
-  /** Full text of the ad. Null in list responses. */
-  jobDescription: string | null;
-}
+export type PostingDetails = Required<
+  Pick<
+    CreateApplicationRequest,
+    | 'location'
+    | 'remote'
+    | 'salaryMin'
+    | 'salaryMax'
+    | 'salaryCurrency'
+    | 'salaryPeriod'
+    | 'salaryText'
+    | 'source'
+    | 'postedOn'
+    | 'jobDescription'
+  >
+>;
 
-export interface ApplicationResponse extends PostingDetails {
-  id: string;
-  company: string;
-  role: string;
-  jobUrl: string | null;
-  notes: string | null;
-  /** Last day the posting accepts applications (YYYY-MM-DD). */
-  applyBy: string | null;
-  /** When to chase this application next (YYYY-MM-DD). */
-  followUpOn: string | null;
-  status: ApplicationStatus;
-  createdAt: string;
-  updatedAt: string;
-  /** When the application entered its current status. */
-  statusChangedAt: string;
-  /** When it first moved to APPLIED; null if never, and in list responses. */
-  appliedAt: string | null;
-  version: number;
-  allowedTransitions: ApplicationStatus[];
-}
-
-export interface StatusChange {
-  /** Null for the entry recorded when the application was created. */
-  fromStatus: ApplicationStatus | null;
-  toStatus: ApplicationStatus;
-  changedAt: string;
-}
-
-export interface CreateApplicationRequest extends PostingDetails {
-  company: string;
-  role: string;
-  jobUrl: string | null;
-  notes: string | null;
-  applyBy: string | null;
-  followUpOn: string | null;
-}
-
-export interface UpdateApplicationRequest extends CreateApplicationRequest {
-  version: number;
-}
-
-export interface FollowUpRequest {
-  /** Null clears the follow-up. */
-  followUpOn: string | null;
-  version: number;
-}
-
-export interface ChangeStatusRequest {
-  status: ApplicationStatus;
-  version: number;
-}
-
+/**
+ * Error body for 4xx/5xx answers. Hand-written because the field errors live in
+ * ProblemDetail's extra properties, which the spec doesn't describe.
+ */
 export interface ProblemDetail {
   title?: string;
   detail?: string;

@@ -6,7 +6,9 @@ import dev.beacon.contracts.documents.DocumentResponse;
 import dev.beacon.domain.documents.DocumentKind;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,6 +38,7 @@ public class LibraryDocumentsController {
     }
 
     @Operation(operationId = "uploadLibraryDocument")
+    @ApiResponse(responseCode = "201", useReturnTypeSchema = true)
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<DocumentResponse> upload(
             @AuthenticationPrincipal SignedInUser user,
@@ -48,6 +51,8 @@ public class LibraryDocumentsController {
     }
 
     @Operation(operationId = "downloadLibraryDocument")
+    @ApiResponse(responseCode = "200", description = "The file, inline for PDFs and images",
+            content = @Content(mediaType = "application/octet-stream", schema = @Schema(type = "string", format = "binary")))
     @GetMapping("/{documentId}/content")
     public ResponseEntity<byte[]> download(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID documentId) {
         return documents.find(user.id(), null, documentId)
@@ -56,6 +61,7 @@ public class LibraryDocumentsController {
     }
 
     @Operation(operationId = "deleteLibraryDocument")
+    @ApiResponse(responseCode = "204")
     @DeleteMapping("/{documentId}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID documentId) {
         return documents.delete(user.id(), null, documentId)

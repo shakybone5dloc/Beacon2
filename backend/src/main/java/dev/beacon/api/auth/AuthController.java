@@ -47,6 +47,7 @@ public class AuthController {
 
     /** Touching the token makes Spring write the XSRF-TOKEN cookie the frontend sends back. */
     @Operation(operationId = "getCsrfToken")
+    @ApiResponse(responseCode = "204")
     @GetMapping("/csrf")
     public ResponseEntity<Void> csrf(@Parameter(hidden = true) CsrfToken token) {
         token.getToken();
@@ -54,6 +55,7 @@ public class AuthController {
     }
 
     @Operation(operationId = "register")
+    @ApiResponse(responseCode = "201", useReturnTypeSchema = true)
     @PostMapping("/register")
     public ResponseEntity<CurrentUserResponse> register(@Valid @RequestBody RegisterRequest body,
                                                         HttpServletRequest request, HttpServletResponse response) {

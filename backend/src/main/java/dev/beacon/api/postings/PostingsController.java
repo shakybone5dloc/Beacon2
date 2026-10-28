@@ -34,7 +34,7 @@ public class PostingsController {
         return service.sources(user.id());
     }
 
-    /** {@code sources} is a comma-separated list of source ids; omit it to search every source the user can. */
+    /** {@code sources} lists source ids, repeated or comma-separated; omit it to search every source the user can. */
     @Operation(operationId = "searchPostings")
     @GetMapping("/search")
     public PostingSearchResponse search(

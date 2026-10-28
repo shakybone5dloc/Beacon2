@@ -1,31 +1,38 @@
-import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { BeaconApi } from '../api/beacon-api';
+import {
+  changeApplicationStatus,
+  createApplication,
+  deleteApplication,
+  getApplication,
+  getApplicationHistory,
+  listApplications,
+  scheduleFollowUp,
+  updateApplication,
+} from '../api/functions';
 import {
   ApplicationResponse,
   ApplicationStatus,
-  ChangeStatusRequest,
   CreateApplicationRequest,
-  FollowUpRequest,
   StatusChange,
   UpdateApplicationRequest,
 } from './application.model';
 
 @Injectable({ providedIn: 'root' })
 export class ApplicationsApi {
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/applications';
+  private readonly api = inject(BeaconApi);
 
   list(): Observable<ApplicationResponse[]> {
-    return this.http.get<ApplicationResponse[]>(this.baseUrl);
+    return this.api.invoke(listApplications);
   }
 
   getById(id: string): Observable<ApplicationResponse> {
-    return this.http.get<ApplicationResponse>(`${this.baseUrl}/${id}`);
+    return this.api.invoke(getApplication, { id });
   }
 
   history(id: string): Observable<StatusChange[]> {
-    return this.http.get<StatusChange[]>(`${this.baseUrl}/${id}/history`);
+    return this.api.invoke(getApplicationHistory, { id });
   }
 
   changeStatus(
@@ -33,16 +40,15 @@ export class ApplicationsApi {
     status: ApplicationStatus,
     version: number,
   ): Observable<ApplicationResponse> {
-    const body: ChangeStatusRequest = { status, version };
-    return this.http.patch<ApplicationResponse>(`${this.baseUrl}/${id}/status`, body);
+    return this.api.invoke(changeApplicationStatus, { id, body: { status, version } });
   }
 
   create(request: CreateApplicationRequest): Observable<ApplicationResponse> {
-    return this.http.post<ApplicationResponse>(`${this.baseUrl}`, request);
+    return this.api.invoke(createApplication, { body: request });
   }
 
   update(id: string, request: UpdateApplicationRequest): Observable<ApplicationResponse> {
-    return this.http.put<ApplicationResponse>(`${this.baseUrl}/${id}`, request);
+    return this.api.invoke(updateApplication, { id, body: request });
   }
 
   scheduleFollowUp(
@@ -50,11 +56,10 @@ export class ApplicationsApi {
     followUpOn: string | null,
     version: number,
   ): Observable<ApplicationResponse> {
-    const body: FollowUpRequest = { followUpOn, version };
-    return this.http.put<ApplicationResponse>(`${this.baseUrl}/${id}/follow-up`, body);
+    return this.api.invoke(scheduleFollowUp, { id, body: { followUpOn, version } });
   }
 
   delete(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+    return this.api.invoke(deleteApplication, { id });
   }
 }

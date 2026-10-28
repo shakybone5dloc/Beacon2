@@ -42,3 +42,6 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Generated from openapi.json by `npm run generate:api` (runs before start, build and test)
+/src/app/api/

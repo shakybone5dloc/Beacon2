@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/ng-openapi-gen/ng-openapi-gen-schema.json",
+  "input": "openapi.json",
+  "output": "src/app/api",
+  "services": false,
+  "apiService": "BeaconApi",
+  "promises": false,
+  "enumStyle": "alias",
+  "endOfLineStyle": "lf",
+  "removeStaleFiles": true,
+  "indexFile": false
+}
