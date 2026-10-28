@@ -19,6 +19,7 @@ Rebuilt from the .NET Beacon, then extended.
 | - | Posting details, documents, posting capture, printable posting / PDF | df3de91, 7b823e8, 8926cf6, 943fa38 |
 | - | AI cover letters (Claude and OpenAI) | df3de91, 81da3bc |
 | - | User accounts (Spring Security), per-user ownership, per-user encrypted API keys, provider guide | 3c31d80, d35c5b5, 59eb080 |
+| X1.1 | OpenAPI spec with springdoc: operationIds, tags, enums, required response fields | 9ebee81 |
 
 ## Next: Companies and people
 
@@ -32,6 +33,7 @@ Rebuilt from the .NET Beacon, then extended.
 - Application form gets a type-ahead company picker instead of a text box.
 - Company page: every application, person and contact for that company.
 - Later: "merge these two companies" for duplicates.
+- Later: optional careers-board id per company (Greenhouse, Lever, Ashby). Those boards need no API key, so Beacon can list a company's open roles directly (a keyless job source per company).
 - Why: people, email domain matching (E3) and the duplicate-pitch warning (R2) all need one company id instead of free-text names that drift apart.
 
 ### R1. People (recruiters, hiring managers, interviewers, referrals)
@@ -58,6 +60,7 @@ Rebuilt from the .NET Beacon, then extended.
 - `interviews`: application, date/time + time zone, type (`PHONE_SCREEN`, `TECHNICAL`, `PANEL`, `ONSITE`, `OTHER`), interviewers (people from R1), location or meeting link, prep notes, debrief notes, outcome.
 - Board shows upcoming interviews ("Interview tomorrow 2:00").
 - `.ics` download per interview so it can go on any calendar.
+- Stale flag for `INTERVIEWING` comes from the last or next interview date instead of days in the status (interview processes can run for months).
 
 ### I2. Application timeline
 - One chronological feed on the detail page: status changes, notes, documents, contacts (R2), interviews (I1), and later emails (E) and inbox accepts.
@@ -79,7 +82,8 @@ Rebuilt from the .NET Beacon, then extended.
 ### E3. Classification and extraction
 - Rules first: known sender domains (Greenhouse, Lever, Workday, LinkedIn/Indeed alerts), subject keywords.
 - Then AI with structured output into a Java record, using the user's own provider keys (same path as cover letters):
-  type (`STATUS_UPDATE`, `JOB_POSTING`, `RECRUITER_OUTREACH`, `IRRELEVANT`), company, role, suggested status, posting URL, recruiter details, confidence.
+  type (`STATUS_UPDATE`, `JOB_POSTING`, `RECRUITER_OUTREACH`, `IRRELEVANT`), company, role, suggested status, posting URL, recruiter details, application deadline, confidence.
+- An extracted deadline ("applications close Nov 15") fills the application's apply-by date.
 - Recruiter outreach: match the person (R1) by sender address or propose a new one with the `RECRUITER` role. The R2 paste-in form gets the same extractor.
 - Status updates: match to an application by sender domain against `companies.email_domains`, falling back to company name.
 - A folder of saved sample emails as an evaluation set to measure accuracy when prompts change.
@@ -105,6 +109,11 @@ Rebuilt from the .NET Beacon, then extended.
 
 Reuses the inbox queue from E4: matches land there to accept or dismiss, same as email postings.
 
+### J0. More job sources (per-user keys)
+- Each new source is a `ProviderCatalog` entry plus a `JobSource` adapter; users add their own key under Settings, and the source then shows up in Find jobs.
+- In order: **JSearch** (best paid pick), **SerpApi Google Jobs** (has a free tier), **Jooble** (free key on request).
+- Not possible: LinkedIn and Indeed have no job-search API.
+
 ### J1. Resume profiles
 - Builds on the existing library documents (`kind = RESUME`, no application): no new file storage.
 - Add a label ("Backend Java", "Test Engineering"...), a default flag, and cached extracted text (`DocumentText`).
@@ -115,6 +124,7 @@ Reuses the inbox queue from E4: matches land there to accept or dismiss, same as
 - Compare a posting with a resume and return a structured result, not just a number:
   score (0-100), matched skills, gaps, dealbreakers (location, salary floor, clearance, sponsorship), one-paragraph rationale.
 - Uses the user's own AI provider keys, same path as cover letters.
+- The same call extracts an application deadline from the description when the job source gave none; it fills apply-by.
 - Cost control: cheap pre-filter first (keywords, then pgvector embedding similarity from the backlog item), LLM only on the top candidates.
 - Cache scores per (posting fingerprint, resume version) so re-runs don't re-pay.
 - Show the score on job search results and on existing applications; suggest which resume fits a posting best.
@@ -127,6 +137,7 @@ Reuses the inbox queue from E4: matches land there to accept or dismiss, same as
   (fingerprint: source + external id, falling back to normalized company + title + location).
 - Matches at or above the minimum score go to the inbox queue as `JOB_SEARCH_MATCH`, with the fit breakdown shown on the item.
 - Accept creates a `SAVED` application with posting details, company (R0) and the chosen resume attached.
+- The posting's close date (USAJOBS and Himalayas give one) becomes the application's apply-by date. Saving a Find jobs result by hand should do the same today.
 - Dismissals are remembered (and can feed back into the minimum score later).
 - Optional daily summary notification: "6 new matches, best 87".
 
@@ -151,11 +162,19 @@ Reuses the inbox queue from E4: matches land there to accept or dismiss, same as
 ### A5. Weekly digest
 - Email (or in-app) summary: follow-ups due, stale applications, upcoming interviews, new job matches.
 
+## Board (any time)
+
+### B1. Search, filter and drag-and-drop
+- Search box and filters on the board (company, role, source, remote, has follow-up due).
+- Drag cards between columns with Angular CDK; only allowed transitions accept a drop, with the same 409 conflict handling as the move buttons.
+
 ## Engineering (any time; earlier is cheaper)
 
 ### X1. OpenAPI + generated Angular client
 - Springdoc generates the OpenAPI spec; generate TypeScript models and services from it.
 - Ends hand-syncing TypeScript interfaces with Java records.
+- Step 1 (backend prep) done in 9ebee81; the remaining steps are in `docs/research/x1-openapi.md`.
+- Turn on `"strict": true` in `frontend/tsconfig.json`, so the generated types' nullability is actually checked.
 
 ### X2. Observability
 - Micrometer metrics, structured JSON logs, tracing (OpenTelemetry).
