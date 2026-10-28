@@ -11,6 +11,8 @@ import dev.beacon.contracts.applications.PostingFields;
 import dev.beacon.contracts.applications.StatusChangeResponse;
 import dev.beacon.contracts.applications.UpdateApplicationRequest;
 import dev.beacon.domain.applications.ApplicationStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,6 +22,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Applications")
 @RestController
 @RequestMapping("/api/applications")
 public class ApplicationController {
@@ -30,6 +33,7 @@ public class ApplicationController {
         this.service = service;
     }
 
+    @Operation(operationId = "createApplication")
     @PostMapping
     public ResponseEntity<ApplicationResponse> create(@AuthenticationPrincipal SignedInUser user, @Valid @RequestBody CreateApplicationRequest request) {
         requireOrderedSalary(request);
@@ -39,16 +43,19 @@ public class ApplicationController {
                 .body(response);
     }
 
+    @Operation(operationId = "getApplication")
     @GetMapping("/{id}")
     public ResponseEntity<ApplicationResponse> getById(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID id) {
         return ResponseEntity.of(service.getById(user.id(), id));
     }
 
+    @Operation(operationId = "listApplications")
     @GetMapping
     public List<ApplicationResponse> getAll(@AuthenticationPrincipal SignedInUser user) {
         return service.list(user.id());
     }
 
+    @Operation(operationId = "updateApplication")
     @PutMapping("/{id}")
     public ResponseEntity<ApplicationResponse> update(
             @AuthenticationPrincipal SignedInUser user,
@@ -59,6 +66,7 @@ public class ApplicationController {
         return ResponseEntity.of(service.update(user.id(), id, request));
     }
 
+    @Operation(operationId = "deleteApplication")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID id) {
         return service.delete(user.id(), id)
@@ -66,6 +74,7 @@ public class ApplicationController {
                 : ResponseEntity.notFound().build();
     }
 
+    @Operation(operationId = "scheduleFollowUp")
     @PutMapping("/{id}/follow-up")
     public ResponseEntity<ApplicationResponse> scheduleFollowUp(
             @AuthenticationPrincipal SignedInUser user,
@@ -75,11 +84,13 @@ public class ApplicationController {
         return ResponseEntity.of(service.scheduleFollowUp(user.id(), id, request));
     }
 
+    @Operation(operationId = "getApplicationHistory")
     @GetMapping("/{id}/history")
     public ResponseEntity<List<StatusChangeResponse>> history(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID id) {
         return ResponseEntity.of(service.history(user.id(), id));
     }
 
+    @Operation(operationId = "changeApplicationStatus")
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApplicationResponse> changeStatus(
             @AuthenticationPrincipal SignedInUser user,

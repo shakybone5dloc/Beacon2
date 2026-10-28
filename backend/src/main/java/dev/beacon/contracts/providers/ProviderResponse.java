@@ -1,5 +1,7 @@
 package dev.beacon.contracts.providers;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
 /**
@@ -11,7 +13,9 @@ import java.util.List;
 public record ProviderResponse(
         String id,
         String name,
+        @Schema(allowableValues = {"JOB_SOURCE", "AI"})
         String kind,
+        @Schema(allowableValues = {"FREE", "PAID"})
         String cost,
         boolean needsKey,
         boolean turnedOff,

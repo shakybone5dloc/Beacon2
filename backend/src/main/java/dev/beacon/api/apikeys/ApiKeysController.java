@@ -5,6 +5,8 @@ import dev.beacon.application.apikeys.ApiKeyService;
 import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.apikeys.ApiKeyResponse;
 import dev.beacon.contracts.apikeys.SaveApiKeyRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /** The signed-in user's own API keys. Responses say whether a key is saved, never what it is. */
+@Tag(name = "API Keys")
 @RestController
 @RequestMapping("/api/me/api-keys")
 public class ApiKeysController {
@@ -23,11 +26,13 @@ public class ApiKeysController {
         this.keys = keys;
     }
 
+    @Operation(operationId = "listApiKeys")
     @GetMapping
     public List<ApiKeyResponse> list(@AuthenticationPrincipal SignedInUser user) {
         return keys.list(user.id()).stream().map(ApiKeysController::toResponse).toList();
     }
 
+    @Operation(operationId = "saveApiKey")
     @PutMapping("/{provider}")
     public ResponseEntity<ApiKeyResponse> save(
             @AuthenticationPrincipal SignedInUser user,
@@ -41,6 +46,7 @@ public class ApiKeysController {
         }
     }
 
+    @Operation(operationId = "deleteApiKey")
     @DeleteMapping("/{provider}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal SignedInUser user, @PathVariable String provider) {
         return keys.delete(user.id(), provider)

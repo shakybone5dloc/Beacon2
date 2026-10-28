@@ -6,6 +6,8 @@ import dev.beacon.application.postings.PostingSearchService;
 import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.postings.JobSourceResponse;
 import dev.beacon.contracts.postings.PostingSearchResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Set;
 
+@Tag(name = "Postings")
 @RestController
 @RequestMapping("/api/postings")
 public class PostingsController {
@@ -25,12 +28,14 @@ public class PostingsController {
         this.service = service;
     }
 
+    @Operation(operationId = "listJobSources")
     @GetMapping("/sources")
     public List<JobSourceResponse> sources(@AuthenticationPrincipal SignedInUser user) {
         return service.sources(user.id());
     }
 
     /** {@code sources} is a comma-separated list of source ids; omit it to search every source the user can. */
+    @Operation(operationId = "searchPostings")
     @GetMapping("/search")
     public PostingSearchResponse search(
             @AuthenticationPrincipal SignedInUser user,

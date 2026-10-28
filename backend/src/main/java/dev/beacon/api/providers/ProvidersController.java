@@ -4,12 +4,15 @@ import dev.beacon.application.postings.PostingSearchService;
 import dev.beacon.application.providers.Provider;
 import dev.beacon.application.providers.ProviderCatalog;
 import dev.beacon.contracts.providers.ProviderResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 /** The provider guide: what each provider covers, what it costs and how to get a key. */
+@Tag(name = "Providers")
 @RestController
 public class ProvidersController {
 
@@ -21,6 +24,7 @@ public class ProvidersController {
         this.postings = postings;
     }
 
+    @Operation(operationId = "listProviders")
     @GetMapping("/api/providers")
     public List<ProviderResponse> list() {
         return catalog.all().stream().map(this::toResponse).toList();

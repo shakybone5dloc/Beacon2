@@ -6,6 +6,12 @@ import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.auth.CurrentUserResponse;
 import dev.beacon.contracts.auth.LoginRequest;
 import dev.beacon.contracts.auth.RegisterRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -23,6 +29,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
 /** Register, sign in and look up the signed-in user. Sign-out is handled by the security filter chain. */
+@Tag(name = "Auth")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -39,12 +46,14 @@ public class AuthController {
     }
 
     /** Touching the token makes Spring write the XSRF-TOKEN cookie the frontend sends back. */
+    @Operation(operationId = "getCsrfToken")
     @GetMapping("/csrf")
-    public ResponseEntity<Void> csrf(CsrfToken token) {
+    public ResponseEntity<Void> csrf(@Parameter(hidden = true) CsrfToken token) {
         token.getToken();
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(operationId = "register")
     @PostMapping("/register")
     public ResponseEntity<CurrentUserResponse> register(@Valid @RequestBody RegisterRequest body,
                                                         HttpServletRequest request, HttpServletResponse response) {
@@ -59,6 +68,12 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(user));
     }
 
+    @Operation(operationId = "login")
+    @ApiResponse(responseCode = "200", description = "Signed in",
+            content = @Content(schema = @Schema(implementation = CurrentUserResponse.class)))
+    @ApiResponse(responseCode = "401", description = "Wrong email or password",
+            content = @Content(mediaType = "application/problem+json",
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest body,
                                    HttpServletRequest request, HttpServletResponse response) {
@@ -76,6 +91,7 @@ public class AuthController {
         return ResponseEntity.ok(toResponse((SignedInUser) authentication.getPrincipal()));
     }
 
+    @Operation(operationId = "getCurrentUser")
     @GetMapping("/me")
     public CurrentUserResponse me(@AuthenticationPrincipal SignedInUser user) {
         return toResponse(user);

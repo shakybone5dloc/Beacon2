@@ -6,6 +6,11 @@ import dev.beacon.application.documents.PostingSummaryService;
 import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.documents.CaptureResponse;
 import dev.beacon.contracts.documents.DocumentResponse;
+import dev.beacon.domain.documents.DocumentKind;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +20,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Application documents")
 @RestController
 @RequestMapping("/api/applications/{applicationId}/documents")
 public class ApplicationDocumentsController {
@@ -30,17 +36,19 @@ public class ApplicationDocumentsController {
         this.summary = summary;
     }
 
+    @Operation(operationId = "listApplicationDocuments")
     @GetMapping
     public ResponseEntity<List<DocumentResponse>> list(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId) {
         return ResponseEntity.of(documents.listForApplication(user.id(), applicationId));
     }
 
+    @Operation(operationId = "uploadApplicationDocument")
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<DocumentResponse> upload(
             @AuthenticationPrincipal SignedInUser user,
             @PathVariable UUID applicationId,
             @RequestParam(required = false) MultipartFile file,
-            @RequestParam(defaultValue = "OTHER") String kind
+            @Parameter(schema = @Schema(implementation = DocumentKind.class)) @RequestParam(defaultValue = "OTHER") String kind
     ) {
         var upload = DocumentFiles.validate(file, kind);
         return documents.addToApplication(user.id(), applicationId, upload.kind(), upload.filename(), upload.contentType(), upload.content())
@@ -51,12 +59,14 @@ public class ApplicationDocumentsController {
     }
 
     /** Prints the application's job URL to PDF and attaches it as a POSTING document. */
+    @Operation(operationId = "capturePosting")
     @PostMapping("/posting-capture")
     public ResponseEntity<CaptureResponse> capturePosting(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId) {
         return ResponseEntity.of(capture.capture(user.id(), applicationId));
     }
 
     /** Prints Beacon's own copy of the posting, from the stored details, as a POSTING document. */
+    @Operation(operationId = "savePostingSummary")
     @PostMapping("/posting-summary")
     public ResponseEntity<DocumentResponse> savePostingSummary(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId) {
         return summary.save(user.id(), applicationId)
@@ -66,6 +76,7 @@ public class ApplicationDocumentsController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(operationId = "downloadApplicationDocument")
     @GetMapping("/{documentId}/content")
     public ResponseEntity<byte[]> download(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId, @PathVariable UUID documentId) {
         return documents.find(user.id(), applicationId, documentId)
@@ -73,6 +84,7 @@ public class ApplicationDocumentsController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(operationId = "deleteApplicationDocument")
     @DeleteMapping("/{documentId}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID applicationId, @PathVariable UUID documentId) {
         return documents.delete(user.id(), applicationId, documentId)

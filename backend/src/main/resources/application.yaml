@@ -53,3 +53,8 @@ beacon:
     # Each user drafts with their own OpenAI or Anthropic key (OpenAI when they have both).
     openai-model: ${OPENAI_MODEL:gpt-6-sol}
     anthropic-model: ${ANTHROPIC_MODEL:claude-opus-5-5}
+
+springdoc:
+  swagger-ui:
+    csrf:
+      enabled: true

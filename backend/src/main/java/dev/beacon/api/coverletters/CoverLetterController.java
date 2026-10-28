@@ -7,6 +7,8 @@ import dev.beacon.contracts.coverletters.CoverLetterDraftResponse;
 import dev.beacon.contracts.coverletters.CoverLetterStatusResponse;
 import dev.beacon.contracts.coverletters.SaveCoverLetterRequest;
 import dev.beacon.contracts.documents.DocumentResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.UUID;
 
+@Tag(name = "Cover letters")
 @RestController
 public class CoverLetterController {
 
@@ -24,12 +27,14 @@ public class CoverLetterController {
         this.service = service;
     }
 
+    @Operation(operationId = "getCoverLetterStatus")
     @GetMapping("/api/cover-letters/status")
     public CoverLetterStatusResponse status(@AuthenticationPrincipal SignedInUser user) {
         return new CoverLetterStatusResponse(service.isConfigured(user.id()));
     }
 
     /** Returns a draft for the user to edit; nothing is saved. */
+    @Operation(operationId = "draftCoverLetter")
     @PostMapping("/api/applications/{applicationId}/cover-letter/draft")
     public ResponseEntity<CoverLetterDraftResponse> draft(
             @AuthenticationPrincipal SignedInUser user,
@@ -41,6 +46,7 @@ public class CoverLetterController {
     }
 
     /** Saves the (possibly edited) letter as a PDF cover letter document. */
+    @Operation(operationId = "saveCoverLetter")
     @PostMapping("/api/applications/{applicationId}/cover-letter")
     public ResponseEntity<DocumentResponse> save(
             @AuthenticationPrincipal SignedInUser user,

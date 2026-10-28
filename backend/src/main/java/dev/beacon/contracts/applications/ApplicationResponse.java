@@ -1,5 +1,9 @@
 package dev.beacon.contracts.applications;
 
+import dev.beacon.domain.applications.ApplicationStatus;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -26,11 +30,13 @@ public record ApplicationResponse (
         String jobDescription,
         /** When the application first moved to APPLIED; null if it never has. */
         Instant appliedAt,
+        @Schema(implementation = ApplicationStatus.class)
         String status,
         Instant createdAt,
         Instant updatedAt,
         Instant statusChangedAt,
         Long version,
+        @ArraySchema(schema = @Schema(implementation = ApplicationStatus.class))
         List<String> allowedTransitions
 ) {
 }
