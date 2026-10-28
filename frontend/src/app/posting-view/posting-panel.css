@@ -3,7 +3,7 @@
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: white;
+  background: var(--color-surface-container-lowest);
   overflow: hidden;
   min-height: 0;
 }
@@ -26,7 +26,7 @@
   cursor: pointer;
 }
 .tabs button[aria-selected='true'] {
-  background: white;
+  background: var(--color-surface-container-lowest);
   border-color: var(--border);
   color: var(--text);
   font-weight: 600;

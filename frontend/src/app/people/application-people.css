@@ -47,14 +47,14 @@ select {
   padding: 0.35rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface-container-lowest);
 }
 button {
   font: inherit;
   padding: 0.3rem 0.8rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface-container-lowest);
   cursor: pointer;
 }
 button:disabled {
@@ -62,7 +62,7 @@ button:disabled {
   cursor: default;
 }
 button.remove {
-  color: #b00020;
+  color: var(--color-error);
   font-size: 0.85rem;
 }
 button.link {

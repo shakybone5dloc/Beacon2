@@ -13,7 +13,11 @@
 @import '@fontsource-variable/jetbrains-mono';
 @import 'material-symbols/outlined.css';
 
-@theme {
+/* `dark:` utilities follow the theme the app picked (see ThemeService), not just the OS. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* `static` so every token is emitted: components' own CSS reads them with var(). */
+@theme static {
   /* Surfaces and text */
   --color-background: #f9f9ff;
   --color-surface: #f9f9ff;
@@ -28,12 +32,27 @@
   --color-outline-variant: #c2c6d6;
   --color-hairline: #eaecf0;
   --color-hairline-strong: #d1d5db;
+  --color-muted: #4b5563;
+  --color-subtle: #f3f4f6;
+  --color-hover: #f9fafb;
+  --color-field-border: #e5e7eb;
+  --color-placeholder: #9ca3af;
 
   /* Blue: active pipeline, primary actions, focus */
   --color-primary: #0055cd;
   --color-primary-container: #2f6feb;
   --color-on-primary: #ffffff;
   --color-primary-fixed: #dae2ff;
+  --color-primary-hover: #2559c7;
+  --color-focus-glow: #2f6feb33;
+
+  /* Tags */
+  --color-info: #1d4ed8;
+  --color-info-bg: #eff6ff;
+  --color-info-border: #dbeafe;
+  --color-violet: #6d28d9;
+  --color-violet-bg: #f5f3ff;
+  --color-violet-border: #ede9fe;
 
   /* Amber: only for things that need the user (follow-ups, deadlines) */
   --color-secondary: #855300;
@@ -41,6 +60,8 @@
   --color-attention: #b45309;
   --color-attention-bg: #fffbeb;
   --color-attention-border: #fde68a;
+  --color-attention-strong: #78350f;
+  --color-attention-panel: #fdf6ee;
 
   /* Outcomes */
   --color-success: #047857;
@@ -49,6 +70,7 @@
   --color-error: #ba1a1a;
   --color-error-bg: #fef2f2;
   --color-error-border: #fee2e2;
+  --color-danger: #dc2626;
 
   /* Type */
   --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -105,11 +127,72 @@
 
 /* Page-wide defaults (screens not yet on the design still use the older variables). */
 :root {
-  --text: #141b2b;
-  --muted: #4b5563;
-  --accent: #2f6feb;
-  --border: #e5e7eb;
-  --surface: #f9fafb;
+  --text: var(--color-on-surface);
+  --muted: var(--color-muted);
+  --accent: var(--color-primary-container);
+  --border: var(--color-field-border);
+  --surface: var(--color-hover);
+  color-scheme: light;
+}
+
+/*
+ * Dark theme: the same tokens with dark values. ThemeService (and the script in index.html,
+ * so there's no white flash on load) sets data-theme from the user's choice or the OS.
+ * Screen only, so printing and Save as PDF always come out light.
+ */
+@media screen {
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+
+    --color-background: #0e131d;
+    --color-surface: #0e131d;
+    --color-surface-container-lowest: #151b27;
+    --color-surface-container-low: #1a2130;
+    --color-surface-container: #212a3c;
+    --color-surface-container-high: #283247;
+    --color-surface-container-highest: #303b52;
+    --color-on-surface: #e4e8f2;
+    --color-on-surface-variant: #a8b0c2;
+    --color-outline: #8a92a5;
+    --color-outline-variant: #4a5368;
+    --color-hairline: #262e3f;
+    --color-hairline-strong: #364055;
+    --color-muted: #a1a9ba;
+    --color-subtle: #222a3a;
+    --color-hover: #1d2433;
+    --color-field-border: #343e53;
+    --color-placeholder: #6b7388;
+
+    --color-primary: #a9c1ff;
+    --color-primary-container: #4d88f7;
+    --color-on-primary: #ffffff;
+    --color-primary-fixed: #1f3363;
+    --color-primary-hover: #3a74e6;
+    --color-focus-glow: #4d88f755;
+
+    --color-info: #9dbbff;
+    --color-info-bg: #16213b;
+    --color-info-border: #243a66;
+    --color-violet: #c7b8ff;
+    --color-violet-bg: #211b38;
+    --color-violet-border: #382d5f;
+
+    --color-secondary: #ffb951;
+    --color-secondary-container: #c27c00;
+    --color-attention: #fbbf24;
+    --color-attention-bg: #261e0e;
+    --color-attention-border: #5a4312;
+    --color-attention-strong: #fcd98a;
+    --color-attention-panel: #211b12;
+
+    --color-success: #4ade9c;
+    --color-success-bg: #0f261d;
+    --color-success-border: #1d4d3a;
+    --color-error: #f87171;
+    --color-error-bg: #2a1517;
+    --color-error-border: #552327;
+    --color-danger: #f87171;
+  }
 }
 
 * {
@@ -168,7 +251,7 @@ body {
   input:not([type='checkbox'], [type='radio'], [type='file']),
   select,
   textarea {
-    @apply min-h-8 min-w-0 rounded-sm border border-[#e5e7eb] bg-surface-container-lowest px-2.5 py-1.5 font-sans text-body-md font-normal text-on-surface placeholder:text-[#9ca3af] focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none disabled:bg-[#f3f4f6] disabled:text-outline;
+    @apply min-h-8 min-w-0 rounded-sm border border-field-border bg-surface-container-lowest px-2.5 py-1.5 font-sans text-body-md font-normal text-on-surface placeholder:text-placeholder focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none disabled:bg-subtle disabled:text-outline;
   }
   input[type='checkbox'],
   input[type='radio'] {
@@ -178,11 +261,11 @@ body {
     @apply text-body-sm;
   }
   button {
-    @apply inline-flex min-h-8 cursor-pointer items-center justify-center gap-1.5 rounded-sm border border-hairline-strong bg-surface-container-lowest px-3 font-sans text-body-sm text-on-surface transition-colors hover:bg-[#f9fafb] disabled:cursor-default disabled:opacity-50;
+    @apply inline-flex min-h-8 cursor-pointer items-center justify-center gap-1.5 rounded-sm border border-hairline-strong bg-surface-container-lowest px-3 font-sans text-body-sm text-on-surface transition-colors hover:bg-hover disabled:cursor-default disabled:opacity-50;
   }
   button[type='submit'],
   button.primary {
-    @apply border-black/10 bg-primary-container text-on-primary hover:bg-[#2559c7];
+    @apply border-black/10 bg-primary-container text-on-primary hover:bg-primary-hover;
   }
   details > summary {
     @apply cursor-pointer;
@@ -195,13 +278,13 @@ body {
 @layer components {
   /* Buttons: 32px standard, 28px compact */
   .btn {
-    @apply inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-sm border border-hairline-strong bg-surface-container-lowest px-3 font-sans text-body-sm whitespace-nowrap text-on-surface transition-colors hover:bg-[#f9fafb] disabled:cursor-default disabled:opacity-50;
+    @apply inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-sm border border-hairline-strong bg-surface-container-lowest px-3 font-sans text-body-sm whitespace-nowrap text-on-surface transition-colors hover:bg-hover disabled:cursor-default disabled:opacity-50;
   }
   .btn-primary {
-    @apply border-black/10 bg-primary-container text-on-primary hover:bg-[#2559c7];
+    @apply border-black/10 bg-primary-container text-on-primary hover:bg-primary-hover;
   }
   .btn-danger {
-    @apply border-error-border bg-error-bg text-[#dc2626] hover:bg-[#fee2e2];
+    @apply border-error-border bg-error-bg text-danger hover:bg-error-border;
   }
   .btn-sm {
     @apply h-7 px-2 font-mono text-label-code;
@@ -209,13 +292,13 @@ body {
 
   /* Pills: mono, 20px tall, 4px corners */
   .pill {
-    @apply inline-flex h-5 items-center gap-1 rounded-sm border border-transparent bg-[#f3f4f6] px-2 font-mono text-[11px] leading-none whitespace-nowrap text-[#4b5563];
+    @apply inline-flex h-5 items-center gap-1 rounded-sm border border-transparent bg-subtle px-2 font-mono text-[11px] leading-none whitespace-nowrap text-muted;
   }
   .pill-blue {
-    @apply border-[#dbeafe] bg-[#eff6ff] text-[#1d4ed8];
+    @apply border-info-border bg-info-bg text-info;
   }
   .pill-violet {
-    @apply border-[#ede9fe] bg-[#f5f3ff] text-[#6d28d9];
+    @apply border-violet-border bg-violet-bg text-violet;
   }
   .pill-amber {
     @apply border-attention-border bg-attention-bg text-attention;
@@ -224,7 +307,7 @@ body {
     @apply border-success-border bg-success-bg text-success;
   }
   .pill-red {
-    @apply border-error-border bg-error-bg text-[#b91c1c];
+    @apply border-error-border bg-error-bg text-error;
   }
 
   .card {
@@ -232,18 +315,18 @@ body {
   }
 
   .input {
-    @apply h-8 w-full min-w-0 rounded-sm border border-[#e5e7eb] bg-surface-container-lowest px-2.5 font-sans text-body-md text-on-surface placeholder:text-[#9ca3af] focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none;
+    @apply h-8 w-full min-w-0 rounded-sm border border-field-border bg-surface-container-lowest px-2.5 font-sans text-body-md text-on-surface placeholder:text-placeholder focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none;
   }
 
   .kbd {
-    @apply inline-flex items-center rounded-[3px] border border-b-2 border-hairline-strong bg-[#f3f4f6] px-1 font-mono text-[10px] text-[#4b5563] uppercase;
+    @apply inline-flex items-center rounded-[3px] border border-b-2 border-hairline-strong bg-subtle px-1 font-mono text-[10px] text-muted uppercase;
   }
 }
 
 .notice {
   background: var(--color-attention-bg);
   border: 1px solid var(--color-attention-border);
-  color: #78350f;
+  color: var(--color-attention-strong);
   padding: 0.6rem 0.8rem;
   border-radius: 6px;
 }

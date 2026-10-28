@@ -43,7 +43,7 @@ header h1 {
   padding: 0 0.45rem;
   border-radius: 4px;
   border: 1px solid var(--border);
-  background: white;
+  background: var(--color-surface-container-lowest);
 }
 .original {
   font-size: 0.85rem;

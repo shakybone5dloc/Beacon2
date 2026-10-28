@@ -25,13 +25,13 @@ input {
   border-radius: 6px;
 }
 input.ng-invalid.ng-touched {
-  border-color: #e50000;
+  border-color: var(--color-error);
 }
 button[type='submit'] {
   justify-self: start;
 }
 .error {
-  color: #e50000;
+  color: var(--color-error);
   font-weight: normal;
   font-size: 0.85rem;
 }

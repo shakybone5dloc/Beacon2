@@ -23,7 +23,7 @@ button {
   padding: 0.3rem 0.9rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface-container-lowest);
   color: var(--text);
   cursor: pointer;
 }
@@ -40,7 +40,7 @@ button:disabled {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 2rem 2.25rem;
-  background: white;
+  background: var(--color-surface-container-lowest);
 }
 
 @media print {

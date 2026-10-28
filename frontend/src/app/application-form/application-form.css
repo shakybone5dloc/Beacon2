@@ -18,10 +18,10 @@ textarea {
 }
 input.ng-invalid.ng-touched,
 textarea.ng-invalid.ng-touched {
-  border-color: #e50000;
+  border-color: var(--color-error);
 }
 .error {
-  color: #e50000;
+  color: var(--color-error);
   font-weight: normal;
   font-size: 0.85rem;
 }
@@ -56,7 +56,7 @@ select {
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface-container-lowest);
 }
 .posting {
   border: 1px solid var(--border);
@@ -129,7 +129,7 @@ select {
   color: var(--muted);
 }
 .pay-type input:checked + span {
-  background: white;
+  background: var(--color-surface-container-lowest);
   color: var(--text);
   font-weight: 600;
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);

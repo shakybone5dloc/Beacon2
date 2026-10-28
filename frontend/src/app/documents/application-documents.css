@@ -34,7 +34,7 @@ select,
   padding: 0.2rem 0.7rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface-container-lowest);
   color: var(--text);
   cursor: pointer;
 }
@@ -44,11 +44,11 @@ button:disabled {
 }
 .delete {
   border-color: transparent;
-  color: #b42318;
+  color: var(--color-error);
   padding: 0 0.3rem;
 }
 .delete:hover:not(:disabled) {
-  border-color: #fda29b;
+  border-color: var(--color-error-border);
 }
 .capture {
   display: flex;

@@ -91,11 +91,11 @@ textarea {
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface-container-lowest);
 }
 input.ng-invalid.ng-touched,
 textarea.ng-invalid.ng-touched {
-  border-color: #e50000;
+  border-color: var(--color-error);
 }
 .hint {
   color: var(--muted);
@@ -103,7 +103,7 @@ textarea.ng-invalid.ng-touched {
   font-size: 0.8rem;
 }
 .error {
-  color: #e50000;
+  color: var(--color-error);
   font-weight: normal;
   font-size: 0.85rem;
 }
@@ -116,13 +116,13 @@ button {
   padding: 0.35rem 0.9rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface-container-lowest);
   cursor: pointer;
 }
 button.primary {
   border-color: var(--accent);
   background: var(--accent);
-  color: white;
+  color: var(--color-on-primary);
 }
 button:disabled {
   opacity: 0.6;

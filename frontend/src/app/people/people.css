@@ -91,16 +91,16 @@ button {
   padding: 0.35rem 0.9rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface-container-lowest);
   cursor: pointer;
 }
 button.primary {
   border-color: var(--accent);
   background: var(--accent);
-  color: white;
+  color: var(--color-on-primary);
 }
 button.danger {
-  color: #b00020;
+  color: var(--color-error);
 }
 .applications,
 .people {

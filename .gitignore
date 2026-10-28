@@ -1,3 +1,6 @@
 .env
 .idea/
 /*.sql
+
+# Design exports from Google Stitch (kept locally as a reference)
+/stitch_*

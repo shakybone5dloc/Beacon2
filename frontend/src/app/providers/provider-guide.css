@@ -53,17 +53,17 @@ h2 {
   white-space: nowrap;
   padding: 0.1rem 0.5rem;
   border-radius: 4px;
-  background: #dafbe1;
-  color: #116329;
+  background: var(--color-success-bg);
+  color: var(--color-success);
 }
 .badge.paid {
-  background: #fff4e5;
-  color: #8a4600;
+  background: var(--color-attention-bg);
+  color: var(--color-attention-strong);
 }
 .add {
   font-weight: 600;
 }
 .off {
   font-size: 0.85rem;
-  color: #8a4600;
+  color: var(--color-attention-strong);
 }

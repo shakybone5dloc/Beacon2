@@ -63,10 +63,10 @@ dd {
 .delete {
   font: inherit;
   padding: 0.3rem 0.8rem;
-  border: 1px solid #e50000;
+  border: 1px solid var(--color-error);
   border-radius: 6px;
-  background: white;
-  color: #e50000;
+  background: var(--color-surface-container-lowest);
+  color: var(--color-error);
   cursor: pointer;
 }
 .delete:disabled {
@@ -116,7 +116,7 @@ h2 {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: white;
+  background: var(--color-surface-container-lowest);
   border: 2px solid var(--accent);
 }
 .timeline time,
@@ -136,9 +136,9 @@ h2 {
   white-space: nowrap;
 }
 .chip.urgent {
-  background: #fff4e5;
-  border-color: #f5c26b;
-  color: #92400e;
+  background: var(--color-attention-bg);
+  border-color: var(--color-attention-border);
+  color: var(--color-attention-strong);
   font-weight: 600;
 }
 
@@ -160,7 +160,7 @@ h2 {
   padding: 0.15rem 0.6rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface-container-lowest);
   cursor: pointer;
 }
 .follow-up button:disabled {
@@ -176,7 +176,7 @@ app-application-people {
   max-width: 720px;
 }
 .salary {
-  color: #1a7f37;
+  color: var(--color-success);
   font-weight: 600;
 }
 .description summary {
@@ -233,7 +233,7 @@ app-application-people {
   padding: 0.15rem 0.7rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface-container-lowest);
   color: var(--accent);
   cursor: pointer;
   white-space: nowrap;

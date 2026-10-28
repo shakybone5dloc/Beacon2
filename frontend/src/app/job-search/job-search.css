@@ -35,7 +35,7 @@
   border: 1px solid var(--accent);
   border-radius: 6px;
   background: var(--accent);
-  color: white;
+  color: var(--color-on-primary);
   cursor: pointer;
 }
 .search button:disabled {
@@ -43,7 +43,7 @@
   cursor: wait;
 }
 .error {
-  color: #e50000;
+  color: var(--color-error);
   font-weight: normal;
   font-size: 0.85rem;
 }
@@ -81,8 +81,8 @@
   font-weight: 600;
   padding: 0 0.45rem;
   border-radius: 4px;
-  background: #ddf4ff;
-  color: #0550ae;
+  background: var(--color-info-bg);
+  color: var(--color-info);
 }
 .sources .more {
   font-size: 0.85rem;
@@ -146,7 +146,7 @@
   font-weight: 600;
 }
 .salary {
-  color: #1a7f37;
+  color: var(--color-success);
   font-weight: 600;
 }
 .chip,
@@ -158,9 +158,9 @@
   border: 1px solid var(--border);
 }
 .chip.closes {
-  background: #fff4e5;
-  border-color: #f5c26b;
-  color: #92400e;
+  background: var(--color-attention-bg);
+  border-color: var(--color-attention-border);
+  color: var(--color-attention-strong);
 }
 .snippet {
   margin: 0.4rem 0 0;
@@ -199,7 +199,7 @@
   padding: 0.2rem 0.8rem;
   border: 1px solid var(--accent);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface-container-lowest);
   color: var(--accent);
   cursor: pointer;
 }
@@ -210,7 +210,7 @@
 .saved {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #1a7f37;
+  color: var(--color-success);
 }
 .empty {
   color: var(--muted);
