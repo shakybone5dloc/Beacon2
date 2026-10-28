@@ -1,28 +1,76 @@
-<h1>Applications</h1>
-<p><a routerLink="/applications/new" class="new">+ New application</a></p>
+<div class="mb-space-xl flex flex-col gap-space-md md:flex-row md:items-center md:justify-between">
+  <div class="flex flex-wrap items-center gap-space-md">
+    <h1 class="m-0 text-headline-lg text-on-surface">Board</h1>
+    @if (applications(); as apps) {
+      <div
+        class="summary flex items-center gap-space-xs rounded-sm bg-surface-container px-2.5 py-1 font-mono text-label-code text-on-surface-variant"
+      >
+        <span class="h-2 w-2 rounded-full bg-primary-container" aria-hidden="true"></span>
+        <span
+          >{{ activeCount() }} active
+          {{ activeCount() === 1 ? 'application' : 'applications' }}</span
+        >
+        @if (needsAttention().length > 0) {
+          <span class="text-outline" aria-hidden="true">·</span>
+          <span class="font-semibold text-secondary"
+            >{{ needsAttention().length }} need action</span
+          >
+        }
+      </div>
+    }
+  </div>
+</div>
 
 @if (notice(); as text) {
-  <p class="notice">{{ text }}</p>
+  <p class="notice mb-space-lg">{{ text }}</p>
 }
 
 @if (error(); as message) {
   <p class="notice">{{ message }}</p>
 } @else if (applications() == null) {
-  <p>Loading...</p>
+  <p class="text-on-surface-variant">Loading...</p>
 } @else {
   @if (needsAttention().length > 0) {
-    <section class="attention" aria-labelledby="attention-heading">
-      <h2 id="attention-heading">Needs attention</h2>
-      <ul>
+    <section
+      class="attention mb-space-xl rounded-md border border-attention-border bg-[#fdf6ee] p-space-md"
+      aria-labelledby="attention-heading"
+    >
+      <h2
+        id="attention-heading"
+        class="m-0 mb-space-md flex items-center gap-space-sm text-headline-sm text-attention"
+      >
+        <span class="material-symbols-outlined !text-[18px]" aria-hidden="true">warning</span>
+        Needs attention
+      </h2>
+      <ul class="m-0 grid list-none gap-space-sm p-0 md:grid-cols-2 xl:grid-cols-3">
         @for (card of needsAttention(); track card.app.id) {
-          <li>
-            <a [routerLink]="['/applications', card.app.id]">{{ employerLabel(card.app) }}</a>
-            <span class="role">{{ card.app.role }}</span>
-            <span class="reason">{{ card.attention!.reason }}</span>
+          <li
+            class="flex flex-col gap-space-sm rounded-md border border-hairline bg-surface-container-lowest p-space-md"
+          >
+            <div class="flex items-start justify-between gap-space-sm">
+              <div class="min-w-0">
+                <a
+                  [routerLink]="['/applications', card.app.id]"
+                  class="block truncate text-headline-sm text-on-surface no-underline hover:text-primary-container"
+                  >{{ employerLabel(card.app) }}</a
+                >
+                <span class="block truncate text-body-sm text-on-surface-variant">{{
+                  card.app.role
+                }}</span>
+              </div>
+              <span class="reason pill pill-amber shrink-0">{{ card.attention!.reason }}</span>
+            </div>
             @if (card.attention!.followUp?.urgent) {
-              <button type="button" [disabled]="busy()" (click)="completeFollowUp(card.app)">
-                Done
-              </button>
+              <div class="flex justify-end">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-primary"
+                  [disabled]="busy()"
+                  (click)="completeFollowUp(card.app)"
+                >
+                  Done
+                </button>
+              </div>
             }
           </li>
         }
@@ -30,57 +78,110 @@
     </section>
   }
 
-  <div class="board">
+  <div class="board flex items-start gap-space-lg overflow-x-auto pb-space-sm">
     @for (column of columns(); track column.title) {
-      <section class="column">
-        <h2>
+      <section
+        class="column flex w-[17rem] min-w-[17rem] shrink-0 flex-col gap-space-sm rounded-md border border-hairline bg-surface-container-low p-space-sm xl:w-auto xl:min-w-0 xl:flex-1"
+      >
+        <h2
+          class="m-0 flex items-center gap-space-sm px-space-xs py-space-xs text-headline-sm text-on-surface"
+        >
           {{ column.title }}
-          <span class="count">{{ column.cards.length }}</span>
+          <span
+            class="count rounded-sm bg-surface-container-high px-1.5 font-mono text-label-code font-normal text-on-surface-variant"
+            >{{ column.cards.length }}</span
+          >
         </h2>
 
         @for (card of column.cards; track card.app.id) {
           @let app = card.app;
           @let a = card.attention;
-          <article class="card" [class.flagged]="a?.needsAttention">
-            <div class="title">
-              <a
-                [routerLink]="['/applications', app.id]"
-                class="company"
-                [class.undisclosed]="!app.company"
-                >{{ employerLabel(app) }}</a
-              >
-              @if (a) {
-                <span class="age" [title]="a.ageDescription" [attr.aria-label]="a.ageDescription">
-                  {{ a.age }}
-                </span>
-              }
+          <article
+            class="card flex flex-col gap-space-sm p-space-md transition-colors hover:border-hairline-strong"
+            [class]="a?.needsAttention ? 'flagged border-l-[3px] border-l-secondary-container' : ''"
+          >
+            <div class="min-w-0">
+              <div class="flex items-baseline justify-between gap-space-sm">
+                <a
+                  [routerLink]="['/applications', app.id]"
+                  class="company min-w-0 truncate text-headline-sm text-on-surface no-underline hover:text-primary-container"
+                  [class.undisclosed]="!app.company"
+                  [class.italic]="!app.company"
+                  [title]="employerLabel(app)"
+                  >{{ employerLabel(app) }}</a
+                >
+                @if (a) {
+                  <span
+                    class="age shrink-0 font-mono text-label-code text-on-surface-variant"
+                    [class.text-attention]="a.needsAttention"
+                    [class.font-semibold]="a.needsAttention"
+                    [title]="a.ageDescription"
+                    [attr.aria-label]="a.ageDescription"
+                  >
+                    {{ a.age }}
+                  </span>
+                }
+              </div>
+              <span class="block text-body-sm text-on-surface-variant">{{ app.role }}</span>
             </div>
-            <span>{{ app.role }}</span>
+
             @if (column.statuses.length > 1) {
-              <span class="badge">{{ app.status | titlecase }}</span>
+              <span class="badge pill self-start" [class]="outcomeClass(app.status)">{{
+                app.status | titlecase
+              }}</span>
             }
+
             @if (a?.deadline || a?.followUp) {
-              <div class="dates">
+              <div class="flex flex-wrap gap-space-xs">
                 @if (a?.deadline; as d) {
-                  <span class="chip deadline" [class.urgent]="d.urgent">{{ d.label }}</span>
+                  <span
+                    class="chip deadline pill"
+                    [class.urgent]="d.urgent"
+                    [class.pill-amber]="d.urgent"
+                    >{{ d.label }}</span
+                  >
                 }
                 @if (a?.followUp; as f) {
-                  <span class="chip follow-up" [class.urgent]="f.urgent">{{ f.label }}</span>
+                  <span
+                    class="chip follow-up pill"
+                    [class.urgent]="f.urgent"
+                    [class.pill-amber]="f.urgent"
+                    >{{ f.label }}</span
+                  >
                 }
               </div>
             }
+
+            @if (details(app); as tags) {
+              @if (tags.length > 0) {
+                <div class="flex flex-wrap gap-space-xs">
+                  @for (tag of tags; track tag) {
+                    <span class="pill">{{ tag }}</span>
+                  }
+                </div>
+              }
+            }
+
             @if (app.allowedTransitions.length > 0) {
-              <div class="actions">
-                @for (target of app.allowedTransitions; track target) {
-                  <button type="button" [disabled]="busy()" (click)="move(app, target)">
-                    {{ target | titlecase }}
-                  </button>
-                }
+              <div class="pt-space-xs">
+                <div class="actions flex flex-wrap justify-end gap-space-xs">
+                  @for (target of moves(app); track target) {
+                    <button
+                      type="button"
+                      class="btn btn-sm"
+                      [class]="isForward(target) ? forwardClasses : ''"
+                      [disabled]="busy()"
+                      (click)="move(app, target)"
+                    >
+                      {{ target | titlecase }}
+                    </button>
+                  }
+                </div>
               </div>
             }
           </article>
         } @empty {
-          <p class="empty">Nothing here</p>
+          <p class="empty m-0 px-space-xs py-space-md text-body-sm text-outline">Nothing here</p>
         }
       </section>
     }

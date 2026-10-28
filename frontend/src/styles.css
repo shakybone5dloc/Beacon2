@@ -1,10 +1,115 @@
-/* You can add global styles to this file, and also import other style files */
+/*
+ * Beacon's look: the "Engineered Precision" design system (design brief from Stitch),
+ * built with Tailwind v4. Tokens live in @theme; repeated pieces (buttons, inputs,
+ * pills, cards) are small component classes below so templates stay readable.
+ *
+ * Tailwind's reset (preflight) is left out until every screen uses this design;
+ * screens not yet moved over still rely on browser defaults.
+ */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+@import 'material-symbols/outlined.css';
+
+@theme {
+  /* Surfaces and text */
+  --color-background: #f9f9ff;
+  --color-surface: #f9f9ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f1f3ff;
+  --color-surface-container: #e9edff;
+  --color-surface-container-high: #e1e8fd;
+  --color-surface-container-highest: #dce2f7;
+  --color-on-surface: #141b2b;
+  --color-on-surface-variant: #424654;
+  --color-outline: #737785;
+  --color-outline-variant: #c2c6d6;
+  --color-hairline: #eaecf0;
+  --color-hairline-strong: #d1d5db;
+
+  /* Blue: active pipeline, primary actions, focus */
+  --color-primary: #0055cd;
+  --color-primary-container: #2f6feb;
+  --color-on-primary: #ffffff;
+  --color-primary-fixed: #dae2ff;
+
+  /* Amber: only for things that need the user (follow-ups, deadlines) */
+  --color-secondary: #855300;
+  --color-secondary-container: #fea619;
+  --color-attention: #b45309;
+  --color-attention-bg: #fffbeb;
+  --color-attention-border: #fde68a;
+
+  /* Outcomes */
+  --color-success: #047857;
+  --color-success-bg: #ecfdf5;
+  --color-success-border: #a7f3d0;
+  --color-error: #ba1a1a;
+  --color-error-bg: #fef2f2;
+  --color-error-border: #fee2e2;
+
+  /* Type */
+  --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  --text-headline-xl: 32px;
+  --text-headline-xl--line-height: 40px;
+  --text-headline-xl--letter-spacing: -0.025em;
+  --text-headline-xl--font-weight: 600;
+  --text-headline-lg: 24px;
+  --text-headline-lg--line-height: 32px;
+  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-lg--font-weight: 600;
+  --text-headline-md: 18px;
+  --text-headline-md--line-height: 24px;
+  --text-headline-md--letter-spacing: -0.015em;
+  --text-headline-md--font-weight: 600;
+  --text-headline-sm: 14px;
+  --text-headline-sm--line-height: 20px;
+  --text-headline-sm--letter-spacing: -0.01em;
+  --text-headline-sm--font-weight: 600;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-body-lg--letter-spacing: -0.011em;
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+  --text-body-md--letter-spacing: -0.006em;
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 18px;
+  --text-label-code: 12px;
+  --text-label-code--line-height: 16px;
+  --text-label-code--letter-spacing: -0.01em;
+  --text-label-code--font-weight: 500;
+  --text-label-sm: 11px;
+  --text-label-sm--line-height: 14px;
+  --text-label-sm--letter-spacing: 0.02em;
+  --text-label-sm--font-weight: 500;
+
+  /* Spacing names from the design (4px rhythm) */
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 0.75rem;
+  --spacing-space-lg: 1rem;
+  --spacing-space-xl: 1.5rem;
+  --spacing-gutter-sm: 0.5rem;
+  --spacing-gutter: 1rem;
+  --spacing-gutter-lg: 1.5rem;
+
+  /* Small, orthogonal corners: 4px controls, 6px cards */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.375rem;
+}
+
+/* Page-wide defaults (screens not yet on the design still use the older variables). */
 :root {
-  --text: #1f2328;
-  --muted: #59636e;
+  --text: #141b2b;
+  --muted: #4b5563;
   --accent: #2f6feb;
-  --border: #d8dee4;
-  --surface: #f6f8fa;
+  --border: #e5e7eb;
+  --surface: #f9fafb;
 }
 
 * {
@@ -13,21 +118,73 @@
 
 body {
   margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--text);
-  background: white;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-on-surface);
+  background: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+.material-symbols-outlined {
+  font-size: 18px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+@layer components {
+  /* Buttons: 32px standard, 28px compact */
+  .btn {
+    @apply inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-sm border border-hairline-strong bg-surface-container-lowest px-3 font-sans text-body-sm whitespace-nowrap text-on-surface transition-colors hover:bg-[#f9fafb] disabled:cursor-default disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply border-black/10 bg-primary-container text-on-primary hover:bg-[#2559c7];
+  }
+  .btn-danger {
+    @apply border-error-border bg-error-bg text-[#dc2626] hover:bg-[#fee2e2];
+  }
+  .btn-sm {
+    @apply h-7 px-2 font-mono text-label-code;
+  }
+
+  /* Pills: mono, 20px tall, 4px corners */
+  .pill {
+    @apply inline-flex h-5 items-center gap-1 rounded-sm border border-transparent bg-[#f3f4f6] px-2 font-mono text-[11px] leading-none whitespace-nowrap text-[#4b5563];
+  }
+  .pill-blue {
+    @apply border-[#dbeafe] bg-[#eff6ff] text-[#1d4ed8];
+  }
+  .pill-violet {
+    @apply border-[#ede9fe] bg-[#f5f3ff] text-[#6d28d9];
+  }
+  .pill-amber {
+    @apply border-attention-border bg-attention-bg text-attention;
+  }
+  .pill-green {
+    @apply border-success-border bg-success-bg text-success;
+  }
+  .pill-red {
+    @apply border-error-border bg-error-bg text-[#b91c1c];
+  }
+
+  .card {
+    @apply rounded-md border border-hairline bg-surface-container-lowest;
+  }
+
+  .input {
+    @apply h-8 w-full min-w-0 rounded-sm border border-[#e5e7eb] bg-surface-container-lowest px-2.5 font-sans text-body-md text-on-surface placeholder:text-[#9ca3af] focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none;
+  }
+
+  .kbd {
+    @apply inline-flex items-center rounded-[3px] border border-b-2 border-hairline-strong bg-[#f3f4f6] px-1 font-mono text-[10px] text-[#4b5563] uppercase;
+  }
 }
 
 .notice {
-  background: #fff4e5;
-  border: 1px solid #f5c26b;
+  background: var(--color-attention-bg);
+  border: 1px solid var(--color-attention-border);
+  color: #78350f;
   padding: 0.6rem 0.8rem;
   border-radius: 6px;
 }

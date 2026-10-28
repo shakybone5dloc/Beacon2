@@ -1,24 +1,100 @@
-<header class="top">
-  <a routerLink="/" class="brand">Beacon</a>
-  @if (auth.user(); as user) {
-    <nav>
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
-        >Board</a
+<header class="top sticky top-0 z-50 border-b border-hairline bg-surface-container-lowest">
+  <div class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-space-lg px-gutter">
+    <div class="flex min-w-0 items-center gap-space-lg">
+      <a
+        routerLink="/"
+        class="brand flex items-center gap-space-sm text-headline-md text-on-surface no-underline"
       >
-      <a routerLink="/jobs" routerLinkActive="active">Find jobs</a>
-      <a routerLink="/companies" routerLinkActive="active">Companies</a>
-      <a routerLink="/people" routerLinkActive="active">People</a>
-      <a routerLink="/documents" routerLinkActive="active">Documents</a>
-      <a routerLink="/applications/new" routerLinkActive="active">New application</a>
-    </nav>
-    <div class="account">
-      <span class="who" [title]="user.email">{{ user.displayName ?? user.email }}</span>
-      <a routerLink="/settings/api-keys" routerLinkActive="active">Settings</a>
-      <button type="button" class="link" (click)="signOut()">Sign out</button>
+        <span
+          class="material-symbols-outlined flex h-7 w-7 items-center justify-center rounded-md bg-primary-container text-on-primary"
+          aria-hidden="true"
+          >flare</span
+        >
+        Beacon
+      </a>
+      @if (auth.user()) {
+        <div class="hidden h-5 w-px bg-hairline lg:block"></div>
+        <nav class="hidden items-center gap-space-xs lg:flex" aria-label="Main">
+          @for (link of links; track link.path) {
+            <a
+              [routerLink]="link.path"
+              routerLinkActive="!bg-surface-container !font-semibold !text-on-surface"
+              [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+              class="rounded-sm px-space-md py-1.5 text-body-md text-on-surface-variant no-underline transition-colors hover:bg-surface-container-low hover:text-on-surface"
+              >{{ link.label }}</a
+            >
+          }
+        </nav>
+      }
     </div>
+
+    @if (auth.user(); as user) {
+      <div class="flex shrink-0 items-center gap-space-md">
+        <a routerLink="/applications/new" class="btn btn-primary no-underline">
+          <span class="material-symbols-outlined !text-base">add</span>
+          <span class="hidden sm:inline">New application</span>
+        </a>
+        <div class="hidden h-5 w-px bg-hairline sm:block"></div>
+        <div class="flex items-center gap-space-sm">
+          <span
+            class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-fixed font-mono text-label-code text-primary"
+            aria-hidden="true"
+            >{{ initials() }}</span
+          >
+          <div class="hidden flex-col sm:flex">
+            <span
+              class="who max-w-[14rem] truncate text-headline-sm text-on-surface"
+              [title]="user.email"
+              >{{ user.displayName ?? user.email }}</span
+            >
+            <div class="flex items-center gap-space-sm text-label-sm text-on-surface-variant">
+              <a
+                routerLink="/settings/api-keys"
+                routerLinkActive="!text-primary-container"
+                class="text-on-surface-variant no-underline hover:text-on-surface"
+                >Settings</a
+              >
+              <span class="text-outline-variant" aria-hidden="true">·</span>
+              <button
+                type="button"
+                class="cursor-pointer border-0 bg-transparent p-0 font-sans text-label-sm text-on-surface-variant hover:text-error"
+                (click)="signOut()"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (auth.user()) {
+    <!-- Below lg the nav moves to its own scrollable row. -->
+    <nav
+      class="flex items-center gap-space-xs overflow-x-auto border-t border-hairline px-gutter py-1 whitespace-nowrap lg:hidden"
+      aria-label="Main"
+    >
+      @for (link of mobileLinks; track link.path) {
+        <a
+          [routerLink]="link.path"
+          routerLinkActive="!bg-surface-container !font-semibold !text-on-surface"
+          [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+          class="rounded-sm px-space-sm py-1 text-body-sm text-on-surface-variant no-underline hover:bg-surface-container-low hover:text-on-surface"
+          >{{ link.label }}</a
+        >
+      }
+      <button
+        type="button"
+        class="cursor-pointer rounded-sm border-0 bg-transparent px-space-sm py-1 font-sans text-body-sm text-on-surface-variant hover:text-error sm:hidden"
+        (click)="signOut()"
+      >
+        Sign out
+      </button>
+    </nav>
   }
 </header>
 
-<main>
+<main class="mx-auto max-w-7xl px-gutter py-gutter-lg">
   <router-outlet />
 </main>

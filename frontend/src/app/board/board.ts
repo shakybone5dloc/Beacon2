@@ -7,9 +7,11 @@ import { ApplicationsApi } from '../applications/applications-api';
 import {
   ApplicationResponse,
   ApplicationStatus,
+  EMPLOYMENT_TYPE_LABELS,
   employerLabel,
 } from '../applications/application.model';
 import { Attention, attentionFor } from '../applications/attention';
+import { formatLocation, formatSalary } from '../postings/format';
 
 interface Card {
   app: ApplicationResponse;
@@ -31,15 +33,27 @@ const COLUMNS: Omit<Column, 'cards'>[] = [
   { title: 'Closed', statuses: ['ACCEPTED', 'DECLINED', 'REJECTED', 'WITHDRAWN'] },
 ];
 
+/** Moves that advance an application; shown as the card's primary button. */
+const FORWARD: ApplicationStatus[] = ['APPLIED', 'INTERVIEWING', 'OFFER', 'ACCEPTED'];
+
+const ACTIVE: ApplicationStatus[] = ['SAVED', 'APPLIED', 'INTERVIEWING', 'OFFER'];
+
+/** How a closed application's outcome badge is coloured. */
+const OUTCOME_CLASSES: Partial<Record<ApplicationStatus, string>> = {
+  ACCEPTED: 'pill-green',
+  REJECTED: 'pill-red',
+};
+
 @Component({
   selector: 'app-board',
   imports: [TitleCasePipe, RouterLink],
   templateUrl: './board.html',
-  styleUrl: './board.css',
 })
 export class Board implements OnInit {
   private readonly api = inject(ApplicationsApi);
   protected readonly employerLabel = employerLabel;
+  /** A forward move is the primary button, with an arrow after its label. */
+  protected readonly forwardClasses = "btn-primary after:content-['_→']";
 
   protected readonly applications = signal<ApplicationResponse[] | null>(null);
   protected readonly error = signal<string | null>(null);
@@ -61,6 +75,10 @@ export class Board implements OnInit {
     }));
   });
 
+  protected readonly activeCount = computed(
+    () => (this.applications() ?? []).filter((app) => ACTIVE.includes(app.status)).length,
+  );
+
   /** Cards needing attention, overdue follow-ups and closing deadlines first. */
   protected readonly needsAttention = computed(() =>
     this.columns()
@@ -71,6 +89,33 @@ export class Board implements OnInit {
 
   ngOnInit(): void {
     this.load();
+  }
+
+  protected isForward(target: ApplicationStatus): boolean {
+    return FORWARD.includes(target);
+  }
+
+  /** The moves on offer, sideways ones first so the forward move sits last, on the right. */
+  protected moves(app: ApplicationResponse): ApplicationStatus[] {
+    return [
+      ...app.allowedTransitions.filter((t) => !FORWARD.includes(t)),
+      ...app.allowedTransitions.filter((t) => FORWARD.includes(t)),
+    ];
+  }
+
+  protected outcomeClass(status: ApplicationStatus): string {
+    return OUTCOME_CLASSES[status] ?? '';
+  }
+
+  /** Short facts for the card's tags: where, how and what it pays. */
+  protected details(app: ApplicationResponse): string[] {
+    const tags = [
+      formatLocation(app.location, 2),
+      app.remote ? 'Remote' : null,
+      app.employmentType ? EMPLOYMENT_TYPE_LABELS[app.employmentType] : null,
+      formatSalary(app),
+    ];
+    return tags.filter((tag): tag is string => !!tag);
   }
 
   protected move(app: ApplicationResponse, target: ApplicationStatus): void {
