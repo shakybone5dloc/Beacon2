@@ -3,230 +3,247 @@
 @if (error(); as message) {
   <p class="notice">{{ message }}</p>
 } @else if (application(); as app) {
-  <div class="layout" [class.with-panel]="panelOpen()">
-    <div class="main">
-      <header class="heading">
-        <div>
-          <h1>
-            @if (app.companyId) {
-              <a [routerLink]="['/companies', app.companyId]" class="company-link">{{
-                app.company
-              }}</a>
-            } @else {
-              {{ employerLabel(app) }}
-            }
-          </h1>
-          <p class="role">{{ app.role }}</p>
-        </div>
-        <div class="heading-side">
-          <span class="status pill pill-blue">
-            {{ app.status | titlecase }}
-            <span class="for">for {{ timeInStatus() }}</span>
-          </span>
-          <button
-            type="button"
-            class="panel-toggle"
-            [attr.aria-expanded]="panelOpen()"
-            aria-controls="posting-panel"
-            (click)="togglePanel()"
-          >
-            {{ panelOpen() ? 'Hide posting' : 'Show posting' }}
-          </button>
-        </div>
-      </header>
-
-      @if (notice(); as text) {
-        <p class="notice">{{ text }}</p>
-      }
-
-      @if (app.allowedTransitions.length > 0) {
-        <div class="moves">
-          <span>Move to</span>
-          @for (target of moves(app); track target) {
+  <!-- Keyed on the id so the sections below start fresh for another application. -->
+  @for (current of [app]; track current.id) {
+    <div class="layout" [class.with-panel]="panelOpen()">
+      <div class="main">
+        <header class="heading">
+          <div>
+            <h1>
+              @if (app.companyId) {
+                <a [routerLink]="['/companies', app.companyId]" class="company-link">{{
+                  app.company
+                }}</a>
+              } @else {
+                {{ employerLabel(app) }}
+              }
+            </h1>
+            <p class="role">{{ app.role }}</p>
+          </div>
+          <div class="heading-side">
+            <span class="status pill pill-blue">
+              {{ app.status | titlecase }}
+              <span class="for">for {{ timeInStatus() }}</span>
+            </span>
             <button
               type="button"
-              [class.primary]="isForward(target)"
-              [disabled]="busy()"
-              (click)="move(app, target)"
+              class="panel-toggle"
+              [attr.aria-expanded]="panelOpen()"
+              aria-controls="posting-panel"
+              (click)="togglePanel()"
             >
-              {{ target | titlecase }}
+              {{ panelOpen() ? 'Hide posting' : 'Show posting' }}
             </button>
+          </div>
+        </header>
+
+        @if (notice(); as text) {
+          <p class="notice">{{ text }}</p>
+        }
+
+        <app-possible-duplicates class="mb-space-md block" [applicationId]="app.id" />
+
+        @if (app.allowedTransitions.length > 0) {
+          <div class="moves">
+            <span>Move to</span>
+            @for (target of moves(app); track target) {
+              <button
+                type="button"
+                [class.primary]="isForward(target)"
+                [disabled]="busy()"
+                (click)="move(app, target)"
+              >
+                {{ target | titlecase }}
+              </button>
+            }
+          </div>
+        }
+
+        <dl class="card p-space-lg">
+          @if (app.employmentType; as type) {
+            <dt>Type</dt>
+            <dd>{{ employmentTypeLabels[type] }}</dd>
           }
-        </div>
-      }
 
-      <dl class="card p-space-lg">
-        @if (app.employmentType; as type) {
-          <dt>Type</dt>
-          <dd>{{ employmentTypeLabels[type] }}</dd>
-        }
+          @if (salary(); as pay) {
+            <dt>Salary</dt>
+            <dd class="salary">{{ pay }}</dd>
+          }
 
-        @if (salary(); as pay) {
-          <dt>Salary</dt>
-          <dd class="salary">{{ pay }}</dd>
-        }
+          @if (app.location || app.remote != null) {
+            <dt>Location</dt>
+            <dd>
+              {{ app.location }}
+              @if (app.remote === true) {
+                <span class="chip">Remote</span>
+              } @else if (app.remote === false) {
+                <span class="chip">On-site or hybrid</span>
+              }
+            </dd>
+          }
 
-        @if (app.location || app.remote != null) {
-          <dt>Location</dt>
+          @if (app.source; as source) {
+            <dt>Found on</dt>
+            <dd>{{ source }}</dd>
+          }
+
+          @if (app.postedOn; as postedOn) {
+            <dt>Posted</dt>
+            <dd>{{ postedOn | date: 'mediumDate' }}</dd>
+          }
+
+          @if (app.appliedAt; as appliedAt) {
+            <dt>Applied</dt>
+            <dd>
+              {{ appliedAt | date: 'mediumDate' }}
+              <span class="none">· {{ appliedAgo() }} ago</span>
+            </dd>
+          }
+
+          <dt>Job posting</dt>
           <dd>
-            {{ app.location }}
-            @if (app.remote === true) {
-              <span class="chip">Remote</span>
-            } @else if (app.remote === false) {
-              <span class="chip">On-site or hybrid</span>
+            @if (app.jobUrl; as url) {
+              <a [href]="url" target="_blank" rel="noopener noreferrer">{{ url }}</a>
+            } @else {
+              <span class="none">None</span>
             }
           </dd>
-        }
 
-        @if (app.source; as source) {
-          <dt>Found on</dt>
-          <dd>{{ source }}</dd>
-        }
-
-        @if (app.postedOn; as postedOn) {
-          <dt>Posted</dt>
-          <dd>{{ postedOn | date: 'mediumDate' }}</dd>
-        }
-
-        @if (app.appliedAt; as appliedAt) {
-          <dt>Applied</dt>
-          <dd>
-            {{ appliedAt | date: 'mediumDate' }}
-            <span class="none">· {{ appliedAgo() }} ago</span>
-          </dd>
-        }
-
-        <dt>Job posting</dt>
-        <dd>
-          @if (app.jobUrl; as url) {
-            <a [href]="url" target="_blank" rel="noopener noreferrer">{{ url }}</a>
-          } @else {
-            <span class="none">None</span>
+          @if (app.applyBy; as applyBy) {
+            <dt>Apply by</dt>
+            <dd>
+              {{ applyBy | date: 'mediumDate' }}
+              @if (attention()?.deadline; as d) {
+                <span class="chip" [class.urgent]="d.urgent">{{ d.label }}</span>
+              }
+            </dd>
           }
-        </dd>
 
-        @if (app.applyBy; as applyBy) {
-          <dt>Apply by</dt>
-          <dd>
-            {{ applyBy | date: 'mediumDate' }}
-            @if (attention()?.deadline; as d) {
-              <span class="chip" [class.urgent]="d.urgent">{{ d.label }}</span>
+          <dt><label for="follow-up">Follow up on</label></dt>
+          <dd class="follow-up">
+            <input id="follow-up" #followUp type="date" [value]="app.followUpOn ?? ''" />
+            <button
+              type="button"
+              [disabled]="busy()"
+              (click)="scheduleFollowUp(app, followUp.value)"
+            >
+              Save
+            </button>
+            @if (app.followUpOn) {
+              <button type="button" [disabled]="busy()" (click)="scheduleFollowUp(app, '')">
+                Clear
+              </button>
+            }
+            @if (attention()?.followUp; as f) {
+              <span class="chip" [class.urgent]="f.urgent">{{ f.label }}</span>
             }
           </dd>
+
+          <dt>Added</dt>
+          <dd>{{ app.createdAt | date: 'medium' }}</dd>
+
+          <dt>Last updated</dt>
+          <dd>{{ app.updatedAt | date: 'medium' }}</dd>
+
+          <dt>Notes</dt>
+          <dd>
+            @if (app.notes; as notes) {
+              <span class="notes">{{ notes }}</span>
+            } @else {
+              <span class="none">None</span>
+            }
+          </dd>
+        </dl>
+
+        @if (!panelOpen()) {
+          <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
+            <h2>Job description</h2>
+            @if (app.jobDescription; as description) {
+              <details class="description" [open]="description.length < 1500">
+                <summary>Full text</summary>
+                <div class="description-text">{{ description }}</div>
+              </details>
+            } @else {
+              <p class="none">
+                None yet.
+                @if (app.jobUrl) {
+                  Use "Save posting as PDF" below to capture it, or paste it in Edit.
+                } @else {
+                  Paste it in Edit.
+                }
+              </p>
+            }
+          </section>
         }
 
-        <dt><label for="follow-up">Follow up on</label></dt>
-        <dd class="follow-up">
-          <input id="follow-up" #followUp type="date" [value]="app.followUpOn ?? ''" />
-          <button type="button" [disabled]="busy()" (click)="scheduleFollowUp(app, followUp.value)">
-            Save
-          </button>
-          @if (app.followUpOn) {
-            <button type="button" [disabled]="busy()" (click)="scheduleFollowUp(app, '')">
-              Clear
-            </button>
-          }
-          @if (attention()?.followUp; as f) {
-            <span class="chip" [class.urgent]="f.urgent">{{ f.label }}</span>
-          }
-        </dd>
+        <app-application-people
+          class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
+          [applicationId]="app.id"
+          (changed)="reloadApplication()"
+        />
 
-        <dt>Added</dt>
-        <dd>{{ app.createdAt | date: 'medium' }}</dd>
+        <app-contact-log
+          class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
+          [applicationId]="app.id"
+          (logged)="people()?.reload()"
+        />
 
-        <dt>Last updated</dt>
-        <dd>{{ app.updatedAt | date: 'medium' }}</dd>
-
-        <dt>Notes</dt>
-        <dd>
-          @if (app.notes; as notes) {
-            <span class="notes">{{ notes }}</span>
-          } @else {
-            <span class="none">None</span>
-          }
-        </dd>
-      </dl>
-
-      @if (!panelOpen()) {
         <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
-          <h2>Job description</h2>
-          @if (app.jobDescription; as description) {
-            <details class="description" [open]="description.length < 1500">
-              <summary>Full text</summary>
-              <div class="description-text">{{ description }}</div>
-            </details>
-          } @else {
-            <p class="none">
-              None yet.
-              @if (app.jobUrl) {
-                Use "Save posting as PDF" below to capture it, or paste it in Edit.
-              } @else {
-                Paste it in Edit.
-              }
-            </p>
-          }
+          <h2>Documents</h2>
+          <app-application-documents
+            [applicationId]="app.id"
+            [jobUrl]="app.jobUrl"
+            (captured)="onCaptured($event)"
+            (changed)="documentList.set($event)"
+          />
         </section>
-      }
 
-      <app-application-people
-        class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
-        [applicationId]="app.id"
-        (changed)="reloadApplication()"
-      />
+        <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
+          <h2>Cover letter</h2>
+          <app-cover-letter-drafter
+            [applicationId]="app.id"
+            [hasJobDescription]="app.jobDescription != null"
+            (saved)="documents()?.reload()"
+          />
+        </section>
 
-      <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
-        <h2>Documents</h2>
-        <app-application-documents
-          [applicationId]="app.id"
-          [jobUrl]="app.jobUrl"
-          (captured)="onCaptured($event)"
-          (changed)="documentList.set($event)"
-        />
-      </section>
+        <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
+          <h2>History</h2>
+          <ol class="timeline">
+            @for (entry of timeline(); track $index) {
+              <li>
+                <strong>{{ entry.toStatus | titlecase }}</strong>
+                <time [attr.datetime]="entry.changedAt">{{
+                  entry.changedAt | date: 'medium'
+                }}</time>
+                @if (entry.after; as after) {
+                  <span class="after">{{ after }} later</span>
+                }
+              </li>
+            }
+          </ol>
+        </section>
 
-      <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
-        <h2>Cover letter</h2>
-        <app-cover-letter-drafter
-          [applicationId]="app.id"
-          [hasJobDescription]="app.jobDescription != null"
-          (saved)="documents()?.reload()"
-        />
-      </section>
-
-      <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
-        <h2>History</h2>
-        <ol class="timeline">
-          @for (entry of timeline(); track $index) {
-            <li>
-              <strong>{{ entry.toStatus | titlecase }}</strong>
-              <time [attr.datetime]="entry.changedAt">{{ entry.changedAt | date: 'medium' }}</time>
-              @if (entry.after; as after) {
-                <span class="after">{{ after }} later</span>
-              }
-            </li>
-          }
-        </ol>
-      </section>
-
-      <div class="buttons mt-space-lg">
-        <a [routerLink]="['/applications', app.id, 'edit']" class="edit btn no-underline">Edit</a>
-        <button
-          type="button"
-          class="delete btn btn-danger"
-          [disabled]="deleting()"
-          (click)="remove(app)"
-        >
-          {{ deleting() ? 'Deleting...' : 'Delete' }}
-        </button>
+        <div class="buttons mt-space-lg">
+          <a [routerLink]="['/applications', app.id, 'edit']" class="edit btn no-underline">Edit</a>
+          <button
+            type="button"
+            class="delete btn btn-danger"
+            [disabled]="deleting()"
+            (click)="remove(app)"
+          >
+            {{ deleting() ? 'Deleting...' : 'Delete' }}
+          </button>
+        </div>
       </div>
-    </div>
 
-    @if (panelOpen()) {
-      <aside id="posting-panel" class="side" aria-label="Job posting">
-        <app-posting-panel [application]="app" [postingPdfUrl]="postingPdfUrl()" />
-      </aside>
-    }
-  </div>
+      @if (panelOpen()) {
+        <aside id="posting-panel" class="side" aria-label="Job posting">
+          <app-posting-panel [application]="app" [postingPdfUrl]="postingPdfUrl()" />
+        </aside>
+      }
+    </div>
+  }
 } @else {
   <p>Loading...</p>
 }

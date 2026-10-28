@@ -138,6 +138,8 @@ describe('people', () => {
       },
     ]);
     await fixture.whenStable();
+    http.expectOne('/api/people/p1/contacts').flush([]);
+    await fixture.whenStable();
     const el: HTMLElement = fixture.nativeElement;
 
     expect(el.querySelector('.applications a')?.textContent).toContain(

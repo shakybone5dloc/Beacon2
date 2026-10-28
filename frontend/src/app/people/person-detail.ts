@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { employerLabel } from '../applications/application.model';
+import { ContactLog } from '../contacts/contact-log';
 import { PeopleApi } from './people-api';
 import { PersonForm } from './person-form';
 import {
@@ -16,7 +17,7 @@ import {
 /** One person: their details, which can be edited, and the applications they're on. */
 @Component({
   selector: 'app-person-detail',
-  imports: [RouterLink, TitleCasePipe, PersonForm],
+  imports: [RouterLink, TitleCasePipe, PersonForm, ContactLog],
   templateUrl: './person-detail.html',
   styleUrl: './people.css',
   host: { class: 'max-w-[720px]' },
@@ -52,6 +53,13 @@ export class PersonDetail implements OnInit {
           err.status === 404 ? 'That person was not found.' : 'Could not load the person.',
         ),
     });
+  }
+
+  /** A contact about an application puts the person on it. */
+  protected reloadApplications(): void {
+    this.api
+      .applicationsOf(this.id())
+      .subscribe((applications) => this.applications.set(applications));
   }
 
   protected saved(person: Person): void {

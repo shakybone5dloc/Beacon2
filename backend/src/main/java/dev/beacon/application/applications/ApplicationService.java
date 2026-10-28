@@ -8,8 +8,10 @@ import dev.beacon.contracts.applications.StatusChangeResponse;
 import dev.beacon.contracts.applications.UpdateApplicationRequest;
 import dev.beacon.domain.applications.ApplicationStatus;
 import dev.beacon.domain.applications.JobApplication;
+import dev.beacon.domain.contacts.Contact;
 import dev.beacon.domain.people.PersonRole;
 import dev.beacon.infrastructure.persistence.ApplicationPersonRepository;
+import dev.beacon.infrastructure.persistence.ContactRepository;
 import dev.beacon.infrastructure.persistence.JobApplicationRepository;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -32,13 +34,15 @@ public class ApplicationService {
 
     private final JobApplicationRepository repository;
     private final ApplicationPersonRepository people;
+    private final ContactRepository contacts;
     private final CompanyService companies;
     private final Clock clock;
 
     public ApplicationService(JobApplicationRepository repository, ApplicationPersonRepository people,
-                              CompanyService companies, Clock clock) {
+                              ContactRepository contacts, CompanyService companies, Clock clock) {
         this.repository = repository;
         this.people = people;
+        this.contacts = contacts;
         this.companies = companies;
         this.clock = clock;
     }
@@ -149,8 +153,9 @@ public class ApplicationService {
     public boolean delete(UUID ownerId, UUID id) {
         var found = repository.findByIdAndOwnerId(id, ownerId);
         found.ifPresent(application -> {
-            // The people stay; only their links to this application go.
+            // The people and their contact logs stay; only their links to this application go.
             people.deleteAllByApplicationId(application.getId());
+            contacts.findAllByApplicationIdOrderByOccurredAtDesc(application.getId()).forEach(Contact::forgetApplication);
             repository.delete(application);
         });
         return found.isPresent();

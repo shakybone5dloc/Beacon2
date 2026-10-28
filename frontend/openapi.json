@@ -56,6 +56,36 @@
         "tags" : [ "Applications" ]
       }
     },
+    "/api/applications/{applicationId}/contacts" : {
+      "get" : {
+        "operationId" : "listApplicationContacts",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ContactResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Contacts" ]
+      }
+    },
     "/api/applications/{applicationId}/cover-letter" : {
       "post" : {
         "operationId" : "saveCoverLetter",
@@ -573,6 +603,36 @@
         "tags" : [ "Applications" ]
       }
     },
+    "/api/applications/{id}/possible-duplicates" : {
+      "get" : {
+        "operationId" : "listPossibleDuplicates",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PossibleDuplicateResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Applications" ]
+      }
+    },
     "/api/applications/{id}/status" : {
       "patch" : {
         "operationId" : "changeApplicationStatus",
@@ -855,6 +915,89 @@
           }
         },
         "tags" : [ "Companies" ]
+      }
+    },
+    "/api/contacts" : {
+      "post" : {
+        "operationId" : "createContact",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateContactRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContactResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Contacts" ]
+      }
+    },
+    "/api/contacts/{id}" : {
+      "delete" : {
+        "operationId" : "deleteContact",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "Contacts" ]
+      },
+      "put" : {
+        "operationId" : "updateContact",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateContactRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContactResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Contacts" ]
       }
     },
     "/api/cover-letters/status" : {
@@ -1224,6 +1367,36 @@
         "tags" : [ "People" ]
       }
     },
+    "/api/people/{personId}/contacts" : {
+      "get" : {
+        "operationId" : "listPersonContacts",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "personId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ContactResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Contacts" ]
+      }
+    },
     "/api/postings/search" : {
       "get" : {
         "operationId" : "searchPostings",
@@ -1536,6 +1709,60 @@
         },
         "required" : [ "applicationCount", "createdAt", "emailDomains", "id", "name", "notes", "type", "updatedAt", "version", "website" ]
       },
+      "ContactResponse" : {
+        "type" : "object",
+        "properties" : {
+          "applicationId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "body" : {
+            "type" : [ "string", "null" ]
+          },
+          "channel" : {
+            "type" : "string",
+            "enum" : [ "EMAIL", "SMS", "LINKEDIN", "PHONE", "OTHER" ]
+          },
+          "company" : {
+            "type" : [ "string", "null" ]
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "direction" : {
+            "type" : "string",
+            "enum" : [ "INBOUND", "OUTBOUND" ]
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "jobRole" : {
+            "type" : [ "string", "null" ]
+          },
+          "occurredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "personId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "personName" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "applicationId", "body", "channel", "company", "createdAt", "direction", "id", "jobRole", "occurredAt", "personId", "personName", "updatedAt", "version" ]
+      },
       "CoverLetterDraftRequest" : {
         "type" : "object",
         "properties" : {
@@ -1653,6 +1880,37 @@
           }
         },
         "required" : [ "role" ]
+      },
+      "CreateContactRequest" : {
+        "type" : "object",
+        "properties" : {
+          "applicationId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "body" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 20000,
+            "minLength" : 0
+          },
+          "channel" : {
+            "type" : "string",
+            "enum" : [ "EMAIL", "SMS", "LINKEDIN", "PHONE", "OTHER" ]
+          },
+          "direction" : {
+            "type" : "string",
+            "enum" : [ "INBOUND", "OUTBOUND" ]
+          },
+          "occurredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "personId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "channel", "direction", "occurredAt", "personId" ]
       },
       "CreatePersonRequest" : {
         "type" : "object",
@@ -1960,6 +2218,36 @@
           }
         },
         "required" : [ "company", "companyId", "createdAt", "email", "id", "linkedinUrl", "name", "notes", "phone", "recruiterType", "role", "title", "updatedAt", "version" ]
+      },
+      "PossibleDuplicateResponse" : {
+        "type" : "object",
+        "properties" : {
+          "applicationId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "company" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "jobRole" : {
+            "type" : "string"
+          },
+          "recruiters" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "SAVED", "APPLIED", "INTERVIEWING", "OFFER", "ACCEPTED", "DECLINED", "REJECTED", "WITHDRAWN" ]
+          }
+        },
+        "required" : [ "applicationId", "company", "createdAt", "jobRole", "recruiters", "status" ]
       },
       "PostingSearchResponse" : {
         "type" : "object",
@@ -2276,6 +2564,41 @@
           }
         },
         "required" : [ "name", "type", "version" ]
+      },
+      "UpdateContactRequest" : {
+        "type" : "object",
+        "properties" : {
+          "applicationId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "body" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 20000,
+            "minLength" : 0
+          },
+          "channel" : {
+            "type" : "string",
+            "enum" : [ "EMAIL", "SMS", "LINKEDIN", "PHONE", "OTHER" ]
+          },
+          "direction" : {
+            "type" : "string",
+            "enum" : [ "INBOUND", "OUTBOUND" ]
+          },
+          "occurredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "personId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "channel", "direction", "occurredAt", "personId", "version" ]
       },
       "UpdatePersonRequest" : {
         "type" : "object",

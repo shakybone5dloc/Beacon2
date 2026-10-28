@@ -14,6 +14,7 @@ import dev.beacon.domain.people.PersonRole;
 import dev.beacon.domain.people.RecruiterType;
 import dev.beacon.infrastructure.persistence.ApplicationPersonRepository;
 import dev.beacon.infrastructure.persistence.CompanyRepository;
+import dev.beacon.infrastructure.persistence.ContactRepository;
 import dev.beacon.infrastructure.persistence.JobApplicationRepository;
 import dev.beacon.infrastructure.persistence.PersonRepository;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -37,15 +38,18 @@ public class PeopleService {
 
     private final PersonRepository people;
     private final ApplicationPersonRepository links;
+    private final ContactRepository contacts;
     private final JobApplicationRepository applications;
     private final CompanyRepository companies;
     private final CompanyService companyService;
     private final Clock clock;
 
-    public PeopleService(PersonRepository people, ApplicationPersonRepository links, JobApplicationRepository applications,
-                         CompanyRepository companies, CompanyService companyService, Clock clock) {
+    public PeopleService(PersonRepository people, ApplicationPersonRepository links, ContactRepository contacts,
+                         JobApplicationRepository applications, CompanyRepository companies,
+                         CompanyService companyService, Clock clock) {
         this.people = people;
         this.links = links;
+        this.contacts = contacts;
         this.applications = applications;
         this.companies = companies;
         this.companyService = companyService;
@@ -89,7 +93,7 @@ public class PeopleService {
         return Optional.of(toResponse(person));
     }
 
-    /** Also removes them from every application they were on. */
+    /** Also removes them from every application they were on, and deletes their contact log. */
     @Transactional
     public boolean delete(UUID ownerId, UUID id) {
         var found = people.findByIdAndOwnerId(id, ownerId);
@@ -97,6 +101,7 @@ public class PeopleService {
             // The database would cascade too, but links already loaded in this
             // transaction would then point at a deleted person.
             links.deleteAllByPersonId(person.getId());
+            contacts.deleteAllByPersonId(person.getId());
             people.delete(person);
         });
         return found.isPresent();

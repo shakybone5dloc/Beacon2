@@ -21,7 +21,9 @@ Rebuilt from the .NET Beacon, then extended.
 | - | User accounts (Spring Security), per-user ownership, per-user encrypted API keys, provider guide | 3c31d80, d35c5b5, 59eb080 |
 | X1 | OpenAPI spec with springdoc, generated Angular client (ng-openapi-gen) behind the existing `*Api` services | 9ebee81 onward |
 | R0 | Companies per user: V7 backfill, find-or-create by normalized name, undisclosed employers, type-ahead, company pages | caa8455 |
-| R1 | People with a role per application, recruiter agencies ("via"), employment type, people pages | after caa8455 |
+| R1 | People with a role per application, recruiter agencies ("via"), employment type, people pages | 819c7e6 |
+| - | Stitch redesign (Tailwind v4 design system on every screen) and dark mode | 42f58e5, 85c7236, 7c039cc |
+| R2 | Contact log per person and application, duplicate-pitch warning | after 7c039cc |
 
 ## Next: Companies and people
 
@@ -52,7 +54,8 @@ Rebuilt from the .NET Beacon, then extended.
 - CRUD API, people list/detail pages, "add person" on the application detail page.
 - Learning focus: JPA relationships (`@ManyToOne`, join entity for many-to-many with extra columns), avoiding N+1 queries (fetch join / `@EntityGraph`).
 
-### R2. Contacts (outreach log)
+### R2. Contacts (outreach log) (done)
+- Built as planned below. Logging a contact about an application also puts the person on it. Deleting an application keeps its contacts in the person's log; deleting a person deletes their log. The duplicate-pitch warning shows on the application page and matches company + normalized title ("Sr." = "Senior") within 6 weeks; an undisclosed employer can't be matched. "Log a call" is the quick-add.
 - `contacts`: person, channel (`EMAIL`, `SMS`, `LINKEDIN`, `PHONE`, `OTHER`), direction (in/out), date, raw text, optional link to the application it relates to.
 - Paste-in form for LinkedIn messages and texts (LinkedIn has no personal messaging API; texts have no general API). Manual fields for now; AI extraction arrives in E3.
 - Quick-add for phone calls.

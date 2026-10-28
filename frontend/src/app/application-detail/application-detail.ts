@@ -1,4 +1,13 @@
-import { Component, computed, inject, input, OnInit, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
@@ -18,6 +27,8 @@ import { ApplicationDocuments } from '../documents/application-documents';
 import { DocumentsApi } from '../documents/documents-api';
 import { DocumentResponse } from '../documents/document.model';
 import { ApplicationPeople } from '../people/application-people';
+import { ContactLog } from '../contacts/contact-log';
+import { PossibleDuplicates } from '../contacts/possible-duplicates';
 import { PostingPanel } from '../posting-view/posting-panel';
 import { CoverLetterDrafter } from '../documents/cover-letter-drafter';
 import { formatSalary } from '../postings/format';
@@ -38,11 +49,13 @@ interface TimelineEntry extends StatusChange {
     CoverLetterDrafter,
     PostingPanel,
     ApplicationPeople,
+    ContactLog,
+    PossibleDuplicates,
   ],
   templateUrl: './application-detail.html',
   styleUrl: './application-detail.css',
 })
-export class ApplicationDetail implements OnInit {
+export class ApplicationDetail {
   private readonly api = inject(ApplicationsApi);
   protected readonly employerLabel = employerLabel;
   protected readonly isForward = isForwardMove;
@@ -67,6 +80,7 @@ export class ApplicationDetail implements OnInit {
   });
 
   protected readonly documents = viewChild(ApplicationDocuments);
+  protected readonly people = viewChild(ApplicationPeople);
   protected readonly documentList = signal<DocumentResponse[]>([]);
   protected readonly panelOpen = signal(initialPanelOpen());
 
@@ -100,8 +114,13 @@ export class ApplicationDetail implements OnInit {
     })),
   );
 
-  ngOnInit(): void {
-    this.load();
+  constructor() {
+    // The route reuses this page when going from one application to another (a
+    // possible duplicate's link), so load whenever the id changes.
+    effect(() => {
+      this.id();
+      untracked(() => this.load());
+    });
   }
 
   protected togglePanel(): void {

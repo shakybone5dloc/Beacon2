@@ -2,12 +2,14 @@ package dev.beacon.api.applications;
 
 import dev.beacon.api.errors.RequestValidationException;
 import dev.beacon.application.applications.ApplicationService;
+import dev.beacon.application.applications.DuplicatePitchService;
 import dev.beacon.application.companies.CompanyService;
 import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.ChangeStatusRequest;
 import dev.beacon.contracts.applications.CreateApplicationRequest;
 import dev.beacon.contracts.applications.FollowUpRequest;
+import dev.beacon.contracts.applications.PossibleDuplicateResponse;
 import dev.beacon.contracts.applications.PostingFields;
 import dev.beacon.contracts.applications.StatusChangeResponse;
 import dev.beacon.contracts.applications.UpdateApplicationRequest;
@@ -31,9 +33,11 @@ import java.util.function.Supplier;
 public class ApplicationController {
 
     private final ApplicationService service;
+    private final DuplicatePitchService duplicates;
 
-    public ApplicationController(ApplicationService service) {
+    public ApplicationController(ApplicationService service, DuplicatePitchService duplicates) {
         this.service = service;
+        this.duplicates = duplicates;
     }
 
     @Operation(operationId = "createApplication")
@@ -57,6 +61,14 @@ public class ApplicationController {
     @GetMapping
     public List<ApplicationResponse> getAll(@AuthenticationPrincipal SignedInUser user) {
         return service.list(user.id());
+    }
+
+    /** Other applications that look like the same job, e.g. pitched by a second recruiter. */
+    @Operation(operationId = "listPossibleDuplicates")
+    @GetMapping("/{id}/possible-duplicates")
+    public ResponseEntity<List<PossibleDuplicateResponse>> possibleDuplicates(@AuthenticationPrincipal SignedInUser user,
+                                                                             @PathVariable UUID id) {
+        return ResponseEntity.of(duplicates.find(user.id(), id));
     }
 
     @Operation(operationId = "updateApplication")

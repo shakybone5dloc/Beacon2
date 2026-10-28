@@ -63,6 +63,11 @@ export class ApplicationPeople implements OnInit {
   );
 
   ngOnInit(): void {
+    this.reload();
+  }
+
+  /** Logging a contact about the application can put someone on it. */
+  reload(): void {
     this.api.onApplication(this.applicationId()).subscribe({
       next: (people) => this.people.set(people),
       error: () => this.error.set('Could not load the people on this application.'),

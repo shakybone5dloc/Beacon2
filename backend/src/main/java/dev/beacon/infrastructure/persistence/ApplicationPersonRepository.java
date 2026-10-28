@@ -30,6 +30,10 @@ public interface ApplicationPersonRepository extends JpaRepository<ApplicationPe
     @EntityGraph(attributePaths = {"application", "application.company"})
     List<ApplicationPerson> findAllByPersonIdOrderByAddedAtDesc(UUID personId);
 
+    /** The people with this role on any of these applications, with their companies. */
+    @EntityGraph(attributePaths = {"person", "person.company"})
+    List<ApplicationPerson> findAllByApplicationIdInAndRoleOrderByAddedAtAsc(Collection<UUID> applicationIds, PersonRole role);
+
     /**
      * For each of these applications, the companies of the people linked with this
      * role: [application id, company name]. Used to show "via <agency>" on undisclosed roles.

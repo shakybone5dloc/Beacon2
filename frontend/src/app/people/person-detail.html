@@ -87,6 +87,12 @@
       }
     </ul>
   }
+
+  <app-contact-log
+    class="card mt-space-xl block p-space-lg [&_h2]:mt-0"
+    [personId]="p.id"
+    (logged)="reloadApplications()"
+  />
 } @else {
   <p>Loading...</p>
 }

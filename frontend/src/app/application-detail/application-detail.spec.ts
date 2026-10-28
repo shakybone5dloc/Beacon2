@@ -13,6 +13,8 @@ import { By } from '@angular/platform-browser';
 import { DocumentResponse } from '../documents/document.model';
 import { aDocument } from '../documents/testing';
 import { PostingPanel } from '../posting-view/posting-panel';
+import { ContactLog } from '../contacts/contact-log';
+import { PossibleDuplicates } from '../contacts/possible-duplicates';
 
 /** Stand-ins for the child panels, which have their own specs and HTTP calls. */
 @Component({
@@ -31,6 +33,18 @@ class DocumentsStub {
 class PeopleStub {
   readonly applicationId = input<string>();
   readonly changed = output<void>();
+  reload(): void {}
+}
+
+@Component({ selector: 'app-contact-log', template: '' })
+class ContactLogStub {
+  readonly applicationId = input<string>();
+  readonly logged = output<void>();
+}
+
+@Component({ selector: 'app-possible-duplicates', template: '' })
+class DuplicatesStub {
+  readonly applicationId = input<string>();
 }
 
 @Component({ selector: 'app-cover-letter-drafter', template: '' })
@@ -50,8 +64,16 @@ describe('ApplicationDetail', () => {
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     TestBed.overrideComponent(ApplicationDetail, {
-      remove: { imports: [ApplicationDocuments, CoverLetterDrafter, ApplicationPeople] },
-      add: { imports: [DocumentsStub, DrafterStub, PeopleStub] },
+      remove: {
+        imports: [
+          ApplicationDocuments,
+          CoverLetterDrafter,
+          ApplicationPeople,
+          ContactLog,
+          PossibleDuplicates,
+        ],
+      },
+      add: { imports: [DocumentsStub, DrafterStub, PeopleStub, ContactLogStub, DuplicatesStub] },
     });
     http = TestBed.inject(HttpTestingController);
     navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
