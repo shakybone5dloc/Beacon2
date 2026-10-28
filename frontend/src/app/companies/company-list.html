@@ -1,0 +1,27 @@
+<h1>Companies</h1>
+<p class="intro">
+  A company is added the first time you name it on an application, and the same company is linked
+  again however you write it ("Acme, Inc." and "ACME" are one company).
+</p>
+
+@if (error()) {
+  <p class="notice">Could not load your companies. Try again in a moment.</p>
+} @else if (companies(); as list) {
+  @if (list.length === 0) {
+    <p class="empty">No companies yet. They appear here once you add an application.</p>
+  } @else {
+    <ul class="companies">
+      @for (c of list; track c.id) {
+        <li>
+          <a [routerLink]="['/companies', c.id]" class="name">{{ c.name }}</a>
+          <span class="type">{{ typeLabels[c.type] }}</span>
+          <span class="count">
+            {{ c.applicationCount }} {{ c.applicationCount === 1 ? 'application' : 'applications' }}
+          </span>
+        </li>
+      }
+    </ul>
+  }
+} @else {
+  <p>Loading...</p>
+}

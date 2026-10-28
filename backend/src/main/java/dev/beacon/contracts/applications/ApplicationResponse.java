@@ -12,7 +12,10 @@ import java.util.List;
 
 public record ApplicationResponse (
         UUID id,
-        String company,
+        /** Null when the employer isn't disclosed. */
+        @Nullable UUID companyId,
+        /** The company's name; null when the employer isn't disclosed. */
+        @Nullable String company,
         String role,
         @Nullable String jobUrl,
         @Nullable String notes,

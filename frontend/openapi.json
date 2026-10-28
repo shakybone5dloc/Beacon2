@@ -605,6 +605,128 @@
         "tags" : [ "Auth" ]
       }
     },
+    "/api/companies" : {
+      "get" : {
+        "operationId" : "listCompanies",
+        "parameters" : [ {
+          "description" : "Only companies whose name contains this (up to ten), for type-ahead",
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/CompanyResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Companies" ]
+      }
+    },
+    "/api/companies/{id}" : {
+      "get" : {
+        "operationId" : "getCompany",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CompanyResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Companies" ]
+      },
+      "put" : {
+        "operationId" : "updateCompany",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateCompanyRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CompanyResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Companies" ]
+      }
+    },
+    "/api/companies/{id}/applications" : {
+      "get" : {
+        "operationId" : "listCompanyApplications",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ApplicationResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Companies" ]
+      }
+    },
     "/api/cover-letters/status" : {
       "get" : {
         "operationId" : "getCoverLetterStatus",
@@ -943,7 +1065,11 @@
             "format" : "date"
           },
           "company" : {
-            "type" : "string"
+            "type" : [ "string", "null" ]
+          },
+          "companyId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
           },
           "createdAt" : {
             "type" : "string",
@@ -1016,7 +1142,7 @@
             "format" : "int64"
           }
         },
-        "required" : [ "allowedTransitions", "appliedAt", "applyBy", "company", "createdAt", "followUpOn", "id", "jobDescription", "jobUrl", "location", "notes", "postedOn", "remote", "role", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "source", "status", "statusChangedAt", "updatedAt", "version" ]
+        "required" : [ "allowedTransitions", "appliedAt", "applyBy", "company", "companyId", "createdAt", "followUpOn", "id", "jobDescription", "jobUrl", "location", "notes", "postedOn", "remote", "role", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "source", "status", "statusChangedAt", "updatedAt", "version" ]
       },
       "CaptureResponse" : {
         "type" : "object",
@@ -1044,6 +1170,51 @@
           }
         },
         "required" : [ "status", "version" ]
+      },
+      "CompanyResponse" : {
+        "type" : "object",
+        "properties" : {
+          "applicationCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "emailDomains" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "notes" : {
+            "type" : [ "string", "null" ]
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "EMPLOYER", "AGENCY", "BOTH" ]
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "website" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "applicationCount", "createdAt", "emailDomains", "id", "name", "notes", "type", "updatedAt", "version", "website" ]
       },
       "CoverLetterDraftRequest" : {
         "type" : "object",
@@ -1085,8 +1256,12 @@
             "type" : [ "string", "null" ],
             "format" : "date"
           },
-          "company" : {
-            "type" : "string",
+          "companyId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "companyName" : {
+            "type" : [ "string", "null" ],
             "maxLength" : 200,
             "minLength" : 0
           },
@@ -1153,7 +1328,7 @@
             "minLength" : 0
           }
         },
-        "required" : [ "company", "role" ]
+        "required" : [ "role" ]
       },
       "CurrentUserResponse" : {
         "type" : "object",
@@ -1512,8 +1687,12 @@
             "type" : [ "string", "null" ],
             "format" : "date"
           },
-          "company" : {
-            "type" : "string",
+          "companyId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "companyName" : {
+            "type" : [ "string", "null" ],
             "maxLength" : 200,
             "minLength" : 0
           },
@@ -1584,7 +1763,45 @@
             "format" : "int64"
           }
         },
-        "required" : [ "company", "role", "version" ]
+        "required" : [ "role", "version" ]
+      },
+      "UpdateCompanyRequest" : {
+        "type" : "object",
+        "properties" : {
+          "emailDomains" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "type" : "string",
+              "pattern" : "\\s*[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\s*"
+            },
+            "maxItems" : 20,
+            "minItems" : 0
+          },
+          "name" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "notes" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 4000,
+            "minLength" : 0
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "EMPLOYER", "AGENCY", "BOTH" ]
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "website" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 2048,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "name", "type", "version" ]
       }
     }
   }

@@ -4,7 +4,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { finalize, Observable } from 'rxjs';
 import { ApplicationsApi } from '../applications/applications-api';
-import { ApplicationResponse, ApplicationStatus } from '../applications/application.model';
+import {
+  ApplicationResponse,
+  ApplicationStatus,
+  employerLabel,
+} from '../applications/application.model';
 import { Attention, attentionFor } from '../applications/attention';
 
 interface Card {
@@ -35,6 +39,7 @@ const COLUMNS: Omit<Column, 'cards'>[] = [
 })
 export class Board implements OnInit {
   private readonly api = inject(ApplicationsApi);
+  protected readonly employerLabel = employerLabel;
 
   protected readonly applications = signal<ApplicationResponse[] | null>(null);
   protected readonly error = signal<string | null>(null);

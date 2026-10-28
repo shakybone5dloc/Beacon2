@@ -20,10 +20,12 @@ Rebuilt from the .NET Beacon, then extended.
 | - | AI cover letters (Claude and OpenAI) | df3de91, 81da3bc |
 | - | User accounts (Spring Security), per-user ownership, per-user encrypted API keys, provider guide | 3c31d80, d35c5b5, 59eb080 |
 | X1 | OpenAPI spec with springdoc, generated Angular client (ng-openapi-gen) behind the existing `*Api` services | 9ebee81 onward |
+| R0 | Companies per user: V7 backfill, find-or-create by normalized name, undisclosed employers, type-ahead, company pages | after 2720da5 |
 
 ## Next: Companies and people
 
-### R0. Companies
+### R0. Companies (done, except the "Later" items)
+- Built as planned below. Pre-account rows with no owner were deleted by V7; job search results without a company save as undisclosed. R1 adds the "via <agency>" part and people/contacts on the company page.
 - New `companies` table, owned per user: name, normalized name (lowercased, "Inc"/"LLC"/"Corp" stripped), website, email domains, notes.
 - `CompanyType`: `EMPLOYER`, `AGENCY`, `BOTH` (some firms place contractors and hire directly).
 - `job_applications.company_id` (the employer) replaces the free-text `company` column.

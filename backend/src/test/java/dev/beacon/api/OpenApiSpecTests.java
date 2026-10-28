@@ -82,7 +82,7 @@ class OpenApiSpecTests {
                 .extractingPath("$.components.schemas.ApplicationResponse.properties.jobDescription.type").asArray()
                 .containsExactlyInAnyOrder("string", "null");
         assertThat(spec).bodyJson()
-                .extractingPath("$.components.schemas.ApplicationResponse.properties.company.type")
+                .extractingPath("$.components.schemas.ApplicationResponse.properties.role.type")
                 .isEqualTo("string");
     }
 

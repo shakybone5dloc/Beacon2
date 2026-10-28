@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ApplicationPostingDetailsApiTests extends SignedInApiTests {
 
     private static final String WITH_DETAILS = """
-            {"company": "Acme", "role": "Engineer", "location": " Denver, CO ", "remote": true,
+            {"companyName": "Acme", "role": "Engineer", "location": " Denver, CO ", "remote": true,
              "salaryMin": 140000, "salaryMax": 170000, "salaryCurrency": "usd", "salaryPeriod": "year",
              "source": "Himalayas", "postedOn": "2026-10-20", "jobDescription": "  Build services.  "}
             """;
@@ -57,7 +57,7 @@ class ApplicationPostingDetailsApiTests extends SignedInApiTests {
     @Test
     void salaryRangeMustBeInOrder() {
         var result = create("""
-                {"company": "Acme", "role": "Engineer", "salaryMin": 200000, "salaryMax": 100000}
+                {"companyName": "Acme", "role": "Engineer", "salaryMin": 200000, "salaryMax": 100000}
                 """);
 
         assertThat(result).hasStatus(HttpStatus.BAD_REQUEST);
@@ -67,7 +67,7 @@ class ApplicationPostingDetailsApiTests extends SignedInApiTests {
     @Test
     void currencyAndPeriodAreValidated() {
         var result = create("""
-                {"company": "Acme", "role": "Engineer", "salaryCurrency": "dollars", "salaryPeriod": "fortnight"}
+                {"companyName": "Acme", "role": "Engineer", "salaryCurrency": "dollars", "salaryPeriod": "fortnight"}
                 """);
 
         assertThat(result).hasStatus(HttpStatus.BAD_REQUEST);
@@ -95,7 +95,7 @@ class ApplicationPostingDetailsApiTests extends SignedInApiTests {
         var result = mvc.put().uri("/api/applications/{id}", id)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"company": "Acme", "role": "Engineer", "location": "Remote", "salaryText": "DOE", "version": 0}
+                        {"companyName": "Acme", "role": "Engineer", "location": "Remote", "salaryText": "DOE", "version": 0}
                         """)
                 .exchange();
 

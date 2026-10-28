@@ -105,7 +105,7 @@ class AuthApiTests {
         var result = mvc.post().uri("/api/applications").session(session)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"company": "Acme", "role": "Engineer"}
+                        {"companyName": "Acme", "role": "Engineer"}
                         """)
                 .exchange();
 

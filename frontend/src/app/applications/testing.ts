@@ -3,6 +3,7 @@ import { ApplicationResponse, PostingDetails } from './application.model';
 export function anApplication(overrides: Partial<ApplicationResponse> = {}): ApplicationResponse {
   return {
     id: crypto.randomUUID(),
+    companyId: 'c-acme',
     company: 'Acme',
     role: 'Engineer',
     jobUrl: null,

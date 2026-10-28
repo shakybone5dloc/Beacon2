@@ -256,3 +256,10 @@ section {
   cursor: pointer;
   white-space: nowrap;
 }
+.company-link {
+  color: inherit;
+  text-decoration: none;
+}
+.company-link:hover {
+  text-decoration: underline;
+}

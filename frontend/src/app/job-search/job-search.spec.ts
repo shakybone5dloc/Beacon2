@@ -145,7 +145,7 @@ describe('JobSearch', () => {
     const req = http.expectOne('/api/applications');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
-      company: 'Acme',
+      companyName: 'Acme',
       role: 'Senior Java Engineer',
       jobUrl: 'https://remotive.com/remote-jobs/1',
       notes: null,
@@ -168,6 +168,18 @@ describe('JobSearch', () => {
     const saved = el.querySelector('a.saved')!;
     expect(saved.textContent).toContain('On your board');
     expect(saved.getAttribute('href')).toBe('/applications/new-app');
+  });
+
+  it('saves a posting without a company as an undisclosed employer', async () => {
+    const { fixture, el } = await render();
+    await searchFor(fixture, [aPosting({ title: 'Java Contractor', company: null })]);
+
+    el.querySelector<HTMLButtonElement>('button.save')!.click();
+
+    const req = http.expectOne('/api/applications');
+    expect(req.request.body.companyName).toBeNull();
+    req.flush(anApplication({ company: null, companyId: null }));
+    await fixture.whenStable();
   });
 
   it('saves the full description and posting details when the source has them', async () => {

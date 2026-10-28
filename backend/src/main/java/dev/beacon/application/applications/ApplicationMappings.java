@@ -26,7 +26,8 @@ public final class ApplicationMappings {
         var posting = a.getPostingDetails();
         return new ApplicationResponse(
                 a.getId(),
-                a.getCompany(),
+                a.getCompany() == null ? null : a.getCompany().getId(),
+                a.getCompanyName(),
                 a.getRole(),
                 a.getJobUrl(),
                 a.getNotes(),

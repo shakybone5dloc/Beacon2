@@ -2,6 +2,7 @@ package dev.beacon.api.applications;
 
 import dev.beacon.api.errors.RequestValidationException;
 import dev.beacon.application.applications.ApplicationService;
+import dev.beacon.application.companies.CompanyService;
 import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.ChangeStatusRequest;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 @Tag(name = "Applications")
 @RestController
@@ -39,7 +41,7 @@ public class ApplicationController {
     @PostMapping
     public ResponseEntity<ApplicationResponse> create(@AuthenticationPrincipal SignedInUser user, @Valid @RequestBody CreateApplicationRequest request) {
         requireOrderedSalary(request);
-        var response = service.create(user.id(), request);
+        var response = withCompanyErrors(() -> service.create(user.id(), request));
         return ResponseEntity
                 .created(URI.create("/api/applications/" + response.id()))
                 .body(response);
@@ -65,7 +67,7 @@ public class ApplicationController {
             @Valid @RequestBody UpdateApplicationRequest request
     ) {
         requireOrderedSalary(request);
-        return ResponseEntity.of(service.update(user.id(), id, request));
+        return ResponseEntity.of(withCompanyErrors(() -> service.update(user.id(), id, request)));
     }
 
     @Operation(operationId = "deleteApplication")
@@ -102,6 +104,15 @@ public class ApplicationController {
     ) {
         var status = parseStatus(request.status());
         return ResponseEntity.of(service.changeStatus(user.id(), id, status, request.version()));
+    }
+
+    /** Another user's company id reads as unknown, the same as one that doesn't exist. */
+    private static <T> T withCompanyErrors(Supplier<T> action) {
+        try {
+            return action.get();
+        } catch (CompanyService.UnknownCompanyException ex) {
+            throw new RequestValidationException("companyId", ex.getMessage());
+        }
     }
 
     private static void requireOrderedSalary(PostingFields fields) {

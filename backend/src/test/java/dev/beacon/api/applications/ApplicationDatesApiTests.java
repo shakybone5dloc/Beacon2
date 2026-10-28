@@ -25,7 +25,7 @@ class ApplicationDatesApiTests extends SignedInApiTests {
     @Test
     void createAcceptsAndReturnsDates() {
         var result = create("""
-                {"company": "Acme", "role": "Engineer", "applyBy": "2026-11-15", "followUpOn": "2026-11-01"}
+                {"companyName": "Acme", "role": "Engineer", "applyBy": "2026-11-15", "followUpOn": "2026-11-01"}
                 """);
 
         assertThat(result).hasStatus(HttpStatus.CREATED);
@@ -36,7 +36,7 @@ class ApplicationDatesApiTests extends SignedInApiTests {
     @Test
     void datesAreOptional() {
         var result = create("""
-                {"company": "Acme", "role": "Engineer"}
+                {"companyName": "Acme", "role": "Engineer"}
                 """);
 
         assertThat(result).hasStatus(HttpStatus.CREATED);
@@ -47,7 +47,7 @@ class ApplicationDatesApiTests extends SignedInApiTests {
     @Test
     void malformedDateReturns400() {
         var result = create("""
-                {"company": "Acme", "role": "Engineer", "applyBy": "next friday"}
+                {"companyName": "Acme", "role": "Engineer", "applyBy": "next friday"}
                 """);
 
         assertThat(result).hasStatus(HttpStatus.BAD_REQUEST);
@@ -56,13 +56,13 @@ class ApplicationDatesApiTests extends SignedInApiTests {
     @Test
     void updateChangesAndClearsDates() {
         var id = idOf(create("""
-                {"company": "Acme", "role": "Engineer", "applyBy": "2026-11-15", "followUpOn": "2026-11-01"}
+                {"companyName": "Acme", "role": "Engineer", "applyBy": "2026-11-15", "followUpOn": "2026-11-01"}
                 """));
 
         var result = mvc.put().uri("/api/applications/{id}", id)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"company": "Acme", "role": "Engineer", "applyBy": "2026-11-20", "version": 0}
+                        {"companyName": "Acme", "role": "Engineer", "applyBy": "2026-11-20", "version": 0}
                         """)
                 .exchange();
 
@@ -74,7 +74,7 @@ class ApplicationDatesApiTests extends SignedInApiTests {
     @Test
     void followUpEndpointSetsTheDateAndBumpsVersion() {
         var id = idOf(create("""
-                {"company": "Acme", "role": "Engineer"}
+                {"companyName": "Acme", "role": "Engineer"}
                 """));
 
         var result = putFollowUp(id, """
@@ -89,7 +89,7 @@ class ApplicationDatesApiTests extends SignedInApiTests {
     @Test
     void followUpEndpointClearsWithNull() {
         var id = idOf(create("""
-                {"company": "Acme", "role": "Engineer", "followUpOn": "2026-11-01"}
+                {"companyName": "Acme", "role": "Engineer", "followUpOn": "2026-11-01"}
                 """));
 
         var result = putFollowUp(id, """
@@ -103,7 +103,7 @@ class ApplicationDatesApiTests extends SignedInApiTests {
     @Test
     void followUpWithStaleVersionReturns409() {
         var id = idOf(create("""
-                {"company": "Acme", "role": "Engineer"}
+                {"companyName": "Acme", "role": "Engineer"}
                 """));
 
         var result = putFollowUp(id, """
@@ -116,7 +116,7 @@ class ApplicationDatesApiTests extends SignedInApiTests {
     @Test
     void followUpWithoutVersionReturns400() {
         var id = idOf(create("""
-                {"company": "Acme", "role": "Engineer"}
+                {"companyName": "Acme", "role": "Engineer"}
                 """));
 
         var result = putFollowUp(id, """

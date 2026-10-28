@@ -1,5 +1,6 @@
 package dev.beacon.application.applications;
 
+import dev.beacon.application.companies.CompanyService;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.CreateApplicationRequest;
 import dev.beacon.contracts.applications.FollowUpRequest;
@@ -26,19 +27,22 @@ import java.util.UUID;
 public class ApplicationService {
 
     private final JobApplicationRepository repository;
+    private final CompanyService companies;
     private final Clock clock;
 
-    public ApplicationService(JobApplicationRepository repository, Clock clock) {
+    public ApplicationService(JobApplicationRepository repository, CompanyService companies, Clock clock) {
         this.repository = repository;
+        this.companies = companies;
         this.clock = clock;
     }
 
+    /** Throws {@link CompanyService.UnknownCompanyException} for a companyId that isn't the owner's. */
     @Transactional
     public ApplicationResponse create(UUID ownerId, CreateApplicationRequest request) {
         var now = Instant.now(clock);
         var application = JobApplication.create(
                 ownerId,
-                request.company(),
+                companies.resolve(ownerId, request, now),
                 request.role(),
                 request.jobUrl(),
                 request.notes(),
@@ -100,7 +104,7 @@ public class ApplicationService {
 
         var now = Instant.now(clock);
         application.updateDetails(
-                request.company(),
+                companies.resolve(ownerId, request, now),
                 request.role(),
                 request.jobUrl(),
                 request.notes(),

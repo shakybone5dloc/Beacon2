@@ -13,7 +13,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -59,7 +58,7 @@ public class PostingCaptureService {
                     new PostingCaptureException("The application was deleted while its posting was being saved.", false));
             var now = Instant.now(clock);
 
-            var filename = "posting-" + slug(application.getCompany()) + "-" + LocalDate.now(clock) + ".pdf";
+            var filename = "posting-" + Filenames.slug(application.getEmployerLabel()) + "-" + LocalDate.now(clock) + ".pdf";
             var document = Document.create(ownerId, applicationId, DocumentKind.POSTING, filename, "application/pdf", pdf, now);
             documents.save(document);
 
@@ -74,11 +73,5 @@ public class PostingCaptureService {
             }
             return new CaptureResponse(DocumentService.toResponse(document.info()), descriptionSaved);
         }));
-    }
-
-    static String slug(String text) {
-        var slug = text.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
-        if (slug.isEmpty()) return "job";
-        return slug.length() <= 60 ? slug : slug.substring(0, 60);
     }
 }

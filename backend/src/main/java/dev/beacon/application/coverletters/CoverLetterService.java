@@ -2,6 +2,7 @@ package dev.beacon.application.coverletters;
 
 import dev.beacon.application.apikeys.UserCredentials;
 import dev.beacon.application.documents.DocumentService;
+import dev.beacon.application.documents.Filenames;
 import dev.beacon.application.documents.PdfPrinter;
 import dev.beacon.application.documents.PostingCaptureException;
 import dev.beacon.application.providers.ProviderCatalog;
@@ -85,7 +86,7 @@ public class CoverLetterService {
         }
 
         return Optional.of(writer(provider).draft(new CoverLetterWriter.CoverLetterInput(
-                application.getCompany(), application.getRole(), application.getJobDescription(), resumeText, instructions),
+                application.getCompanyName(), application.getRole(), application.getJobDescription(), resumeText, instructions),
                 apiKey));
     }
 
@@ -113,7 +114,7 @@ public class CoverLetterService {
             throw new CoverLetterException("Could not turn the letter into a PDF: " + ex.getMessage(), true);
         }
 
-        var filename = "cover-letter-" + slug(application.getCompany()) + "-" + LocalDate.now(clock) + ".pdf";
+        var filename = "cover-letter-" + Filenames.slug(application.getEmployerLabel()) + "-" + LocalDate.now(clock) + ".pdf";
         return documents.addToApplication(ownerId, applicationId, DocumentKind.COVER_LETTER, filename, "application/pdf", pdf);
     }
 
@@ -134,11 +135,5 @@ public class CoverLetterService {
                 %s
                 </body></html>
                 """.formatted(LETTER_DATE.format(date), paragraphs);
-    }
-
-    private static String slug(String text) {
-        var slug = text.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
-        if (slug.isEmpty()) return "job";
-        return slug.length() <= 60 ? slug : slug.substring(0, 60);
     }
 }

@@ -1,6 +1,7 @@
 package dev.beacon.application.documents;
 
 import dev.beacon.domain.applications.JobApplication;
+import dev.beacon.domain.companies.Company;
 import dev.beacon.domain.applications.PostingDetails;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +32,7 @@ class PostingSummaryServiceTests {
 
     @Test
     void htmlShowsTheFactsAndEscapesEverything() {
-        var app = JobApplication.create(OWNER, "Acme <Labs>", "Senior Java Engineer", "https://acme.dev/jobs/1", null, NOW);
+        var app = JobApplication.create(OWNER, Company.create(OWNER, "Acme <Labs>", NOW), "Senior Java Engineer", "https://acme.dev/jobs/1", null, NOW);
         app.setPostingDetails(new PostingDetails("Denver, CO", true, 140000, 170000, "USD", "year", null,
                 "Himalayas", LocalDate.parse("2026-10-20")), NOW);
         app.setApplyBy(LocalDate.parse("2026-11-15"), NOW);
@@ -51,12 +52,19 @@ class PostingSummaryServiceTests {
 
     @Test
     void htmlLeavesOutNonWebLinksAndSaysWhenThereIsNoDescription() {
-        var app = JobApplication.create(OWNER, "Acme", "Engineer", "javascript:alert(1)", null, NOW);
+        var app = JobApplication.create(OWNER, Company.create(OWNER, "Acme", NOW), "Engineer", "javascript:alert(1)", null, NOW);
 
         var html = PostingSummaryService.postingHtml(app);
 
         assertThat(html).doesNotContain("javascript:");
         assertThat(html).contains("No job description was saved");
         assertThat(html).doesNotContain("class=\"facts\"");
+    }
+
+    @Test
+    void anUndisclosedEmployerIsNamedAsSuch() {
+        var app = JobApplication.create(OWNER, null, "Java Contractor", null, null, NOW);
+
+        assertThat(PostingSummaryService.postingHtml(app)).contains("<p class=\"company\">Undisclosed client</p>");
     }
 }

@@ -3,8 +3,9 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, finalize, of, switchMap } from 'rxjs';
 import { ApplicationsApi } from '../applications/applications-api';
+import { CompaniesApi } from '../companies/companies-api';
 import {
   ApplicationResponse,
   CreateApplicationRequest,
@@ -50,6 +51,7 @@ const PATTERN_MESSAGES: Partial<Record<FieldName, string>> = {
 })
 export class ApplicationForm implements OnInit {
   private readonly api = inject(ApplicationsApi);
+  private readonly companies = inject(CompaniesApi);
   private readonly router = inject(Router);
   private readonly fb = inject(NonNullableFormBuilder);
 
@@ -70,7 +72,9 @@ export class ApplicationForm implements OnInit {
   private version = 0;
 
   protected readonly form = this.fb.group({
+    /** Disabled, so neither required nor sent, while the employer isn't disclosed. */
     company: ['', [Validators.required, Validators.maxLength(200)]],
+    undisclosed: [false],
     role: ['', [Validators.required, Validators.maxLength(200)]],
     jobUrl: ['', [Validators.maxLength(2048), Validators.pattern(/^https?:\/\/.+/)]],
     notes: ['', [Validators.maxLength(4000)]],
@@ -92,6 +96,17 @@ export class ApplicationForm implements OnInit {
     jobDescription: ['', [Validators.maxLength(100_000)]],
   });
 
+  /** The user's companies matching what's typed, offered as the company input's suggestions. */
+  protected readonly companySuggestions = toSignal(
+    this.form.controls.company.valueChanges.pipe(
+      debounceTime(200),
+      distinctUntilChanged(),
+      switchMap((text) => (text.trim() ? this.companies.list(text) : of([]))),
+      catchError(() => of([])),
+    ),
+    { initialValue: [] },
+  );
+
   protected readonly payType = toSignal(this.form.controls.payType.valueChanges, {
     initialValue: this.form.controls.payType.value,
   });
@@ -101,6 +116,9 @@ export class ApplicationForm implements OnInit {
     this.form.controls.payType.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((type) => this.applyPayType(type));
+    this.form.controls.undisclosed.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((undisclosed) => this.applyUndisclosed(undisclosed));
   }
 
   ngOnInit(): void {
@@ -136,7 +154,8 @@ export class ApplicationForm implements OnInit {
 
     const v = this.form.getRawValue();
     const request: CreateApplicationRequest = {
-      company: v.company,
+      // A name links to the user's company of that name, or creates it; none means undisclosed.
+      companyName: v.undisclosed ? null : v.company.trim(),
       role: v.role,
       jobUrl: v.jobUrl.trim() || null,
       notes: v.notes.trim() || null,
@@ -178,6 +197,12 @@ export class ApplicationForm implements OnInit {
     return 'Invalid.';
   }
 
+  private applyUndisclosed(undisclosed: boolean): void {
+    const company = this.form.controls.company;
+    if (undisclosed) company.disable({ emitEvent: false });
+    else company.enable({ emitEvent: false });
+  }
+
   /** Only the active pay type's fields take part in validation and submission. */
   private applyPayType(type: PayType): void {
     const hourly = type === 'hourly';
@@ -194,7 +219,8 @@ export class ApplicationForm implements OnInit {
   private fill(app: ApplicationResponse): void {
     this.version = app.version;
     this.form.reset({
-      company: app.company,
+      company: app.company ?? '',
+      undisclosed: app.company == null,
       role: app.role,
       jobUrl: app.jobUrl ?? '',
       notes: app.notes ?? '',
@@ -209,6 +235,7 @@ export class ApplicationForm implements OnInit {
       postedOn: app.postedOn ?? '',
       jobDescription: app.jobDescription ?? '',
     });
+    this.applyUndisclosed(app.company == null);
     this.detailsOpen.set(hasPostingDetails(app));
   }
 
@@ -217,8 +244,7 @@ export class ApplicationForm implements OnInit {
 
     if (err.status === 400 && problem?.errors) {
       for (const [field, messages] of Object.entries(problem.errors)) {
-        // An hourly rate travels as salaryMin, so its errors belong on the rate field.
-        const name = this.payType() === 'hourly' && field === 'salaryMin' ? 'hourlyRate' : field;
+        const name = formFieldFor(field, this.payType());
         const control = this.form.get(name);
         control?.setErrors({ server: messages[0] });
         control?.markAsTouched();
@@ -294,4 +320,12 @@ function payFields(app: ApplicationResponse) {
     salaryMax: app.salaryMax?.toString() ?? '',
     salaryPeriod: app.salaryPeriod ?? 'year',
   };
+}
+
+/** The form control a server field error belongs to. */
+function formFieldFor(field: string, payType: PayType): string {
+  // An hourly rate travels as salaryMin, so its errors belong on the rate field.
+  if (payType === 'hourly' && field === 'salaryMin') return 'hourlyRate';
+  if (field === 'companyName' || field === 'companyId') return 'company';
+  return field;
 }

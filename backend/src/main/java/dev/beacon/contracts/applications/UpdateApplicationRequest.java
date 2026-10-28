@@ -9,9 +9,13 @@ import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.URL;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 public record UpdateApplicationRequest(
-    @NotBlank @Size(max = 200) String company,
+    /** An existing company of the user's. Takes precedence over companyName. */
+    @Nullable UUID companyId,
+    /** Matched to one of the user's companies by name, or created. Leave both empty when the employer isn't disclosed. */
+    @Nullable @Size(max = 200) String companyName,
     @NotBlank @Size(max = 200) String role,
     @Nullable @URL @Size(max = 2048) String jobUrl,
     @Nullable @Size(max = 4000) String notes,
@@ -28,5 +32,5 @@ public record UpdateApplicationRequest(
     @Nullable LocalDate postedOn,
     @Nullable @Size(max = 100_000) String jobDescription,
     @NotNull Long version
-    ) implements PostingFields {
+    ) implements PostingFields, CompanyChoice {
 }

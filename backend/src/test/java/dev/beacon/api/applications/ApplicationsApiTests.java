@@ -26,7 +26,7 @@ class ApplicationsApiTests extends SignedInApiTests {
         var result = mvc.post().uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"company": "  Acme  ", "role": "Senior Engineer"}
+                        {"companyName": "  Acme  ", "role": "Senior Engineer"}
                         """)
                 .exchange();
 
@@ -37,16 +37,30 @@ class ApplicationsApiTests extends SignedInApiTests {
     }
 
     @Test
-    void createWithBlankCompanyReturns400WithFieldErrors() {
+    void createWithBlankRoleReturns400WithFieldErrors() {
         var result = mvc.post().uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"company": "", "role": "Senior Engineer"}
+                        {"companyName": "Acme", "role": ""}
                 """)
                 .exchange();
 
         assertThat(result).hasStatus(HttpStatus.BAD_REQUEST);
-        assertThat(result).bodyJson().extractingPath("$.errors.company").isNotNull();
+        assertThat(result).bodyJson().extractingPath("$.errors.role").isNotNull();
+    }
+
+    @Test
+    void withoutACompanyTheEmployerIsUndisclosed() {
+        var result = mvc.post().uri("/api/applications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"companyName": "  ", "role": "Java Contractor"}
+                """)
+                .exchange();
+
+        assertThat(result).hasStatus(HttpStatus.CREATED);
+        assertThat(result).bodyJson().extractingPath("$.company").isNull();
+        assertThat(result).bodyJson().extractingPath("$.companyId").isNull();
     }
 
     @Test
@@ -61,7 +75,7 @@ class ApplicationsApiTests extends SignedInApiTests {
         var result = mvc.post().uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"company": "  Acme  ", "role": "Senior Engineer"}
+                        {"companyName": "  Acme  ", "role": "Senior Engineer"}
                         """)
                 .exchange();
 
@@ -89,7 +103,7 @@ class ApplicationsApiTests extends SignedInApiTests {
         var result = mvc.post().uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"company": "%s", "role": "Senior Engineer"}
+                        {"companyName": "%s", "role": "Senior Engineer"}
                         """.formatted(company))
                 .exchange();
 

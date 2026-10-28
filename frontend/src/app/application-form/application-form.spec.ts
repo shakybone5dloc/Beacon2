@@ -45,7 +45,7 @@ describe('ApplicationForm', () => {
       const req = http.expectOne('/api/applications');
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({
-        company: 'Acme',
+        companyName: 'Acme',
         role: 'Engineer',
         jobUrl: null,
         notes: null,
@@ -54,7 +54,7 @@ describe('ApplicationForm', () => {
         followUpOn: null,
       });
       req.flush(
-        { errors: { company: ['already tracked'] } },
+        { errors: { companyName: ['already tracked'] } },
         { status: 400, statusText: 'Bad Request' },
       );
       await fixture.whenStable();
@@ -62,6 +62,54 @@ describe('ApplicationForm', () => {
       const companyLabel = el.querySelector('input[formControlName=company]')!.closest('label')!;
       expect(companyLabel.querySelector('.error')?.textContent).toContain('already tracked');
       expect(el.querySelectorAll('.error').length).toBe(1);
+    });
+  });
+
+  describe('company', () => {
+    it('sends no company when the employer is not disclosed', async () => {
+      const fixture = TestBed.createComponent(ApplicationForm);
+      await fixture.whenStable();
+      const el: HTMLElement = fixture.nativeElement;
+
+      input(el, 'undisclosed').click();
+      await fixture.whenStable();
+      expect(input(el, 'company').disabled).toBe(true);
+
+      fill(el, 'role', 'Java Contractor');
+      el.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+
+      const req = http.expectOne('/api/applications');
+      expect(req.request.body.companyName).toBeNull();
+      req.flush(anApplication({ company: null, companyId: null }));
+    });
+
+    it("suggests the user's companies matching what is typed", async () => {
+      const fixture = TestBed.createComponent(ApplicationForm);
+      await fixture.whenStable();
+      const el: HTMLElement = fixture.nativeElement;
+
+      fill(el, 'company', 'ac');
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      http
+        .expectOne((r) => r.url === '/api/companies' && r.params.get('q') === 'ac')
+        .flush([
+          {
+            id: 'c1',
+            name: 'Acme, Inc.',
+            type: 'EMPLOYER',
+            website: null,
+            emailDomains: [],
+            notes: null,
+            applicationCount: 2,
+            version: 0,
+            createdAt: '2026-10-23T12:00:00Z',
+            updatedAt: '2026-10-23T12:00:00Z',
+          },
+        ]);
+      await fixture.whenStable();
+
+      const options = Array.from(el.querySelectorAll('#company-suggestions option'));
+      expect(options.map((o) => o.getAttribute('value'))).toEqual(['Acme, Inc.']);
     });
   });
 
@@ -238,6 +286,13 @@ describe('ApplicationForm', () => {
       return { fixture, el: fixture.nativeElement as HTMLElement };
     }
 
+    it('shows an undisclosed employer as such', async () => {
+      const { el } = await openEditor(anApplication({ id: 'a1', company: null, companyId: null }));
+
+      expect(input(el, 'undisclosed').checked).toBe(true);
+      expect(input(el, 'company').disabled).toBe(true);
+    });
+
     it('loads the application into the form', async () => {
       const { el } = await openEditor(
         anApplication({
@@ -271,7 +326,7 @@ describe('ApplicationForm', () => {
       const req = http.expectOne('/api/applications/a1');
       expect(req.request.method).toBe('PUT');
       expect(req.request.body).toEqual({
-        company: 'Acme',
+        companyName: 'Acme',
         role: 'Principal Engineer',
         jobUrl: null,
         notes: null,

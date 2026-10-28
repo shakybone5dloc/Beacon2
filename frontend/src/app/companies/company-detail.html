@@ -1,0 +1,102 @@
+<p><a routerLink="/companies" class="back">← Companies</a></p>
+
+@if (loadError(); as message) {
+  <p class="notice">{{ message }}</p>
+} @else if (company(); as c) {
+  @if (!editing()) {
+    <header class="heading">
+      <div>
+        <h1>{{ c.name }}</h1>
+        <p class="type">{{ typeLabels[c.type] }}</p>
+      </div>
+      <button type="button" (click)="startEdit()">Edit</button>
+    </header>
+
+    <dl class="facts">
+      @if (c.website; as website) {
+        <div>
+          <dt>Website</dt>
+          <dd>
+            <a [href]="website" target="_blank" rel="noopener noreferrer">{{ website }}</a>
+          </dd>
+        </div>
+      }
+      @if (c.emailDomains.length) {
+        <div>
+          <dt>Email domains</dt>
+          <dd>{{ c.emailDomains.join(', ') }}</dd>
+        </div>
+      }
+    </dl>
+    @if (c.notes; as notes) {
+      <p class="notes">{{ notes }}</p>
+    }
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate class="edit">
+      @if (formError(); as message) {
+        <p class="notice">{{ message }}</p>
+      }
+      <label>
+        Name
+        <input formControlName="name" />
+        @if (errorFor('name'); as msg) {
+          <span class="error">{{ msg }}</span>
+        }
+      </label>
+      <label>
+        Type
+        <select formControlName="type">
+          @for (t of types; track t) {
+            <option [value]="t">{{ typeLabels[t] }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Website
+        <input formControlName="website" type="url" placeholder="https://..." />
+        @if (errorFor('website'); as msg) {
+          <span class="error">{{ msg }}</span>
+        }
+      </label>
+      <label>
+        Email domains
+        <input formControlName="emailDomains" placeholder="acme.com, acmejobs.com" />
+        <span class="hint"
+          >Where their recruiters' email comes from; used to match email later.</span
+        >
+        @if (errorFor('emailDomains'); as msg) {
+          <span class="error">{{ msg }}</span>
+        }
+      </label>
+      <label>
+        Notes
+        <textarea formControlName="notes" rows="4"></textarea>
+        @if (errorFor('notes'); as msg) {
+          <span class="error">{{ msg }}</span>
+        }
+      </label>
+      <div class="buttons">
+        <button type="submit" class="primary" [disabled]="saving()">
+          {{ saving() ? 'Saving...' : 'Save' }}
+        </button>
+        <button type="button" (click)="editing.set(false)" [disabled]="saving()">Cancel</button>
+      </div>
+    </form>
+  }
+
+  <h2>Applications</h2>
+  @if (applications().length === 0) {
+    <p class="empty">No applications with {{ c.name }} yet.</p>
+  } @else {
+    <ul class="applications">
+      @for (app of applications(); track app.id) {
+        <li>
+          <a [routerLink]="['/applications', app.id]">{{ app.role }}</a>
+          <span class="badge">{{ app.status | titlecase }}</span>
+        </li>
+      }
+    </ul>
+  }
+} @else {
+  <p>Loading...</p>
+}

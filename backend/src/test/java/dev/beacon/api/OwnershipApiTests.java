@@ -4,10 +4,8 @@ import com.jayway.jsonpath.JsonPath;
 import dev.beacon.DocumentTestDoubles;
 import dev.beacon.SignedInApiTests;
 import dev.beacon.TestcontainersConfiguration;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
@@ -28,8 +26,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 class OwnershipApiTests extends SignedInApiTests {
 
-    @Autowired EntityManager entityManager;
-
     private MockMvcTester other;
 
     @BeforeEach
@@ -48,7 +44,7 @@ class OwnershipApiTests extends SignedInApiTests {
         assertThat(other.put().uri("/api/applications/{id}", id)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"company": "Hijacked", "role": "Engineer", "version": 0}
+                        {"companyName": "Hijacked", "role": "Engineer", "version": 0}
                         """)
                 .exchange()).hasStatus(HttpStatus.NOT_FOUND);
         assertThat(other.patch().uri("/api/applications/{id}/status", id)
@@ -85,29 +81,49 @@ class OwnershipApiTests extends SignedInApiTests {
     }
 
     @Test
-    void rowsFromBeforeAccountsAreHiddenFromEveryone() {
-        var legacy = UUID.randomUUID();
-        entityManager.createNativeQuery("""
-                insert into job_applications (id, company, role, status, version, created_at, updated_at, status_changed_at)
-                values (:id, 'Legacy', 'Engineer', 'SAVED', 0, now(), now(), now())
-                """).setParameter("id", legacy).executeUpdate();
+    void anotherUsersCompanyIsNotFoundAndCantBeLinked() {
+        var appId = createApplication(mvc);
+        var companyId = JsonPath.<String>read(body(mvc.get().uri("/api/applications/{id}", appId).exchange()), "$.companyId");
 
-        assertThat(mvc.get().uri("/api/applications").exchange())
-                .bodyJson().extractingPath("$").asArray().isEmpty();
-        assertThat(mvc.get().uri("/api/applications/{id}", legacy).exchange()).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(other.get().uri("/api/companies").exchange()).bodyJson().extractingPath("$").asArray().isEmpty();
+        assertThat(other.get().uri("/api/companies/{id}", companyId).exchange()).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(other.get().uri("/api/companies/{id}/applications", companyId).exchange()).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(other.put().uri("/api/companies/{id}", companyId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"name": "Hijacked", "type": "EMPLOYER", "version": 0}
+                        """)
+                .exchange()).hasStatus(HttpStatus.NOT_FOUND);
+
+        var linked = other.post().uri("/api/applications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"companyId": "%s", "role": "Engineer"}
+                        """.formatted(companyId))
+                .exchange();
+        assertThat(linked).hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(linked).bodyJson().extractingPath("$.errors.companyId").isNotNull();
     }
 
     private static String createApplication(MockMvcTester as) {
         return id(as.post().uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"company": "Acme", "role": "Engineer"}
+                        {"companyName": "Acme", "role": "Engineer"}
                         """)
                 .exchange());
     }
 
     private static MockMultipartFile file() {
         return new MockMultipartFile("file", "resume.pdf", "application/pdf", DocumentTestDoubles.pdfWithText("Resume"));
+    }
+
+    private static String body(MvcTestResult result) {
+        try {
+            return result.getResponse().getContentAsString();
+        } catch (UnsupportedEncodingException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     private static String id(MvcTestResult result) {

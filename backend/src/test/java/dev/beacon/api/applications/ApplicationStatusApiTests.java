@@ -118,7 +118,7 @@ class ApplicationStatusApiTests extends SignedInApiTests {
         var result = mvc.post().uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"company": "Acme", "role": "Engineer"}
+                        {"companyName": "Acme", "role": "Engineer"}
                         """)
                 .exchange();
         assertThat(result).hasStatus(HttpStatus.CREATED);

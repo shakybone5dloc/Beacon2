@@ -7,7 +7,15 @@
     <div class="main">
       <header class="heading">
         <div>
-          <h1>{{ app.company }}</h1>
+          <h1>
+            @if (app.companyId) {
+              <a [routerLink]="['/companies', app.companyId]" class="company-link">{{
+                app.company
+              }}</a>
+            } @else {
+              {{ employerLabel(app) }}
+            }
+          </h1>
           <p class="role">{{ app.role }}</p>
         </div>
         <div class="heading-side">

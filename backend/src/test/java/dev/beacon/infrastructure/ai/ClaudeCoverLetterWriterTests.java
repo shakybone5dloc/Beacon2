@@ -26,4 +26,11 @@ class ClaudeCoverLetterWriterTests {
 
         assertThat(message).doesNotContain("Additional guidance");
     }
+
+    @Test
+    void promptSaysWhenTheEmployerIsNotDisclosed() {
+        var message = CoverLetterPrompt.userMessage(new CoverLetterInput(null, "Engineer", "JD", "CV", null));
+
+        assertThat(message).contains("Company: not disclosed").doesNotContain("null");
+    }
 }

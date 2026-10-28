@@ -10,6 +10,11 @@ export type ChangeStatusRequest = api.ChangeStatusRequest;
 
 export type ApplicationStatus = ApplicationResponse['status'];
 
+/** The employer's name, or how to refer to one that isn't disclosed. */
+export function employerLabel(app: Pick<ApplicationResponse, 'company'>): string {
+  return app.company ?? 'Undisclosed client';
+}
+
 /** Board column order. */
 export const STATUSES = [
   'SAVED',

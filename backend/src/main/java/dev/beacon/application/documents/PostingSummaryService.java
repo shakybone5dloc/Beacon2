@@ -50,7 +50,7 @@ public class PostingSummaryService {
         var application = found.get();
 
         var pdf = printer.printHtml(postingHtml(application));
-        var filename = "posting-" + PostingCaptureService.slug(application.getCompany()) + "-summary-" + LocalDate.now(clock) + ".pdf";
+        var filename = "posting-" + Filenames.slug(application.getEmployerLabel()) + "-summary-" + LocalDate.now(clock) + ".pdf";
         return documents.addToApplication(ownerId, applicationId, DocumentKind.POSTING, filename, "application/pdf", pdf);
     }
 
@@ -106,9 +106,9 @@ public class PostingSummaryService {
                 </div>
                 </body></html>
                 """.formatted(
-                escape(app.getRole()), escape(app.getCompany()),
+                escape(app.getRole()), escape(app.getEmployerLabel()),
                 escape(app.getRole()),
-                escape(app.getCompany()),
+                escape(app.getEmployerLabel()),
                 facts.isEmpty() ? "" : "<div class=\"facts\">" + String.join("", facts) + "</div>",
                 original,
                 description);

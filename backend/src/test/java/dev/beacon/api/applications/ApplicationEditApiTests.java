@@ -27,7 +27,7 @@ class ApplicationEditApiTests extends SignedInApiTests {
         var id = createApplication();
 
         var result = put(id, """
-                {"company": " Globex ", "role": "Staff Engineer", "jobUrl": "https://globex.com/jobs/1",
+                {"companyName": " Globex ", "role": "Staff Engineer", "jobUrl": "https://globex.com/jobs/1",
                  "notes": "Referred by Sam", "version": 0}
                 """);
 
@@ -45,22 +45,22 @@ class ApplicationEditApiTests extends SignedInApiTests {
         var id = createApplication();
 
         var result = put(id, """
-                {"company": "Globex", "role": "Engineer", "version": 3}
+                {"companyName": "Globex", "role": "Engineer", "version": 3}
                 """);
 
         assertThat(result).hasStatus(HttpStatus.CONFLICT);
     }
 
     @Test
-    void updateWithBlankCompanyReturns400WithFieldErrors() {
+    void updateWithBlankRoleReturns400WithFieldErrors() {
         var id = createApplication();
 
         var result = put(id, """
-                {"company": "", "role": "Engineer", "version": 0}
+                {"companyName": "Acme", "role": "", "version": 0}
                 """);
 
         assertThat(result).hasStatus(HttpStatus.BAD_REQUEST);
-        assertThat(result).bodyJson().extractingPath("$.errors.company").isNotNull();
+        assertThat(result).bodyJson().extractingPath("$.errors.role").isNotNull();
     }
 
     @Test
@@ -68,7 +68,7 @@ class ApplicationEditApiTests extends SignedInApiTests {
         var id = createApplication();
 
         var result = put(id, """
-                {"company": "Globex", "role": "Engineer"}
+                {"companyName": "Globex", "role": "Engineer"}
                 """);
 
         assertThat(result).hasStatus(HttpStatus.BAD_REQUEST);
@@ -78,7 +78,7 @@ class ApplicationEditApiTests extends SignedInApiTests {
     @Test
     void updateUnknownIdReturns404() {
         var result = put(UUID.randomUUID().toString(), """
-                {"company": "Globex", "role": "Engineer", "version": 0}
+                {"companyName": "Globex", "role": "Engineer", "version": 0}
                 """);
 
         assertThat(result).hasStatus(HttpStatus.NOT_FOUND);
@@ -107,7 +107,7 @@ class ApplicationEditApiTests extends SignedInApiTests {
         var result = mvc.post().uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"company": "Acme", "role": "Engineer"}
+                        {"companyName": "Acme", "role": "Engineer"}
                         """)
                 .exchange();
         assertThat(result).hasStatus(HttpStatus.CREATED);

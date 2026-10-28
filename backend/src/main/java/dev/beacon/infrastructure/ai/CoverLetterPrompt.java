@@ -27,7 +27,8 @@ final class CoverLetterPrompt {
 
     static String userMessage(CoverLetterInput input) {
         var message = new StringBuilder()
-                .append("Company: ").append(input.company()).append('\n')
+                .append("Company: ").append(input.company() != null ? input.company()
+                        : "not disclosed (the role came through a recruiter; don't name or guess the company)").append('\n')
                 .append("Role: ").append(input.role()).append("\n\n")
                 .append("<job_description>\n").append(input.jobDescription()).append("\n</job_description>\n\n")
                 .append("<resume>\n").append(input.resume()).append("\n</resume>");

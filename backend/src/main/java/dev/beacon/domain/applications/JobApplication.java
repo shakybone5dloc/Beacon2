@@ -1,6 +1,7 @@
 package dev.beacon.domain.applications;
 
 import dev.beacon.domain.DomainException;
+import dev.beacon.domain.companies.Company;
 
 import jakarta.persistence.*;
 import java.time.Instant;
@@ -14,6 +15,8 @@ import java.util.UUID;
 @Table(name = "job_applications")
 public class JobApplication {
 
+    public static final String UNDISCLOSED_EMPLOYER = "Undisclosed client";
+
     @Id
     private UUID id;
 
@@ -21,8 +24,10 @@ public class JobApplication {
     @Column(name = "owner_id", updatable = false)
     private UUID ownerId;
 
-    @Column(nullable = false, length = 200)
-    private String company;
+    /** The employer; null when it isn't disclosed (a recruiter's client, say). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @Column(nullable = false, length = 200)
     private String role;
@@ -88,7 +93,8 @@ public class JobApplication {
 
     protected JobApplication() { }
 
-    public static JobApplication create(UUID ownerId, String company, String role, String jobUrl, String notes, Instant now) {
+    /** @param company null when the employer isn't disclosed; must belong to the same owner */
+    public static JobApplication create(UUID ownerId, Company company, String role, String jobUrl, String notes, Instant now) {
         if (ownerId == null) throw new IllegalArgumentException("An application needs an owner");
         var app = new JobApplication();
         app.id = UUID.randomUUID();
@@ -101,18 +107,18 @@ public class JobApplication {
         return app;
     }
 
-    public void updateDetails(String company, String role, String jobUrl, String notes, Instant now) {
+    public void updateDetails(Company company, String role, String jobUrl, String notes, Instant now) {
         applyDetails(company, role, jobUrl, notes);
         this.updatedAt = now;
     }
 
-    private void applyDetails(String company, String role, String jobUrl, String notes) {
-        if (company == null
-            || company.isBlank()
-            || role == null
-            || role.isBlank()) throw new IllegalArgumentException();
+    private void applyDetails(Company company, String role, String jobUrl, String notes) {
+        if (role == null || role.isBlank()) throw new IllegalArgumentException("An application needs a role");
+        if (company != null && !company.getOwnerId().equals(ownerId)) {
+            throw new IllegalArgumentException("The company belongs to another user");
+        }
 
-        this.company = company.strip();
+        this.company = company;
         this.role = role.strip();
         this.jobUrl = trimToNull(jobUrl);
         this.notes = trimToNull(notes);
@@ -170,7 +176,12 @@ public class JobApplication {
     }
 
     public UUID getId() { return id; }
-    public String getCompany() { return company; }
+    /** Null when the employer isn't disclosed. */
+    public Company getCompany() { return company; }
+    /** The employer's name, or null when it isn't disclosed. */
+    public String getCompanyName() { return company == null ? null : company.getName(); }
+    /** The employer's name, or "Undisclosed client", for titles and file names. */
+    public String getEmployerLabel() { return company == null ? UNDISCLOSED_EMPLOYER : company.getName(); }
     public String getRole() { return role; }
     public String getJobUrl() { return jobUrl; }
     public String getNotes() { return notes; }

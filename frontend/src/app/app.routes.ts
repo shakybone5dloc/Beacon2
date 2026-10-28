@@ -10,6 +10,8 @@ import { RegisterPage } from './auth/register-page';
 import { authGuard, guestGuard } from './auth/auth.guards';
 import { ProviderGuide } from './providers/provider-guide';
 import { ApiKeysPage } from './providers/api-keys-page';
+import { CompanyList } from './companies/company-list';
+import { CompanyDetail } from './companies/company-detail';
 
 export const routes: Routes = [
   { path: 'login', component: LoginPage, canActivate: [guestGuard], title: 'Beacon · Sign in' },
@@ -26,6 +28,8 @@ export const routes: Routes = [
       { path: '', component: Board, title: 'Beacon · Board' },
       { path: 'jobs', component: JobSearch, title: 'Beacon · Find jobs' },
       { path: 'documents', component: DocumentLibrary, title: 'Beacon · Documents' },
+      { path: 'companies', component: CompanyList, title: 'Beacon · Companies' },
+      { path: 'companies/:id', component: CompanyDetail, title: 'Beacon · Company' },
       { path: 'providers', component: ProviderGuide, title: 'Beacon · Getting API keys' },
       { path: 'settings/api-keys', component: ApiKeysPage, title: 'Beacon · API keys' },
       { path: 'applications/new', component: ApplicationForm, title: 'Beacon · New application' },

@@ -1,5 +1,6 @@
 package dev.beacon.domain.applications;
 
+import dev.beacon.domain.companies.Company;
 import dev.beacon.domain.DomainException;
 import org.junit.jupiter.api.Test;
 
@@ -14,10 +15,14 @@ class JobApplicationStatusTests {
     private static final UUID OWNER = UUID.randomUUID();
 
     private static final Instant NOW = Instant.parse("2026-10-23T12:00:00.00Z");
+
+    private static Company company(String name) {
+        return Company.create(OWNER, name, NOW);
+    }
     private static final Instant LATER = NOW.plusSeconds(3600);
 
     private static JobApplication newApp() {
-        return JobApplication.create(OWNER, "Acme", "Engineer", null, null, NOW);
+        return JobApplication.create(OWNER, company("Acme"), "Engineer", null, null, NOW);
     }
 
     @Test
@@ -135,7 +140,7 @@ class JobApplicationStatusTests {
     void editingDetailsDoesNotTouchStatusChangedAt() {
         var app = newApp();
 
-        app.updateDetails("Globex", "Engineer", null, null, LATER);
+        app.updateDetails(company("Globex"), "Engineer", null, null, LATER);
 
         assertThat(app.getStatusChangedAt()).isEqualTo(NOW);
         assertThat(app.getStatusHistory()).hasSize(1);

@@ -52,7 +52,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Test
     void capturePrintsTheJobUrlAndKeepsItsTextAsTheDescription() {
-        var appId = createApplication("{\"company\": \"Acme Corp\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL + "\"}");
+        var appId = createApplication("{\"companyName\": \"Acme Corp\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL + "\"}");
 
         var result = capture(appId);
 
@@ -69,7 +69,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Test
     void captureNeverOverwritesAnExistingDescription() {
-        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL
                 + "\", \"jobDescription\": \"My own notes\"}");
 
         assertThat(capture(appId)).bodyJson().extractingPath("$.descriptionSaved").isEqualTo(false);
@@ -80,7 +80,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Test
     void aBotCheckPageIsReportedAndNotSaved() {
-        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL + "\"}");
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL + "\"}");
         printer.pageLines = new String[]{"himalayas.app", "Performing security verification",
                 "Ray ID: 9f1c2b", "Performance and Security by Cloudflare"};
 
@@ -96,7 +96,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Test
     void aPageWithBarelyAnyTextIsKeptButNotUsedAsTheDescription() {
-        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL + "\"}");
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL + "\"}");
         printer.pageLines = new String[]{"Loading..."};
 
         var result = capture(appId);
@@ -109,7 +109,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Test
     void captureNeedsAJobUrl() {
-        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Engineer\"}");
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\"}");
 
         var result = capture(appId);
 
@@ -120,7 +120,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Test
     void captureRefusesPrivateNetworkAddresses() {
-        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"http://127.0.0.1:8080/admin\"}");
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"http://127.0.0.1:8080/admin\"}");
 
         var result = capture(appId);
 
@@ -130,7 +130,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Test
     void aBrowserFailureIsA502() {
-        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL + "\"}");
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL + "\"}");
         printer.failWith = "The page took too long to load.";
 
         var result = capture(appId);
@@ -148,7 +148,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Test
     void postingSummaryPrintsBeaconsOwnCopyOfThePosting() {
-        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Java Engineer\", \"salaryMin\": 140000, "
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Java Engineer\", \"salaryMin\": 140000, "
                 + "\"salaryCurrency\": \"USD\", \"jobDescription\": \"Build services.\"}");
 
         var result = mvc.post().uri("/api/applications/{id}/documents/posting-summary", appId).exchange();
@@ -183,7 +183,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
     @Test
     void draftWithoutAnAiKeyPointsToSettings() {
         keys.delete(signedIn.id(), "openai");
-        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Engineer\", \"jobDescription\": \"Build services.\"}");
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\", \"jobDescription\": \"Build services.\"}");
         var resumeId = uploadToLibrary("resume.txt", "Jordan Smith".getBytes());
 
         var result = draft(appId, resumeId, null);
@@ -195,7 +195,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Test
     void draftUsesTheJobDescriptionAndALibraryResume() {
-        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Engineer\", \"jobDescription\": \"Build services.\"}");
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\", \"jobDescription\": \"Build services.\"}");
         var resumeId = uploadToLibrary("resume.pdf", DocumentTestDoubles.pdfWithText("Jordan Smith", "Java developer, 8 years"));
 
         var result = draft(appId, resumeId, "Mention Denver");
@@ -210,7 +210,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Test
     void draftNeedsAJobDescription() {
-        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Engineer\"}");
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\"}");
         var resumeId = uploadToLibrary("resume.txt", "Jordan Smith".getBytes());
 
         var result = draft(appId, resumeId, null);
@@ -221,7 +221,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Test
     void draftExplainsWhenTheResumeCannotBeRead() {
-        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Engineer\", \"jobDescription\": \"Build services.\"}");
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\", \"jobDescription\": \"Build services.\"}");
         var resumeId = uploadToLibrary("resume.docx", new byte[]{1, 2, 3});
 
         var result = draft(appId, resumeId, null);
@@ -232,7 +232,7 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
 
     @Test
     void saveRendersTheLetterAsAPdfCoverLetter() {
-        var appId = createApplication("{\"company\": \"Acme\", \"role\": \"Engineer\"}");
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\"}");
 
         var result = mvc.post().uri("/api/applications/{id}/cover-letter", appId)
                 .contentType(MediaType.APPLICATION_JSON)

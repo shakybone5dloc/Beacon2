@@ -127,7 +127,7 @@ export class JobSearch implements OnInit {
 
     this.applicationsApi
       .create({
-        company: truncate(posting.company ?? 'Unknown company'),
+        companyName: posting.company ? truncate(posting.company) : null,
         role: truncate(posting.title),
         jobUrl: posting.url.length <= 2048 ? posting.url : null,
         notes: null,

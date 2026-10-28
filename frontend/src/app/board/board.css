@@ -172,3 +172,6 @@
   color: var(--accent);
   text-decoration: none;
 }
+.company.undisclosed {
+  font-style: italic;
+}

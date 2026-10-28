@@ -20,10 +20,20 @@
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <label>
       Company
-      <input formControlName="company" />
+      <input formControlName="company" list="company-suggestions" autocomplete="off" />
+      <datalist id="company-suggestions">
+        @for (c of companySuggestions(); track c.id) {
+          <option [value]="c.name"></option>
+        }
+      </datalist>
+      <span class="hint">Pick one you've used before, or type a new name to add it.</span>
       @if (errorFor('company'); as msg) {
         <span class="error">{{ msg }}</span>
       }
+    </label>
+    <label class="check">
+      <input type="checkbox" formControlName="undisclosed" />
+      Employer not disclosed (a recruiter's client)
     </label>
 
     <label>

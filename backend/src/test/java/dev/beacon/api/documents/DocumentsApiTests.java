@@ -158,7 +158,7 @@ class DocumentsApiTests extends SignedInApiTests {
     private String createApplication() {
         var result = mvc.post().uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"company\": \"Acme\", \"role\": \"Engineer\"}")
+                .content("{\"companyName\": \"Acme\", \"role\": \"Engineer\"}")
                 .exchange();
         var location = result.getResponse().getHeader(HttpHeaders.LOCATION);
         return location.substring(location.lastIndexOf('/') + 1);

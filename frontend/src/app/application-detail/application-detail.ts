@@ -7,6 +7,7 @@ import { ApplicationsApi } from '../applications/applications-api';
 import {
   ApplicationResponse,
   ApplicationStatus,
+  employerLabel,
   StatusChange,
 } from '../applications/application.model';
 import { attentionFor } from '../applications/attention';
@@ -38,6 +39,7 @@ interface TimelineEntry extends StatusChange {
 })
 export class ApplicationDetail implements OnInit {
   private readonly api = inject(ApplicationsApi);
+  protected readonly employerLabel = employerLabel;
   private readonly router = inject(Router);
   private readonly documentsApi = inject(DocumentsApi);
 
@@ -152,7 +154,7 @@ export class ApplicationDetail implements OnInit {
   }
 
   protected remove(app: ApplicationResponse): void {
-    if (!confirm(`Delete ${app.company} – ${app.role}? This cannot be undone.`)) {
+    if (!confirm(`Delete ${employerLabel(app)} – ${app.role}? This cannot be undone.`)) {
       return;
     }
 
