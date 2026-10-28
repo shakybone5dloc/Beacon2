@@ -11,6 +11,23 @@ export type ChangeStatusRequest = api.ChangeStatusRequest;
 export type ApplicationStatus = ApplicationResponse['status'];
 export type EmploymentType = NonNullable<ApplicationResponse['employmentType']>;
 
+const FORWARD_MOVES: ApplicationStatus[] = ['APPLIED', 'INTERVIEWING', 'OFFER', 'ACCEPTED'];
+
+/** Moves that advance an application, shown as the primary button. */
+export function isForwardMove(status: ApplicationStatus): boolean {
+  return FORWARD_MOVES.includes(status);
+}
+
+/** The moves on offer, sideways ones first so the forward move comes last. */
+export function orderedMoves(
+  app: Pick<ApplicationResponse, 'allowedTransitions'>,
+): ApplicationStatus[] {
+  return [
+    ...app.allowedTransitions.filter((t) => !isForwardMove(t)),
+    ...app.allowedTransitions.filter((t) => isForwardMove(t)),
+  ];
+}
+
 export const EMPLOYMENT_TYPE_LABELS: Record<EmploymentType, string> = {
   FULL_TIME: 'Full-time',
   CONTRACT: 'Contract',

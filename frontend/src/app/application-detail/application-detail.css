@@ -22,7 +22,7 @@
 .status {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 0.15rem 0.7rem;
   font-size: 0.85rem;
   white-space: nowrap;
@@ -33,7 +33,7 @@ dl {
   grid-template-columns: max-content 1fr;
   gap: 0.6rem 1.5rem;
   max-width: 720px;
-  margin: 1.5rem 0;
+  margin: 1.5rem 0 0;
 }
 dt {
   font-weight: 600;
@@ -87,24 +87,6 @@ dd {
   color: var(--muted);
   font-size: 0.9rem;
 }
-.moves button {
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 0.2rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: white;
-  color: var(--text);
-  cursor: pointer;
-}
-.moves button:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.moves button:disabled {
-  opacity: 0.5;
-  cursor: wait;
-}
 
 h2 {
   font-size: 1rem;
@@ -147,7 +129,7 @@ h2 {
   margin-left: 0.4rem;
   font-size: 0.75rem;
   padding: 0 0.45rem;
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--muted);
@@ -189,9 +171,9 @@ h2 {
   margin-left: 0;
 }
 
-section {
+section,
+app-application-people {
   max-width: 720px;
-  margin-bottom: 1.5rem;
 }
 .salary {
   color: #1a7f37;

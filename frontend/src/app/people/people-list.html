@@ -1,13 +1,18 @@
-<header class="heading">
-  <h1>People</h1>
+<header class="heading mb-space-lg">
+  <div>
+    <h1 class="mb-space-xs">People</h1>
+    <p class="intro m-0 max-w-2xl text-body-md text-on-surface-variant">
+      Recruiters, hiring managers, interviewers and referrals. Add them to an application from its
+      page to keep track of who you're talking to about what.
+    </p>
+  </div>
   @if (!adding()) {
-    <button type="button" class="primary" (click)="adding.set(true)">New person</button>
+    <button type="button" class="primary shrink-0" (click)="adding.set(true)">
+      <span class="material-symbols-outlined !text-base" aria-hidden="true">add</span>
+      New person
+    </button>
   }
 </header>
-<p class="intro">
-  Recruiters, hiring managers, interviewers and referrals. Add them to an application from its page
-  to keep track of who you're talking to about what.
-</p>
 
 @if (adding()) {
   <section class="panel">
@@ -22,15 +27,51 @@
   @if (list.length === 0) {
     <p class="empty">No one yet.</p>
   } @else {
-    <ul class="people">
-      @for (p of list; track p.id) {
-        <li>
-          <a [routerLink]="['/people', p.id]" class="name">{{ p.name }}</a>
-          <span class="role">{{ roleLabels[p.role] }}</span>
-          <span class="where">{{ where(p) }}</span>
-        </li>
-      }
-    </ul>
+    <div class="card overflow-x-auto">
+      <table class="people-table w-full border-collapse text-left">
+        <thead>
+          <tr
+            class="border-b border-hairline font-mono text-label-sm tracking-wide text-on-surface-variant uppercase"
+          >
+            <th class="px-space-lg py-space-md font-medium">Name</th>
+            <th class="px-space-lg py-space-md font-medium">Role</th>
+            <th class="px-space-lg py-space-md font-medium">Works at</th>
+            <th class="px-space-lg py-space-md font-medium">Contact</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of list; track p.id) {
+            <tr class="border-b border-hairline last:border-b-0 hover:bg-[#f3f4f6]">
+              <td class="px-space-lg py-space-md">
+                <div class="flex items-center gap-space-md">
+                  <span
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-fixed font-mono text-label-code text-primary"
+                    aria-hidden="true"
+                    >{{ initials(p.name) }}</span
+                  >
+                  <a
+                    [routerLink]="['/people', p.id]"
+                    class="name text-headline-sm text-on-surface no-underline hover:text-primary-container"
+                    >{{ p.name }}</a
+                  >
+                </div>
+              </td>
+              <td class="px-space-lg py-space-md">
+                <span class="role-pill pill" [class.pill-violet]="p.role === 'RECRUITER'">{{
+                  roleLabels[p.role]
+                }}</span>
+              </td>
+              <td class="where px-space-lg py-space-md text-body-sm text-on-surface-variant">
+                {{ where(p) }}
+              </td>
+              <td class="px-space-lg py-space-md font-mono text-label-code text-on-surface-variant">
+                {{ p.email ?? p.phone ?? '' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
 } @else {
   <p>Loading...</p>

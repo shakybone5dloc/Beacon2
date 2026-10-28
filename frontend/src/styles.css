@@ -3,11 +3,11 @@
  * built with Tailwind v4. Tokens live in @theme; repeated pieces (buttons, inputs,
  * pills, cards) are small component classes below so templates stay readable.
  *
- * Tailwind's reset (preflight) is left out until every screen uses this design;
- * screens not yet moved over still rely on browser defaults.
+ * Tailwind's reset (preflight) is on; the base layer below gives plain elements
+ * (headings, links, form controls, buttons, lists) the design's look, and
+ * components' own CSS and utility classes refine it.
  */
-@import 'tailwindcss/theme.css' layer(theme);
-@import 'tailwindcss/utilities.css' layer(utilities);
+@import 'tailwindcss';
 
 @import '@fontsource-variable/inter';
 @import '@fontsource-variable/jetbrains-mono';
@@ -131,6 +131,65 @@ body {
   font-size: 18px;
   line-height: 1;
   vertical-align: middle;
+}
+
+/* Plain elements in the design's style. Layered, so components' CSS and utilities win. */
+@layer base {
+  h1 {
+    @apply mb-space-lg text-headline-lg text-on-surface;
+  }
+  h2 {
+    @apply mt-space-xl mb-space-md text-headline-md text-on-surface;
+  }
+  h3 {
+    @apply mt-space-lg mb-space-sm text-headline-sm text-on-surface;
+  }
+  p {
+    @apply mb-space-md;
+  }
+  ol {
+    @apply mb-space-md list-decimal pl-5;
+  }
+  ul {
+    @apply mb-space-md list-disc pl-5;
+  }
+  a {
+    @apply text-primary-container;
+  }
+  a:hover {
+    @apply underline;
+  }
+  code {
+    @apply font-mono text-label-code;
+  }
+  label {
+    @apply text-headline-sm text-on-surface;
+  }
+  input:not([type='checkbox'], [type='radio'], [type='file']),
+  select,
+  textarea {
+    @apply min-h-8 min-w-0 rounded-sm border border-[#e5e7eb] bg-surface-container-lowest px-2.5 py-1.5 font-sans text-body-md font-normal text-on-surface placeholder:text-[#9ca3af] focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none disabled:bg-[#f3f4f6] disabled:text-outline;
+  }
+  input[type='checkbox'],
+  input[type='radio'] {
+    @apply h-4 w-4 accent-primary-container;
+  }
+  input[type='file'] {
+    @apply text-body-sm;
+  }
+  button {
+    @apply inline-flex min-h-8 cursor-pointer items-center justify-center gap-1.5 rounded-sm border border-hairline-strong bg-surface-container-lowest px-3 font-sans text-body-sm text-on-surface transition-colors hover:bg-[#f9fafb] disabled:cursor-default disabled:opacity-50;
+  }
+  button[type='submit'],
+  button.primary {
+    @apply border-black/10 bg-primary-container text-on-primary hover:bg-[#2559c7];
+  }
+  details > summary {
+    @apply cursor-pointer;
+  }
+  hr {
+    @apply my-space-lg border-t border-hairline;
+  }
 }
 
 @layer components {

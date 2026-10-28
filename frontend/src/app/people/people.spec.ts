@@ -109,9 +109,11 @@ describe('people', () => {
     await fixture.whenStable();
     const el: HTMLElement = fixture.nativeElement;
 
-    const rows = Array.from(el.querySelectorAll('.people li')).map((li) =>
-      Array.from(li.children).map((c) => c.textContent!.trim()),
-    );
+    const rows = Array.from(el.querySelectorAll('.people-table tbody tr')).map((tr) => [
+      tr.querySelector('.name')!.textContent!.trim(),
+      tr.querySelector('.role-pill')!.textContent!.trim(),
+      tr.querySelector('.where')!.textContent!.trim(),
+    ]);
     expect(rows).toEqual([
       ['Pat Lee', 'Recruiter', 'Senior Recruiter, Robert Half'],
       ['Sam', 'Other', ''],

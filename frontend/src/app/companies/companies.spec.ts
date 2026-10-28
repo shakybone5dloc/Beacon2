@@ -47,14 +47,16 @@ describe('companies', () => {
     await fixture.whenStable();
     const el: HTMLElement = fixture.nativeElement;
 
-    const rows = Array.from(el.querySelectorAll('.companies li')).map((li) =>
-      Array.from(li.children).map((child) => child.textContent!.replace(/\s+/g, ' ').trim()),
-    );
+    const rows = Array.from(el.querySelectorAll('.company-table tbody tr')).map((tr) => [
+      tr.querySelector('.name')!.textContent!.trim(),
+      tr.querySelector('.type')!.textContent!.trim(),
+      tr.querySelector('.count')!.textContent!.replace(/\s+/g, ' ').trim(),
+    ]);
     expect(rows).toEqual([
       ['Acme', 'Employer', '1 application'],
       ['Globex', 'Recruiting agency', '3 applications'],
     ]);
-    expect(el.querySelector('.companies a')?.getAttribute('href')).toBe('/companies/c1');
+    expect(el.querySelector('.company-table a')?.getAttribute('href')).toBe('/companies/c1');
   });
 
   describe('CompanyDetail', () => {

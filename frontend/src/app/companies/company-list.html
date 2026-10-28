@@ -1,27 +1,81 @@
-<h1>Companies</h1>
-<p class="intro">
-  A company is added the first time you name it on an application, and the same company is linked
-  again however you write it ("Acme, Inc." and "ACME" are one company).
-</p>
+<div class="mb-space-lg">
+  <h1 class="mb-space-xs">Companies</h1>
+  <p class="intro m-0 max-w-2xl text-body-md text-on-surface-variant">
+    A company is added the first time you name it on an application or a person, and the same
+    company is linked again however you write it ("Acme, Inc." and "ACME" are one company).
+  </p>
+</div>
 
 @if (error()) {
   <p class="notice">Could not load your companies. Try again in a moment.</p>
 } @else if (companies(); as list) {
   @if (list.length === 0) {
-    <p class="empty">No companies yet. They appear here once you add an application.</p>
+    <p class="empty text-on-surface-variant">
+      No companies yet. They appear here once you add an application.
+    </p>
   } @else {
-    <ul class="companies">
-      @for (c of list; track c.id) {
-        <li>
-          <a [routerLink]="['/companies', c.id]" class="name">{{ c.name }}</a>
-          <span class="type">{{ typeLabels[c.type] }}</span>
-          <span class="count">
-            {{ c.applicationCount }} {{ c.applicationCount === 1 ? 'application' : 'applications' }}
-          </span>
-        </li>
-      }
-    </ul>
+    <div class="card overflow-x-auto">
+      <table class="company-table w-full border-collapse text-left">
+        <thead>
+          <tr
+            class="border-b border-hairline font-mono text-label-sm tracking-wide text-on-surface-variant uppercase"
+          >
+            <th class="px-space-lg py-space-md font-medium">Company</th>
+            <th class="px-space-lg py-space-md font-medium">Domain</th>
+            <th class="px-space-lg py-space-md text-right font-medium">Applications</th>
+            <th class="px-space-lg py-space-md font-medium">Last update</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of list; track c.id) {
+            <tr class="border-b border-hairline last:border-b-0 hover:bg-[#f3f4f6]">
+              <td class="px-space-lg py-space-md">
+                <div class="flex items-center gap-space-md">
+                  <span
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm font-mono text-label-code"
+                    [class]="
+                      c.type === 'EMPLOYER'
+                        ? 'bg-primary-fixed text-primary'
+                        : 'bg-attention-bg text-attention'
+                    "
+                    aria-hidden="true"
+                    >{{ initials(c.name) }}</span
+                  >
+                  <div class="min-w-0">
+                    <a
+                      [routerLink]="['/companies', c.id]"
+                      class="name block truncate text-headline-sm text-on-surface no-underline hover:text-primary-container"
+                      >{{ c.name }}</a
+                    >
+                    <span
+                      class="type pill mt-0.5"
+                      [class.pill-blue]="c.type === 'EMPLOYER'"
+                      [class.pill-amber]="c.type !== 'EMPLOYER'"
+                      >{{ typeLabels[c.type] }}</span
+                    >
+                  </div>
+                </div>
+              </td>
+              <td class="px-space-lg py-space-md font-mono text-label-code text-on-surface-variant">
+                @if (domain(c); as host) {
+                  <a [href]="c.website" target="_blank" rel="noopener noreferrer">{{ host }}</a>
+                } @else {
+                  <span class="text-outline">–</span>
+                }
+              </td>
+              <td class="count px-space-lg py-space-md text-right font-mono text-label-code">
+                {{ c.applicationCount }}
+                {{ c.applicationCount === 1 ? 'application' : 'applications' }}
+              </td>
+              <td class="px-space-lg py-space-md font-mono text-label-code text-on-surface-variant">
+                {{ c.updatedAt | date: 'MMM d' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
 } @else {
-  <p>Loading...</p>
+  <p class="text-on-surface-variant">Loading...</p>
 }

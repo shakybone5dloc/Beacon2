@@ -19,6 +19,7 @@ type FieldName = 'name' | 'website' | 'emailDomains' | 'notes';
   imports: [ReactiveFormsModule, RouterLink, TitleCasePipe],
   templateUrl: './company-detail.html',
   styleUrl: './companies.css',
+  host: { class: 'max-w-[720px]' },
 })
 export class CompanyDetail implements OnInit {
   private readonly api = inject(CompaniesApi);

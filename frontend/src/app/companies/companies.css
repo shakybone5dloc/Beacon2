@@ -1,6 +1,5 @@
 :host {
   display: block;
-  max-width: 720px;
 }
 .intro,
 .empty,
@@ -69,7 +68,7 @@
 .badge {
   font-size: 0.75rem;
   padding: 0 0.45rem;
-  border-radius: 999px;
+  border-radius: 4px;
   border: 1px solid var(--border);
   color: var(--muted);
 }
@@ -128,4 +127,15 @@ button.primary {
 button:disabled {
   opacity: 0.6;
   cursor: wait;
+}
+.applications,
+.people {
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-hairline);
+  border-radius: 6px;
+  padding: 0 1rem;
+}
+.applications li:last-child,
+.people li:last-child {
+  border-bottom: 0;
 }

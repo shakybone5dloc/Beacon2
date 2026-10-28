@@ -10,6 +10,7 @@ import { Person, PERSON_ROLE_LABELS } from './person.model';
   imports: [RouterLink, PersonForm],
   templateUrl: './people-list.html',
   styleUrl: './people.css',
+  host: { class: 'max-w-5xl' },
 })
 export class PeopleList implements OnInit {
   private readonly api = inject(PeopleApi);
@@ -25,6 +26,17 @@ export class PeopleList implements OnInit {
       next: (people) => this.people.set(people),
       error: () => this.error.set(true),
     });
+  }
+
+  /** "Pat Lee" -> "PL". */
+  protected initials(name: string): string {
+    return name
+      .split(/\s+/)
+      .filter((w) => w.length > 0)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase();
   }
 
   /** "Senior Recruiter, Robert Half", or whichever of the two is known. */

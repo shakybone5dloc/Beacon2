@@ -9,6 +9,8 @@ import {
   ApplicationStatus,
   employerLabel,
   EMPLOYMENT_TYPE_LABELS,
+  isForwardMove,
+  orderedMoves,
   StatusChange,
 } from '../applications/application.model';
 import { attentionFor } from '../applications/attention';
@@ -43,6 +45,8 @@ interface TimelineEntry extends StatusChange {
 export class ApplicationDetail implements OnInit {
   private readonly api = inject(ApplicationsApi);
   protected readonly employerLabel = employerLabel;
+  protected readonly isForward = isForwardMove;
+  protected readonly moves = orderedMoves;
   protected readonly employmentTypeLabels = EMPLOYMENT_TYPE_LABELS;
   private readonly router = inject(Router);
   private readonly documentsApi = inject(DocumentsApi);

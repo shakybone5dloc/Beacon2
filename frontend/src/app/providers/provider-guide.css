@@ -52,7 +52,7 @@ h2 {
   font-weight: 600;
   white-space: nowrap;
   padding: 0.1rem 0.5rem;
-  border-radius: 999px;
+  border-radius: 4px;
   background: #dafbe1;
   color: #116329;
 }

@@ -19,6 +19,7 @@ import {
   imports: [RouterLink, TitleCasePipe, PersonForm],
   templateUrl: './person-detail.html',
   styleUrl: './people.css',
+  host: { class: 'max-w-[720px]' },
 })
 export class PersonDetail implements OnInit {
   private readonly api = inject(PeopleApi);

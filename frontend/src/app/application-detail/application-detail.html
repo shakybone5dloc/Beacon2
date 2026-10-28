@@ -19,7 +19,7 @@
           <p class="role">{{ app.role }}</p>
         </div>
         <div class="heading-side">
-          <span class="status">
+          <span class="status pill pill-blue">
             {{ app.status | titlecase }}
             <span class="for">for {{ timeInStatus() }}</span>
           </span>
@@ -42,15 +42,20 @@
       @if (app.allowedTransitions.length > 0) {
         <div class="moves">
           <span>Move to</span>
-          @for (target of app.allowedTransitions; track target) {
-            <button type="button" [disabled]="busy()" (click)="move(app, target)">
+          @for (target of moves(app); track target) {
+            <button
+              type="button"
+              [class.primary]="isForward(target)"
+              [disabled]="busy()"
+              (click)="move(app, target)"
+            >
               {{ target | titlecase }}
             </button>
           }
         </div>
       }
 
-      <dl>
+      <dl class="card p-space-lg">
         @if (app.employmentType; as type) {
           <dt>Type</dt>
           <dd>{{ employmentTypeLabels[type] }}</dd>
@@ -143,7 +148,7 @@
       </dl>
 
       @if (!panelOpen()) {
-        <section>
+        <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
           <h2>Job description</h2>
           @if (app.jobDescription; as description) {
             <details class="description" [open]="description.length < 1500">
@@ -163,9 +168,13 @@
         </section>
       }
 
-      <app-application-people [applicationId]="app.id" (changed)="reloadApplication()" />
+      <app-application-people
+        class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
+        [applicationId]="app.id"
+        (changed)="reloadApplication()"
+      />
 
-      <section>
+      <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
         <h2>Documents</h2>
         <app-application-documents
           [applicationId]="app.id"
@@ -175,7 +184,7 @@
         />
       </section>
 
-      <section>
+      <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
         <h2>Cover letter</h2>
         <app-cover-letter-drafter
           [applicationId]="app.id"
@@ -184,22 +193,29 @@
         />
       </section>
 
-      <h2>History</h2>
-      <ol class="timeline">
-        @for (entry of timeline(); track $index) {
-          <li>
-            <strong>{{ entry.toStatus | titlecase }}</strong>
-            <time [attr.datetime]="entry.changedAt">{{ entry.changedAt | date: 'medium' }}</time>
-            @if (entry.after; as after) {
-              <span class="after">{{ after }} later</span>
-            }
-          </li>
-        }
-      </ol>
+      <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
+        <h2>History</h2>
+        <ol class="timeline">
+          @for (entry of timeline(); track $index) {
+            <li>
+              <strong>{{ entry.toStatus | titlecase }}</strong>
+              <time [attr.datetime]="entry.changedAt">{{ entry.changedAt | date: 'medium' }}</time>
+              @if (entry.after; as after) {
+                <span class="after">{{ after }} later</span>
+              }
+            </li>
+          }
+        </ol>
+      </section>
 
-      <div class="buttons">
-        <a [routerLink]="['/applications', app.id, 'edit']" class="edit">Edit</a>
-        <button type="button" class="delete" [disabled]="deleting()" (click)="remove(app)">
+      <div class="buttons mt-space-lg">
+        <a [routerLink]="['/applications', app.id, 'edit']" class="edit btn no-underline">Edit</a>
+        <button
+          type="button"
+          class="delete btn btn-danger"
+          [disabled]="deleting()"
+          (click)="remove(app)"
+        >
           {{ deleting() ? 'Deleting...' : 'Delete' }}
         </button>
       </div>

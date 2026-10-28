@@ -9,6 +9,8 @@ import {
   ApplicationStatus,
   EMPLOYMENT_TYPE_LABELS,
   employerLabel,
+  isForwardMove,
+  orderedMoves,
 } from '../applications/application.model';
 import { Attention, attentionFor } from '../applications/attention';
 import { formatLocation, formatSalary } from '../postings/format';
@@ -32,9 +34,6 @@ const COLUMNS: Omit<Column, 'cards'>[] = [
   { title: 'Offer', statuses: ['OFFER'] },
   { title: 'Closed', statuses: ['ACCEPTED', 'DECLINED', 'REJECTED', 'WITHDRAWN'] },
 ];
-
-/** Moves that advance an application; shown as the card's primary button. */
-const FORWARD: ApplicationStatus[] = ['APPLIED', 'INTERVIEWING', 'OFFER', 'ACCEPTED'];
 
 const ACTIVE: ApplicationStatus[] = ['SAVED', 'APPLIED', 'INTERVIEWING', 'OFFER'];
 
@@ -91,17 +90,8 @@ export class Board implements OnInit {
     this.load();
   }
 
-  protected isForward(target: ApplicationStatus): boolean {
-    return FORWARD.includes(target);
-  }
-
-  /** The moves on offer, sideways ones first so the forward move sits last, on the right. */
-  protected moves(app: ApplicationResponse): ApplicationStatus[] {
-    return [
-      ...app.allowedTransitions.filter((t) => !FORWARD.includes(t)),
-      ...app.allowedTransitions.filter((t) => FORWARD.includes(t)),
-    ];
-  }
+  protected readonly isForward = isForwardMove;
+  protected readonly moves = orderedMoves;
 
   protected outcomeClass(status: ApplicationStatus): string {
     return OUTCOME_CLASSES[status] ?? '';

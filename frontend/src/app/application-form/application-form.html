@@ -17,7 +17,7 @@
     </p>
   }
 
-  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="card p-space-lg">
     <label>
       Company
       <input formControlName="company" list="company-suggestions" autocomplete="off" />
