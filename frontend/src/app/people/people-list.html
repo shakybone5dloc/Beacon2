@@ -1,0 +1,37 @@
+<header class="heading">
+  <h1>People</h1>
+  @if (!adding()) {
+    <button type="button" class="primary" (click)="adding.set(true)">New person</button>
+  }
+</header>
+<p class="intro">
+  Recruiters, hiring managers, interviewers and referrals. Add them to an application from its page
+  to keep track of who you're talking to about what.
+</p>
+
+@if (adding()) {
+  <section class="panel">
+    <h2>New person</h2>
+    <app-person-form (saved)="added($event)" (cancelled)="adding.set(false)" />
+  </section>
+}
+
+@if (error()) {
+  <p class="notice">Could not load the people. Try again in a moment.</p>
+} @else if (people(); as list) {
+  @if (list.length === 0) {
+    <p class="empty">No one yet.</p>
+  } @else {
+    <ul class="people">
+      @for (p of list; track p.id) {
+        <li>
+          <a [routerLink]="['/people', p.id]" class="name">{{ p.name }}</a>
+          <span class="role">{{ roleLabels[p.role] }}</span>
+          <span class="where">{{ where(p) }}</span>
+        </li>
+      }
+    </ul>
+  }
+} @else {
+  <p>Loading...</p>
+}

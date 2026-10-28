@@ -1,0 +1,92 @@
+<p><a routerLink="/people" class="back">← People</a></p>
+
+@if (loadError(); as message) {
+  <p class="notice">{{ message }}</p>
+} @else if (person(); as p) {
+  @if (editing()) {
+    <h1>Edit {{ p.name }}</h1>
+    <app-person-form [person]="p" (saved)="saved($event)" (cancelled)="editing.set(false)" />
+  } @else {
+    <header class="heading">
+      <div>
+        <h1>{{ p.name }}</h1>
+        <p class="role">
+          {{ roleLabels[p.role] }}
+          @if (p.recruiterType; as type) {
+            · {{ recruiterTypeLabels[type] }}
+          }
+        </p>
+      </div>
+      <div class="buttons">
+        <button type="button" (click)="editing.set(true)">Edit</button>
+        <button type="button" class="danger" (click)="remove()">Delete</button>
+      </div>
+    </header>
+    @if (deleteError(); as message) {
+      <p class="notice">{{ message }}</p>
+    }
+
+    <dl class="facts">
+      @if (p.title || p.company) {
+        <div>
+          <dt>Works at</dt>
+          <dd>
+            {{ p.title }}
+            @if (p.title && p.company) {
+              at
+            }
+            @if (p.companyId) {
+              <a [routerLink]="['/companies', p.companyId]">{{ p.company }}</a>
+            }
+          </dd>
+        </div>
+      }
+      @if (p.email; as email) {
+        <div>
+          <dt>Email</dt>
+          <dd>
+            <a [href]="'mailto:' + email">{{ email }}</a>
+          </dd>
+        </div>
+      }
+      @if (p.phone; as phone) {
+        <div>
+          <dt>Phone</dt>
+          <dd>
+            <a [href]="'tel:' + phone">{{ phone }}</a>
+          </dd>
+        </div>
+      }
+      @if (p.linkedinUrl; as url) {
+        <div>
+          <dt>LinkedIn</dt>
+          <dd>
+            <a [href]="url" target="_blank" rel="noopener noreferrer">{{ url }}</a>
+          </dd>
+        </div>
+      }
+    </dl>
+    @if (p.notes; as notes) {
+      <p class="notes">{{ notes }}</p>
+    }
+  }
+
+  <h2>Applications</h2>
+  @if (applications().length === 0) {
+    <p class="empty">Not on any applications yet. Add them from an application's page.</p>
+  } @else {
+    <ul class="applications">
+      @for (a of applications(); track a.applicationId) {
+        <li>
+          <a [routerLink]="['/applications', a.applicationId]"
+            >{{ employerLabel(a) }} – {{ a.jobRole }}</a
+          >
+          <span class="role">as {{ roleLabels[a.role] }}</span>
+          <span class="badge">{{ a.status | titlecase }}</span>
+        </li>
+      }
+    </ul>
+  }
+} @else {
+  <p>Loading...</p>
+}

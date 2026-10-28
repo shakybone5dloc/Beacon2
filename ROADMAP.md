@@ -20,7 +20,8 @@ Rebuilt from the .NET Beacon, then extended.
 | - | AI cover letters (Claude and OpenAI) | df3de91, 81da3bc |
 | - | User accounts (Spring Security), per-user ownership, per-user encrypted API keys, provider guide | 3c31d80, d35c5b5, 59eb080 |
 | X1 | OpenAPI spec with springdoc, generated Angular client (ng-openapi-gen) behind the existing `*Api` services | 9ebee81 onward |
-| R0 | Companies per user: V7 backfill, find-or-create by normalized name, undisclosed employers, type-ahead, company pages | after 2720da5 |
+| R0 | Companies per user: V7 backfill, find-or-create by normalized name, undisclosed employers, type-ahead, company pages | caa8455 |
+| R1 | People with a role per application, recruiter agencies ("via"), employment type, people pages | after caa8455 |
 
 ## Next: Companies and people
 
@@ -38,7 +39,8 @@ Rebuilt from the .NET Beacon, then extended.
 - Later: optional careers-board id per company (Greenhouse, Lever, Ashby). Those boards need no API key, so Beacon can list a company's open roles directly (a keyless job source per company).
 - Why: people, email domain matching (E3) and the duplicate-pitch warning (R2) all need one company id instead of free-text names that drift apart.
 
-### R1. People (recruiters, hiring managers, interviewers, referrals)
+### R1. People (recruiters, hiring managers, interviewers, referrals) (done)
+- Built as planned below. A person also has a usual role, which a new link starts with. A company first named by an agency or RPO recruiter is created as an agency. Undisclosed roles show "via <agency>" from a linked recruiter.
 - New `people` table, owned per user (`owner_id`, same as applications and documents), instead of a recruiters-only table.
 - Fields: name, `company_id`, title, email, phone, LinkedIn URL, notes, timestamps.
 - `PersonRole`: `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `REFERRAL`, `OTHER`.

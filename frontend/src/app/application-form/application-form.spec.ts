@@ -46,6 +46,7 @@ describe('ApplicationForm', () => {
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({
         companyName: 'Acme',
+        employmentType: null,
         role: 'Engineer',
         jobUrl: null,
         notes: null,
@@ -327,6 +328,7 @@ describe('ApplicationForm', () => {
       expect(req.request.method).toBe('PUT');
       expect(req.request.body).toEqual({
         companyName: 'Acme',
+        employmentType: null,
         role: 'Principal Engineer',
         jobUrl: null,
         notes: null,

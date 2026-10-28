@@ -12,6 +12,8 @@ import { ProviderGuide } from './providers/provider-guide';
 import { ApiKeysPage } from './providers/api-keys-page';
 import { CompanyList } from './companies/company-list';
 import { CompanyDetail } from './companies/company-detail';
+import { PeopleList } from './people/people-list';
+import { PersonDetail } from './people/person-detail';
 
 export const routes: Routes = [
   { path: 'login', component: LoginPage, canActivate: [guestGuard], title: 'Beacon · Sign in' },
@@ -30,6 +32,8 @@ export const routes: Routes = [
       { path: 'documents', component: DocumentLibrary, title: 'Beacon · Documents' },
       { path: 'companies', component: CompanyList, title: 'Beacon · Companies' },
       { path: 'companies/:id', component: CompanyDetail, title: 'Beacon · Company' },
+      { path: 'people', component: PeopleList, title: 'Beacon · People' },
+      { path: 'people/:id', component: PersonDetail, title: 'Beacon · Person' },
       { path: 'providers', component: ProviderGuide, title: 'Beacon · Getting API keys' },
       { path: 'settings/api-keys', component: ApiKeysPage, title: 'Beacon · API keys' },
       { path: 'applications/new', component: ApplicationForm, title: 'Beacon · New application' },

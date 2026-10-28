@@ -1,0 +1,75 @@
+<section class="people">
+  <h2>People</h2>
+
+  @if (error(); as message) {
+    <p class="notice">{{ message }}</p>
+  }
+
+  @if (people(); as list) {
+    @if (list.length === 0) {
+      <p class="empty">No one yet. Add the recruiter, hiring manager or whoever referred you.</p>
+    } @else {
+      <ul>
+        @for (entry of list; track entry.person.id) {
+          <li>
+            <div class="who">
+              <a [routerLink]="['/people', entry.person.id]" class="name">{{
+                entry.person.name
+              }}</a>
+              @if (contact(entry.person); as details) {
+                <span class="details">{{ details }}</span>
+              }
+            </div>
+            <select
+              [value]="entry.role"
+              (change)="changeRole(entry, $any($event.target).value)"
+              [attr.aria-label]="'Role of ' + entry.person.name"
+            >
+              @for (r of roles; track r) {
+                <option [value]="r" [selected]="r === entry.role">{{ roleLabels[r] }}</option>
+              }
+            </select>
+            <button type="button" class="remove" (click)="remove(entry)">Remove</button>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (creating()) {
+      <div class="panel">
+        <h3>New person</h3>
+        <app-person-form (saved)="created($event)" (cancelled)="creating.set(false)" />
+      </div>
+    } @else {
+      <div class="add">
+        <input
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+          list="application-people-suggestions"
+          placeholder="Add someone you've added before..."
+          aria-label="Person to add"
+          autocomplete="off"
+        />
+        <datalist id="application-people-suggestions">
+          @for (o of options(); track o.person.id) {
+            <option [value]="o.label"></option>
+          }
+        </datalist>
+        <select
+          [value]="addRole()"
+          (change)="addRole.set($any($event.target).value)"
+          aria-label="Their role on this application"
+        >
+          <option value="">Usual role</option>
+          @for (r of roles; track r) {
+            <option [value]="r">{{ roleLabels[r] }}</option>
+          }
+        </select>
+        <button type="button" (click)="add()" [disabled]="!picked()">Add</button>
+        <button type="button" class="link" (click)="creating.set(true)">New person…</button>
+      </div>
+    }
+  } @else if (!error()) {
+    <p>Loading...</p>
+  }
+</section>

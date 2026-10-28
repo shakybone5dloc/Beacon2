@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { ApplicationDetail } from './application-detail';
+import { ApplicationPeople } from '../people/application-people';
 import { anApplication } from '../applications/testing';
 import { ApplicationResponse, StatusChange } from '../applications/application.model';
 import { ApplicationDocuments } from '../documents/application-documents';
@@ -26,6 +27,12 @@ class DocumentsStub {
   reload(): void {}
 }
 
+@Component({ selector: 'app-application-people', template: '' })
+class PeopleStub {
+  readonly applicationId = input<string>();
+  readonly changed = output<void>();
+}
+
 @Component({ selector: 'app-cover-letter-drafter', template: '' })
 class DrafterStub {
   readonly applicationId = input<string>();
@@ -43,8 +50,8 @@ describe('ApplicationDetail', () => {
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     TestBed.overrideComponent(ApplicationDetail, {
-      remove: { imports: [ApplicationDocuments, CoverLetterDrafter] },
-      add: { imports: [DocumentsStub, DrafterStub] },
+      remove: { imports: [ApplicationDocuments, CoverLetterDrafter, ApplicationPeople] },
+      add: { imports: [DocumentsStub, DrafterStub, PeopleStub] },
     });
     http = TestBed.inject(HttpTestingController);
     navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
@@ -84,6 +91,19 @@ describe('ApplicationDetail', () => {
   function deleteButton(el: HTMLElement): HTMLButtonElement {
     return el.querySelector<HTMLButtonElement>('button.delete')!;
   }
+
+  it('shows the recruiter agency of an undisclosed employer, refreshed when people change', async () => {
+    const app = anApplication({ id: 'a1', company: null, companyId: null, employmentType: 'C2C' });
+    const { fixture, el } = await open(app);
+    expect(el.querySelector('h1')?.textContent).toContain('Undisclosed client');
+    expect(el.textContent).toContain('Contract (C2C)');
+
+    fixture.debugElement.query(By.directive(PeopleStub)).componentInstance.changed.emit();
+    http.expectOne('/api/applications/a1').flush({ ...app, viaAgency: 'Robert Half' });
+    await fixture.whenStable();
+
+    expect(el.querySelector('h1')?.textContent).toContain('Undisclosed client · via Robert Half');
+  });
 
   it('shows the application details with an edit link', async () => {
     const { el } = await open(

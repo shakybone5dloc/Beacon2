@@ -326,6 +326,106 @@
         "tags" : [ "Application documents" ]
       }
     },
+    "/api/applications/{applicationId}/people" : {
+      "get" : {
+        "operationId" : "listApplicationPeople",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ApplicationPersonResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Application people" ]
+      }
+    },
+    "/api/applications/{applicationId}/people/{personId}" : {
+      "delete" : {
+        "operationId" : "unlinkApplicationPerson",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "path",
+          "name" : "personId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "Application people" ]
+      },
+      "put" : {
+        "operationId" : "linkApplicationPerson",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "path",
+          "name" : "personId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LinkPersonRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApplicationPersonResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Application people" ]
+      }
+    },
     "/api/applications/{id}" : {
       "delete" : {
         "operationId" : "deleteApplication",
@@ -635,6 +735,36 @@
         "tags" : [ "Companies" ]
       }
     },
+    "/api/companies/{companyId}/people" : {
+      "get" : {
+        "operationId" : "listCompanyPeople",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "companyId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PersonResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "People" ]
+      }
+    },
     "/api/companies/{id}" : {
       "get" : {
         "operationId" : "getCompany",
@@ -928,6 +1058,172 @@
         "tags" : [ "API Keys" ]
       }
     },
+    "/api/people" : {
+      "get" : {
+        "operationId" : "listPeople",
+        "parameters" : [ {
+          "description" : "Only people whose name contains this (up to ten), for type-ahead",
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PersonResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "People" ]
+      },
+      "post" : {
+        "operationId" : "createPerson",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreatePersonRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PersonResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "People" ]
+      }
+    },
+    "/api/people/{id}" : {
+      "delete" : {
+        "operationId" : "deletePerson",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "People" ]
+      },
+      "get" : {
+        "operationId" : "getPerson",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PersonResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "People" ]
+      },
+      "put" : {
+        "operationId" : "updatePerson",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdatePersonRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PersonResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "People" ]
+      }
+    },
+    "/api/people/{id}/applications" : {
+      "get" : {
+        "operationId" : "listPersonApplications",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PersonApplicationResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "People" ]
+      }
+    },
     "/api/postings/search" : {
       "get" : {
         "operationId" : "searchPostings",
@@ -1046,6 +1342,23 @@
         },
         "required" : [ "hint", "provider", "saved", "updatedAt" ]
       },
+      "ApplicationPersonResponse" : {
+        "type" : "object",
+        "properties" : {
+          "addedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "person" : {
+            "$ref" : "#/components/schemas/PersonResponse"
+          },
+          "role" : {
+            "type" : "string",
+            "enum" : [ "RECRUITER", "HIRING_MANAGER", "INTERVIEWER", "REFERRAL", "OTHER" ]
+          }
+        },
+        "required" : [ "addedAt", "person", "role" ]
+      },
       "ApplicationResponse" : {
         "type" : "object",
         "properties" : {
@@ -1074,6 +1387,10 @@
           "createdAt" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "employmentType" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "FULL_TIME", "CONTRACT", "CONTRACT_TO_HIRE", "C2C", "PART_TIME" ]
           },
           "followUpOn" : {
             "type" : [ "string", "null" ],
@@ -1140,9 +1457,12 @@
           "version" : {
             "type" : "integer",
             "format" : "int64"
+          },
+          "viaAgency" : {
+            "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "allowedTransitions", "appliedAt", "applyBy", "company", "companyId", "createdAt", "followUpOn", "id", "jobDescription", "jobUrl", "location", "notes", "postedOn", "remote", "role", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "source", "status", "statusChangedAt", "updatedAt", "version" ]
+        "required" : [ "allowedTransitions", "appliedAt", "applyBy", "company", "companyId", "createdAt", "employmentType", "followUpOn", "id", "jobDescription", "jobUrl", "location", "notes", "postedOn", "remote", "role", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "source", "status", "statusChangedAt", "updatedAt", "version", "viaAgency" ]
       },
       "CaptureResponse" : {
         "type" : "object",
@@ -1265,6 +1585,10 @@
             "maxLength" : 200,
             "minLength" : 0
           },
+          "employmentType" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "FULL_TIME", "CONTRACT", "CONTRACT_TO_HIRE", "C2C", "PART_TIME" ]
+          },
           "followUpOn" : {
             "type" : [ "string", "null" ],
             "format" : "date"
@@ -1329,6 +1653,60 @@
           }
         },
         "required" : [ "role" ]
+      },
+      "CreatePersonRequest" : {
+        "type" : "object",
+        "properties" : {
+          "companyId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "companyName" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "email" : {
+            "type" : [ "string", "null" ],
+            "format" : "email",
+            "maxLength" : 320,
+            "minLength" : 0
+          },
+          "linkedinUrl" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 2048,
+            "minLength" : 0
+          },
+          "name" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "notes" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 4000,
+            "minLength" : 0
+          },
+          "phone" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 50,
+            "minLength" : 0
+          },
+          "recruiterType" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "IN_HOUSE", "AGENCY", "RPO", "INDEPENDENT" ]
+          },
+          "role" : {
+            "type" : "string",
+            "enum" : [ "RECRUITER", "HIRING_MANAGER", "INTERVIEWER", "REFERRAL", "OTHER" ]
+          },
+          "title" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 200,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "name", "role" ]
       },
       "CurrentUserResponse" : {
         "type" : "object",
@@ -1477,6 +1855,15 @@
         },
         "required" : [ "attributionUrl", "coverage", "id", "name", "usesYourKey" ]
       },
+      "LinkPersonRequest" : {
+        "type" : "object",
+        "properties" : {
+          "role" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "RECRUITER", "HIRING_MANAGER", "INTERVIEWER", "REFERRAL", "OTHER" ]
+          }
+        }
+      },
       "LoginRequest" : {
         "type" : "object",
         "properties" : {
@@ -1490,6 +1877,89 @@
           }
         },
         "required" : [ "email", "password" ]
+      },
+      "PersonApplicationResponse" : {
+        "type" : "object",
+        "properties" : {
+          "addedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "applicationId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "company" : {
+            "type" : [ "string", "null" ]
+          },
+          "jobRole" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string",
+            "enum" : [ "RECRUITER", "HIRING_MANAGER", "INTERVIEWER", "REFERRAL", "OTHER" ]
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "SAVED", "APPLIED", "INTERVIEWING", "OFFER", "ACCEPTED", "DECLINED", "REJECTED", "WITHDRAWN" ]
+          }
+        },
+        "required" : [ "addedAt", "applicationId", "company", "jobRole", "role", "status" ]
+      },
+      "PersonResponse" : {
+        "type" : "object",
+        "properties" : {
+          "company" : {
+            "type" : [ "string", "null" ]
+          },
+          "companyId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "email" : {
+            "type" : [ "string", "null" ]
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "linkedinUrl" : {
+            "type" : [ "string", "null" ]
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "notes" : {
+            "type" : [ "string", "null" ]
+          },
+          "phone" : {
+            "type" : [ "string", "null" ]
+          },
+          "recruiterType" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "IN_HOUSE", "AGENCY", "RPO", "INDEPENDENT" ]
+          },
+          "role" : {
+            "type" : "string",
+            "enum" : [ "RECRUITER", "HIRING_MANAGER", "INTERVIEWER", "REFERRAL", "OTHER" ]
+          },
+          "title" : {
+            "type" : [ "string", "null" ]
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "company", "companyId", "createdAt", "email", "id", "linkedinUrl", "name", "notes", "phone", "recruiterType", "role", "title", "updatedAt", "version" ]
       },
       "PostingSearchResponse" : {
         "type" : "object",
@@ -1696,6 +2166,10 @@
             "maxLength" : 200,
             "minLength" : 0
           },
+          "employmentType" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "FULL_TIME", "CONTRACT", "CONTRACT_TO_HIRE", "C2C", "PART_TIME" ]
+          },
           "followUpOn" : {
             "type" : [ "string", "null" ],
             "format" : "date"
@@ -1802,6 +2276,64 @@
           }
         },
         "required" : [ "name", "type", "version" ]
+      },
+      "UpdatePersonRequest" : {
+        "type" : "object",
+        "properties" : {
+          "companyId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "companyName" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "email" : {
+            "type" : [ "string", "null" ],
+            "format" : "email",
+            "maxLength" : 320,
+            "minLength" : 0
+          },
+          "linkedinUrl" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 2048,
+            "minLength" : 0
+          },
+          "name" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "notes" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 4000,
+            "minLength" : 0
+          },
+          "phone" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 50,
+            "minLength" : 0
+          },
+          "recruiterType" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "IN_HOUSE", "AGENCY", "RPO", "INDEPENDENT" ]
+          },
+          "role" : {
+            "type" : "string",
+            "enum" : [ "RECRUITER", "HIRING_MANAGER", "INTERVIEWER", "REFERRAL", "OTHER" ]
+          },
+          "title" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "name", "role", "version" ]
       }
     }
   }

@@ -1,6 +1,7 @@
 package dev.beacon.contracts.applications;
 
 import dev.beacon.domain.applications.ApplicationStatus;
+import dev.beacon.domain.applications.EmploymentType;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
@@ -17,6 +18,9 @@ public record ApplicationResponse (
         /** The company's name; null when the employer isn't disclosed. */
         @Nullable String company,
         String role,
+        @Nullable EmploymentType employmentType,
+        /** For an undisclosed employer: the agency of a recruiter on the application, when there is one. */
+        @Nullable String viaAgency,
         @Nullable String jobUrl,
         @Nullable String notes,
         @Nullable LocalDate applyBy,

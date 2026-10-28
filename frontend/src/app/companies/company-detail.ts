@@ -6,6 +6,8 @@ import { RouterLink } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
 import { ApplicationResponse, ProblemDetail } from '../applications/application.model';
 import { problemText } from '../documents/application-documents';
+import { PeopleApi } from '../people/people-api';
+import { Person, PERSON_ROLE_LABELS } from '../people/person.model';
 import { CompaniesApi } from './companies-api';
 import { Company, COMPANY_TYPE_LABELS, COMPANY_TYPES, CompanyType } from './company.model';
 
@@ -20,6 +22,7 @@ type FieldName = 'name' | 'website' | 'emailDomains' | 'notes';
 })
 export class CompanyDetail implements OnInit {
   private readonly api = inject(CompaniesApi);
+  private readonly peopleApi = inject(PeopleApi);
   private readonly fb = inject(NonNullableFormBuilder);
 
   /** Bound from the `:id` route param. */
@@ -27,6 +30,8 @@ export class CompanyDetail implements OnInit {
 
   protected readonly company = signal<Company | null>(null);
   protected readonly applications = signal<ApplicationResponse[]>([]);
+  protected readonly people = signal<Person[]>([]);
+  protected readonly roleLabels = PERSON_ROLE_LABELS;
   protected readonly loadError = signal<string | null>(null);
   protected readonly editing = signal(false);
   protected readonly saving = signal(false);
@@ -48,10 +53,12 @@ export class CompanyDetail implements OnInit {
     forkJoin({
       company: this.api.getById(this.id()),
       applications: this.api.applications(this.id()),
+      people: this.peopleApi.atCompany(this.id()),
     }).subscribe({
-      next: ({ company, applications }) => {
+      next: ({ company, applications, people }) => {
         this.company.set(company);
         this.applications.set(applications);
+        this.people.set(people);
       },
       error: (err: HttpErrorResponse) =>
         this.loadError.set(

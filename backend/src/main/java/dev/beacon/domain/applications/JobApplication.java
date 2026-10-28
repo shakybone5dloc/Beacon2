@@ -71,6 +71,11 @@ public class JobApplication {
     @Column(columnDefinition = "text")
     private String jobDescription;
 
+    /** Full-time, contract and so on; null when not known. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private EmploymentType employmentType;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private ApplicationStatus status;
@@ -137,6 +142,11 @@ public class JobApplication {
         this.updatedAt = now;
     }
 
+    public void setEmploymentType(EmploymentType employmentType, Instant now) {
+        this.employmentType = employmentType;
+        this.updatedAt = now;
+    }
+
     public void setJobDescription(String jobDescription, Instant now) {
         this.jobDescription = jobDescription == null || jobDescription.isBlank() ? null : jobDescription.strip();
         this.updatedAt = now;
@@ -176,6 +186,7 @@ public class JobApplication {
     }
 
     public UUID getId() { return id; }
+    public UUID getOwnerId() { return ownerId; }
     /** Null when the employer isn't disclosed. */
     public Company getCompany() { return company; }
     /** The employer's name, or null when it isn't disclosed. */
@@ -191,6 +202,7 @@ public class JobApplication {
         return new PostingDetails(location, remote, salaryMin, salaryMax, salaryCurrency, salaryPeriod, salaryText, source, postedOn);
     }
     public String getJobDescription() { return jobDescription; }
+    public EmploymentType getEmploymentType() { return employmentType; }
     /** When the application first moved to APPLIED, or null if it never has. */
     public Instant getAppliedAt() {
         return statusHistory.stream()

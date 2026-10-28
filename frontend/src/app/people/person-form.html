@@ -1,0 +1,98 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  @if (formError(); as message) {
+    <p class="notice">{{ message }}</p>
+  }
+
+  <div class="row">
+    <label>
+      Name
+      <input formControlName="name" autocomplete="off" />
+      @if (errorFor('name'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+    <label>
+      Usual role
+      <select formControlName="role">
+        @for (r of roles; track r) {
+          <option [value]="r">{{ roleLabels[r] }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <div class="row">
+    <label>
+      Company
+      <input formControlName="company" list="person-company-suggestions" autocomplete="off" />
+      <datalist id="person-company-suggestions">
+        @for (c of companySuggestions(); track c.id) {
+          <option [value]="c.name"></option>
+        }
+      </datalist>
+      <span class="hint">For a recruiter, their agency or employer.</span>
+      @if (errorFor('company'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+    <label>
+      Title
+      <input formControlName="title" />
+      @if (errorFor('title'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+  </div>
+
+  @if (role() === 'RECRUITER') {
+    <label>
+      Recruiter type
+      <select formControlName="recruiterType">
+        <option value="">Not sure</option>
+        @for (t of recruiterTypes; track t) {
+          <option [value]="t">{{ recruiterTypeLabels[t] }}</option>
+        }
+      </select>
+    </label>
+  }
+
+  <div class="row">
+    <label>
+      Email
+      <input formControlName="email" type="email" />
+      @if (errorFor('email'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+    <label>
+      Phone
+      <input formControlName="phone" type="tel" />
+      @if (errorFor('phone'); as msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </label>
+  </div>
+
+  <label>
+    LinkedIn
+    <input formControlName="linkedinUrl" type="url" placeholder="https://www.linkedin.com/in/..." />
+    @if (errorFor('linkedinUrl'); as msg) {
+      <span class="error">{{ msg }}</span>
+    }
+  </label>
+
+  <label>
+    Notes
+    <textarea formControlName="notes" rows="3"></textarea>
+    @if (errorFor('notes'); as msg) {
+      <span class="error">{{ msg }}</span>
+    }
+  </label>
+
+  <div class="buttons">
+    <button type="submit" class="primary" [disabled]="saving()">
+      {{ saving() ? 'Saving...' : person() ? 'Save' : 'Add person' }}
+    </button>
+    <button type="button" (click)="cancelled.emit()" [disabled]="saving()">Cancel</button>
+  </div>
+</form>

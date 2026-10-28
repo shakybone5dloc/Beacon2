@@ -1,5 +1,6 @@
 package dev.beacon.contracts.applications;
 
+import dev.beacon.domain.applications.EmploymentType;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -16,6 +17,7 @@ public record CreateApplicationRequest (
     /** Matched to one of the user's companies by name, or created. Leave both empty when the employer isn't disclosed. */
     @Nullable @Size(max = 200) String companyName,
     @NotBlank @Size(max = 200) String role,
+    @Nullable EmploymentType employmentType,
     @Nullable @URL @Size(max = 2048) String jobUrl,
     @Nullable @Size(max = 4000) String notes,
     @Nullable LocalDate applyBy,

@@ -7,6 +7,7 @@ import dev.beacon.contracts.companies.CompanyResponse;
 import dev.beacon.contracts.companies.UpdateCompanyRequest;
 import dev.beacon.domain.companies.Company;
 import dev.beacon.domain.companies.CompanyNames;
+import dev.beacon.domain.companies.CompanyType;
 import dev.beacon.infrastructure.persistence.CompanyRepository;
 import dev.beacon.infrastructure.persistence.JobApplicationRepository;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -91,6 +92,12 @@ public class CompanyService {
      */
     @Transactional
     public Company resolve(UUID ownerId, CompanyChoice choice, Instant now) {
+        return resolve(ownerId, choice, CompanyType.EMPLOYER, now);
+    }
+
+    /** As {@link #resolve(UUID, CompanyChoice, Instant)}, creating a new company as {@code typeIfNew}; existing ones keep theirs. */
+    @Transactional
+    public Company resolve(UUID ownerId, CompanyChoice choice, CompanyType typeIfNew, Instant now) {
         if (choice.companyId() != null) {
             return companies.findByIdAndOwnerId(choice.companyId(), ownerId)
                     .orElseThrow(() -> new UnknownCompanyException("That company was not found."));
@@ -98,7 +105,7 @@ public class CompanyService {
         var name = choice.companyName();
         if (name == null || name.isBlank()) return null;
         return companies.findByOwnerIdAndNormalizedName(ownerId, CompanyNames.normalize(name))
-                .orElseGet(() -> companies.save(Company.create(ownerId, name, now)));
+                .orElseGet(() -> companies.save(Company.create(ownerId, name, typeIfNew, now)));
     }
 
     private Map<UUID, Long> applicationCounts(UUID ownerId) {

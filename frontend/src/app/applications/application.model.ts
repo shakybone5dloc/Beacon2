@@ -9,10 +9,21 @@ export type FollowUpRequest = api.FollowUpRequest;
 export type ChangeStatusRequest = api.ChangeStatusRequest;
 
 export type ApplicationStatus = ApplicationResponse['status'];
+export type EmploymentType = NonNullable<ApplicationResponse['employmentType']>;
 
-/** The employer's name, or how to refer to one that isn't disclosed. */
-export function employerLabel(app: Pick<ApplicationResponse, 'company'>): string {
-  return app.company ?? 'Undisclosed client';
+export const EMPLOYMENT_TYPE_LABELS: Record<EmploymentType, string> = {
+  FULL_TIME: 'Full-time',
+  CONTRACT: 'Contract',
+  CONTRACT_TO_HIRE: 'Contract-to-hire',
+  C2C: 'Contract (C2C)',
+  PART_TIME: 'Part-time',
+};
+export const EMPLOYMENT_TYPES = Object.keys(EMPLOYMENT_TYPE_LABELS) as EmploymentType[];
+
+/** The employer's name, or how to refer to one that isn't disclosed (and who's representing it). */
+export function employerLabel(app: { company: string | null; viaAgency?: string | null }): string {
+  if (app.company) return app.company;
+  return app.viaAgency ? `Undisclosed client · via ${app.viaAgency}` : 'Undisclosed client';
 }
 
 /** Board column order. */

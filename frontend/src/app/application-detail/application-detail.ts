@@ -8,12 +8,14 @@ import {
   ApplicationResponse,
   ApplicationStatus,
   employerLabel,
+  EMPLOYMENT_TYPE_LABELS,
   StatusChange,
 } from '../applications/application.model';
 import { attentionFor } from '../applications/attention';
 import { ApplicationDocuments } from '../documents/application-documents';
 import { DocumentsApi } from '../documents/documents-api';
 import { DocumentResponse } from '../documents/document.model';
+import { ApplicationPeople } from '../people/application-people';
 import { PostingPanel } from '../posting-view/posting-panel';
 import { CoverLetterDrafter } from '../documents/cover-letter-drafter';
 import { formatSalary } from '../postings/format';
@@ -33,6 +35,7 @@ interface TimelineEntry extends StatusChange {
     ApplicationDocuments,
     CoverLetterDrafter,
     PostingPanel,
+    ApplicationPeople,
   ],
   templateUrl: './application-detail.html',
   styleUrl: './application-detail.css',
@@ -40,6 +43,7 @@ interface TimelineEntry extends StatusChange {
 export class ApplicationDetail implements OnInit {
   private readonly api = inject(ApplicationsApi);
   protected readonly employerLabel = employerLabel;
+  protected readonly employmentTypeLabels = EMPLOYMENT_TYPE_LABELS;
   private readonly router = inject(Router);
   private readonly documentsApi = inject(DocumentsApi);
 
@@ -175,6 +179,11 @@ export class ApplicationDetail implements OnInit {
           }
         },
       });
+  }
+
+  /** People changed: a recruiter's agency may now show for an undisclosed employer. */
+  protected reloadApplication(): void {
+    this.api.getById(this.id()).subscribe((application) => this.application.set(application));
   }
 
   private load(): void {

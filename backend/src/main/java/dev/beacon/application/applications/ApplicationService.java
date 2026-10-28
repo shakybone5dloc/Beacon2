@@ -8,6 +8,8 @@ import dev.beacon.contracts.applications.StatusChangeResponse;
 import dev.beacon.contracts.applications.UpdateApplicationRequest;
 import dev.beacon.domain.applications.ApplicationStatus;
 import dev.beacon.domain.applications.JobApplication;
+import dev.beacon.domain.people.PersonRole;
+import dev.beacon.infrastructure.persistence.ApplicationPersonRepository;
 import dev.beacon.infrastructure.persistence.JobApplicationRepository;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -15,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,11 +31,14 @@ import java.util.UUID;
 public class ApplicationService {
 
     private final JobApplicationRepository repository;
+    private final ApplicationPersonRepository people;
     private final CompanyService companies;
     private final Clock clock;
 
-    public ApplicationService(JobApplicationRepository repository, CompanyService companies, Clock clock) {
+    public ApplicationService(JobApplicationRepository repository, ApplicationPersonRepository people,
+                              CompanyService companies, Clock clock) {
         this.repository = repository;
+        this.people = people;
         this.companies = companies;
         this.clock = clock;
     }
@@ -50,23 +57,26 @@ public class ApplicationService {
         );
         application.setApplyBy(request.applyBy(), now);
         application.scheduleFollowUp(request.followUpOn(), now);
+        application.setEmploymentType(request.employmentType(), now);
         application.setPostingDetails(ApplicationMappings.toPostingDetails(request), now);
         application.setJobDescription(request.jobDescription(), now);
 
         repository.save(application);
-        return ApplicationMappings.toResponse(application);
+        return toResponse(application);
     }
 
     @Transactional(readOnly = true)
     public Optional<ApplicationResponse> getById(UUID ownerId, UUID id) {
-        return repository.findByIdAndOwnerId(id, ownerId).map(ApplicationMappings::toResponse);
+        return repository.findByIdAndOwnerId(id, ownerId)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
     public List<ApplicationResponse> list(UUID ownerId) {
-        return repository.findAllByOwnerIdOrderByCreatedAtDesc(ownerId)
-                .stream()
-                .map(ApplicationMappings::toSummary)
+        var found = repository.findAllByOwnerIdOrderByCreatedAtDesc(ownerId);
+        var agencies = agencies(found);
+        return found.stream()
+                .map(app -> ApplicationMappings.toSummary(app, agencies.get(app.getId())))
                 .toList();
     }
 
@@ -90,7 +100,7 @@ public class ApplicationService {
         application.changeStatus(newStatus, Instant.now(clock));
 
         repository.flush();
-        return Optional.of(ApplicationMappings.toResponse(application));
+        return Optional.of(toResponse(application));
     }
 
     @Transactional
@@ -112,11 +122,12 @@ public class ApplicationService {
         );
         application.setApplyBy(request.applyBy(), now);
         application.scheduleFollowUp(request.followUpOn(), now);
+        application.setEmploymentType(request.employmentType(), now);
         application.setPostingDetails(ApplicationMappings.toPostingDetails(request), now);
         application.setJobDescription(request.jobDescription(), now);
 
         repository.flush();
-        return Optional.of(ApplicationMappings.toResponse(application));
+        return Optional.of(toResponse(application));
     }
 
     @Transactional
@@ -131,14 +142,36 @@ public class ApplicationService {
         application.scheduleFollowUp(request.followUpOn(), Instant.now(clock));
 
         repository.flush();
-        return Optional.of(ApplicationMappings.toResponse(application));
+        return Optional.of(toResponse(application));
     }
 
     @Transactional
     public boolean delete(UUID ownerId, UUID id) {
         var found = repository.findByIdAndOwnerId(id, ownerId);
-        found.ifPresent(repository::delete);
+        found.ifPresent(application -> {
+            // The people stay; only their links to this application go.
+            people.deleteAllByApplicationId(application.getId());
+            repository.delete(application);
+        });
         return found.isPresent();
+    }
+
+    private ApplicationResponse toResponse(JobApplication application) {
+        return ApplicationMappings.toResponse(application, agencies(List.of(application)).get(application.getId()));
+    }
+
+    /**
+     * For applications whose employer isn't disclosed: the company of the first recruiter
+     * linked to each, by application id. One query however many applications there are.
+     */
+    private Map<UUID, String> agencies(List<JobApplication> found) {
+        var undisclosed = found.stream().filter(app -> app.getCompany() == null).map(JobApplication::getId).toList();
+        if (undisclosed.isEmpty()) return Map.of();
+        var agencies = new HashMap<UUID, String>();
+        for (var row : people.findCompanyNamesByRole(undisclosed, PersonRole.RECRUITER)) {
+            agencies.putIfAbsent((UUID) row[0], (String) row[1]);
+        }
+        return agencies;
     }
 
     private static void requireVersion(JobApplication application, long expectedVersion) {

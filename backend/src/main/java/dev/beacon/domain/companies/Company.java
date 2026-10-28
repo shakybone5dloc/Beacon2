@@ -59,12 +59,16 @@ public class Company {
     protected Company() { }
 
     public static Company create(UUID ownerId, String name, Instant now) {
+        return create(ownerId, name, CompanyType.EMPLOYER, now);
+    }
+
+    public static Company create(UUID ownerId, String name, CompanyType type, Instant now) {
         if (ownerId == null) throw new IllegalArgumentException("A company needs an owner");
         var company = new Company();
         company.id = UUID.randomUUID();
         company.ownerId = ownerId;
         company.rename(name);
-        company.type = CompanyType.EMPLOYER;
+        company.type = type == null ? CompanyType.EMPLOYER : type;
         company.createdAt = now;
         company.updatedAt = now;
         return company;

@@ -45,6 +45,16 @@
     </label>
 
     <label>
+      Employment type
+      <select formControlName="employmentType">
+        <option value="">Not specified</option>
+        @for (t of employmentTypes; track t) {
+          <option [value]="t">{{ employmentTypeLabels[t] }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
       Job URL
       <input formControlName="jobUrl" type="url" placeholder="https://..." />
       @if (errorFor('jobUrl'); as msg) {

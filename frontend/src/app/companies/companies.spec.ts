@@ -66,6 +66,7 @@ describe('companies', () => {
       http
         .expectOne('/api/companies/c1/applications')
         .flush([anApplication({ id: 'a1', role: 'Java Engineer', status: 'APPLIED' })]);
+      http.expectOne('/api/companies/c1/people').flush([]);
       await fixture.whenStable();
       return { fixture, el: fixture.nativeElement as HTMLElement };
     }

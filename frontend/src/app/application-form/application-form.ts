@@ -9,6 +9,9 @@ import { CompaniesApi } from '../companies/companies-api';
 import {
   ApplicationResponse,
   CreateApplicationRequest,
+  EMPLOYMENT_TYPE_LABELS,
+  EMPLOYMENT_TYPES,
+  EmploymentType,
   ProblemDetail,
   SALARY_PERIODS,
 } from '../applications/application.model';
@@ -68,6 +71,8 @@ export class ApplicationForm implements OnInit {
   protected readonly detailsOpen = signal(false);
   /** Hourly pay has its own switch, so the salary periods leave "hour" out. */
   protected readonly salaryPeriods = SALARY_PERIODS.filter((p) => p !== 'hour');
+  protected readonly employmentTypes = EMPLOYMENT_TYPES;
+  protected readonly employmentTypeLabels = EMPLOYMENT_TYPE_LABELS;
 
   private version = 0;
 
@@ -76,6 +81,8 @@ export class ApplicationForm implements OnInit {
     company: ['', [Validators.required, Validators.maxLength(200)]],
     undisclosed: [false],
     role: ['', [Validators.required, Validators.maxLength(200)]],
+    /** '' means not specified. */
+    employmentType: ['' as EmploymentType | ''],
     jobUrl: ['', [Validators.maxLength(2048), Validators.pattern(/^https?:\/\/.+/)]],
     notes: ['', [Validators.maxLength(4000)]],
     applyBy: [''],
@@ -157,6 +164,7 @@ export class ApplicationForm implements OnInit {
       // A name links to the user's company of that name, or creates it; none means undisclosed.
       companyName: v.undisclosed ? null : v.company.trim(),
       role: v.role,
+      employmentType: v.employmentType || null,
       jobUrl: v.jobUrl.trim() || null,
       notes: v.notes.trim() || null,
       applyBy: v.applyBy || null,
@@ -222,6 +230,7 @@ export class ApplicationForm implements OnInit {
       company: app.company ?? '',
       undisclosed: app.company == null,
       role: app.role,
+      employmentType: app.employmentType ?? '',
       jobUrl: app.jobUrl ?? '',
       notes: app.notes ?? '',
       applyBy: app.applyBy ?? '',

@@ -51,6 +51,11 @@
       }
 
       <dl>
+        @if (app.employmentType; as type) {
+          <dt>Type</dt>
+          <dd>{{ employmentTypeLabels[type] }}</dd>
+        }
+
         @if (salary(); as pay) {
           <dt>Salary</dt>
           <dd class="salary">{{ pay }}</dd>
@@ -157,6 +162,8 @@
           }
         </section>
       }
+
+      <app-application-people [applicationId]="app.id" (changed)="reloadApplication()" />
 
       <section>
         <h2>Documents</h2>

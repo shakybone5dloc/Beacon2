@@ -6,6 +6,8 @@ export function anApplication(overrides: Partial<ApplicationResponse> = {}): App
     companyId: 'c-acme',
     company: 'Acme',
     role: 'Engineer',
+    employmentType: null,
+    viaAgency: null,
     jobUrl: null,
     notes: null,
     applyBy: null,

@@ -1,0 +1,104 @@
+:host {
+  display: block;
+  max-width: 720px;
+}
+.intro,
+.empty,
+.role,
+.where {
+  color: var(--muted);
+}
+.back {
+  color: var(--muted);
+  text-decoration: none;
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.heading h1 {
+  margin-bottom: 0;
+}
+.heading .role {
+  margin-top: 0.2rem;
+}
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  margin: 1rem 0;
+}
+.panel h2 {
+  margin-top: 0;
+  font-size: 1.05rem;
+}
+.people,
+.applications {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+.people li,
+.applications li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.people .name {
+  font-weight: 600;
+}
+.role,
+.where {
+  font-size: 0.85rem;
+}
+.facts {
+  display: grid;
+  gap: 0.4rem;
+}
+.facts dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.notes {
+  white-space: pre-line;
+}
+.badge {
+  font-size: 0.75rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.buttons {
+  display: flex;
+  gap: 0.6rem;
+}
+button {
+  font: inherit;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+}
+button.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+button.danger {
+  color: #b00020;
+}

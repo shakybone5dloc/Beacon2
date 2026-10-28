@@ -1,0 +1,82 @@
+.people h2 {
+  font-size: 1.1rem;
+}
+.empty,
+.details {
+  color: var(--muted);
+}
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.8rem;
+  display: grid;
+  gap: 0.3rem;
+}
+li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.who {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+.name {
+  font-weight: 600;
+}
+.details {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.add input {
+  flex: 1;
+  min-width: 12rem;
+}
+input,
+select {
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+}
+button {
+  font: inherit;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+button.remove {
+  color: #b00020;
+  font-size: 0.85rem;
+}
+button.link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--accent);
+}
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+}
+.panel h3 {
+  margin-top: 0;
+  font-size: 1rem;
+}

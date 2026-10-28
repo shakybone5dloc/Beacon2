@@ -13,15 +13,24 @@ public final class ApplicationMappings {
 
     /** Everything about one application, including its description and applied date. */
     public static ApplicationResponse toResponse(JobApplication a) {
-        return toResponse(a, true);
+        return toResponse(a, true, null);
+    }
+
+    /** @param viaAgency see {@link ApplicationResponse#viaAgency()} */
+    public static ApplicationResponse toResponse(JobApplication a, String viaAgency) {
+        return toResponse(a, true, viaAgency);
     }
 
     /** For lists: skips the description and the history lookup behind appliedAt. */
     public static ApplicationResponse toSummary(JobApplication a) {
-        return toResponse(a, false);
+        return toResponse(a, false, null);
     }
 
-    private static ApplicationResponse toResponse(JobApplication a, boolean full) {
+    public static ApplicationResponse toSummary(JobApplication a, String viaAgency) {
+        return toResponse(a, false, viaAgency);
+    }
+
+    private static ApplicationResponse toResponse(JobApplication a, boolean full, String viaAgency) {
         var allowedTransitions = ApplicationStatusTransitions.allowedFrom(a.getStatus()).stream().map(Enum::name).toList();
         var posting = a.getPostingDetails();
         return new ApplicationResponse(
@@ -29,6 +38,8 @@ public final class ApplicationMappings {
                 a.getCompany() == null ? null : a.getCompany().getId(),
                 a.getCompanyName(),
                 a.getRole(),
+                a.getEmploymentType(),
+                viaAgency,
                 a.getJobUrl(),
                 a.getNotes(),
                 a.getApplyBy(),

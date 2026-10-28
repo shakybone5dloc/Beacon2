@@ -84,6 +84,20 @@
     </form>
   }
 
+  <h2>People</h2>
+  @if (people().length === 0) {
+    <p class="empty">No one at {{ c.name }} yet.</p>
+  } @else {
+    <ul class="applications">
+      @for (p of people(); track p.id) {
+        <li>
+          <a [routerLink]="['/people', p.id]">{{ p.name }}</a>
+          <span class="type">{{ p.title ?? roleLabels[p.role] }}</span>
+        </li>
+      }
+    </ul>
+  }
+
   <h2>Applications</h2>
   @if (applications().length === 0) {
     <p class="empty">No applications with {{ c.name }} yet.</p>
