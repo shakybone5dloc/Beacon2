@@ -171,6 +171,16 @@ Reuses the inbox queue from E4: matches land there to accept or dismiss, same as
 ### A5. Weekly digest
 - Email (or in-app) summary: follow-ups due, stale applications, upcoming interviews, new job matches.
 
+### A6. Study cards (spaced repetition)
+- Flashcards to drill before an interview: terms, likely questions and your own STAR stories. Prototyped as the "Interview Recall" page (Oct 29) for the Elevance hiring manager round.
+- `study_decks` and `study_cards` per user: question, answer (markdown), optional link to an application, interview (I1) or company (R0).
+- Cards come from three places: written by hand, generated from a posting + resume (reuses A1's prep output), or promoted from an interview's prep notes. Generated cards land as drafts to review and edit before they're studied.
+- Review flow: show the question, answer out loud, reveal, self-grade (Again / Hard / Good / Easy).
+- Scheduling: start with Leitner boxes (1 to 3), then move to SM-2 (ease factor, interval, due date) in a `card_reviews` table. Due cards come first; "Again" brings a card back in the same session.
+- "Study for this interview" button on the interview page builds a deck from that application's posting and fit gaps (J2); the board's next-interview chip shows how many cards are due.
+- Keyboard shortcuts (Space reveal, 1-4 grade) and a cheat-sheet view listing every answer.
+- Learning focus: modeling a scheduling algorithm as a pure, unit-tested Java service (dates in, next due date out), a "due today" query with an index on `(owner_id, due_at)`, and an Angular study screen with signals and keyboard handling.
+
 ## Board (any time)
 
 ### B1. Search, filter and drag-and-drop
