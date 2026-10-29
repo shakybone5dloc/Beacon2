@@ -1,0 +1,242 @@
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+  <h2 class="m-0">Interviews</h2>
+  @if (!editing()) {
+    <button type="button" class="btn btn-sm" (click)="start()">
+      <span class="material-symbols-outlined !text-base" aria-hidden="true">event</span>
+      Schedule interview
+    </button>
+  }
+</div>
+
+@if (error(); as message) {
+  <p class="notice mt-space-md">{{ message }}</p>
+}
+
+@if (editing(); as target) {
+  <form
+    class="interview-form mt-space-md grid gap-space-md rounded-md border border-hairline bg-surface-container-low p-space-md"
+    [formGroup]="form"
+    (ngSubmit)="save()"
+  >
+    <h3 class="m-0">{{ target === 'new' ? 'Schedule an interview' : 'Edit interview' }}</h3>
+    <div class="grid gap-space-md sm:grid-cols-2">
+      <label class="grid gap-space-xs">
+        Type
+        <select formControlName="type">
+          @for (t of types; track t) {
+            <option [value]="t">{{ typeLabels[t] }}</option>
+          }
+        </select>
+      </label>
+      <label class="grid gap-space-xs">
+        Length
+        <select formControlName="durationMinutes">
+          @for (d of durations; track d) {
+            <option [ngValue]="d">{{ durationLabel(d) }}</option>
+          }
+        </select>
+      </label>
+      <label class="grid gap-space-xs">
+        Starts
+        <input type="datetime-local" formControlName="localStart" />
+      </label>
+      <label class="grid gap-space-xs">
+        Time zone
+        <select formControlName="timeZone">
+          @for (z of zones(); track z) {
+            <option [value]="z">{{ z.replaceAll('_', ' ') }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <label class="grid gap-space-xs">
+      Where
+      <input
+        formControlName="location"
+        placeholder="Meeting link, phone number or address"
+        autocomplete="off"
+      />
+    </label>
+
+    <fieldset class="m-0 grid gap-space-xs border-0 p-0">
+      <legend class="mb-space-xs text-headline-sm">Interviewers</legend>
+      @if (people().length === 0) {
+        <p class="m-0 text-body-sm text-on-surface-variant">
+          Add interviewers under <a routerLink="/people">People</a> to pick them here.
+        </p>
+      } @else {
+        <div
+          class="interviewers flex max-h-40 flex-wrap gap-x-space-lg gap-y-space-xs overflow-y-auto"
+        >
+          @for (p of people(); track p.id) {
+            <label class="flex items-center gap-space-xs text-body-md font-normal">
+              <input
+                type="checkbox"
+                [checked]="interviewerIds().has(p.id)"
+                (change)="toggleInterviewer(p.id, $any($event.target).checked)"
+              />
+              {{ p.name }}
+              @if (p.company) {
+                <span class="text-on-surface-variant">({{ p.company }})</span>
+              }
+            </label>
+          }
+        </div>
+      }
+    </fieldset>
+
+    <label class="grid gap-space-xs">
+      Prep notes
+      <textarea
+        formControlName="prepNotes"
+        rows="3"
+        placeholder="What to review, questions to ask, stories to tell."
+      ></textarea>
+    </label>
+    <div class="grid gap-space-md sm:grid-cols-[1fr_12rem]">
+      <label class="grid gap-space-xs">
+        Debrief
+        <textarea
+          formControlName="debriefNotes"
+          rows="3"
+          placeholder="How it went, what they asked."
+        ></textarea>
+      </label>
+      <label class="grid content-start gap-space-xs">
+        Outcome
+        <select formControlName="outcome">
+          <option value="">Not known yet</option>
+          @for (o of outcomes; track o) {
+            <option [value]="o">{{ outcomeLabels[o] }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <p class="m-0 text-body-sm text-on-surface-variant">
+      Interviewers not on this application yet are added to it.
+    </p>
+    @if (formError(); as message) {
+      <p class="m-0 text-body-sm text-error">{{ message }}</p>
+    }
+    <div class="flex gap-space-sm">
+      <button type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>
+      <button type="button" (click)="cancel()">Cancel</button>
+    </div>
+  </form>
+}
+
+@if (interviews(); as list) {
+  @if (list.length === 0) {
+    @if (!editing()) {
+      <p class="empty mt-space-md mb-0 text-on-surface-variant">
+        None scheduled. Add each one to keep its time, interviewers and notes together.
+      </p>
+    }
+  } @else {
+    <ul class="interviews m-0 mt-space-md list-none p-0">
+      @for (i of list; track i.id) {
+        <li
+          class="flex flex-wrap gap-x-space-md gap-y-space-sm border-b border-hairline py-space-md last:border-b-0 sm:flex-nowrap"
+          [class.opacity-70]="isPast(i) || i.outcome === 'CANCELLED'"
+        >
+          <span
+            class="material-symbols-outlined mt-0.5 w-[18px] shrink-0 text-on-surface-variant"
+            aria-hidden="true"
+            >event</span
+          >
+          <div class="min-w-0 flex-1 basis-[calc(100%-30px)] sm:basis-0">
+            <div class="flex flex-wrap items-baseline gap-x-space-sm gap-y-space-xs">
+              <span class="type font-semibold">{{ typeLabels[i.type] }}</span>
+              @if (i.id === nextId()) {
+                <span class="pill pill-blue">Next</span>
+              }
+              @if (i.outcome; as o) {
+                <span
+                  class="outcome pill"
+                  [class.pill-green]="o === 'PASSED'"
+                  [class.pill-red]="o === 'DID_NOT_PASS'"
+                  >{{ outcomeLabels[o] }}</span
+                >
+              }
+            </div>
+            <p class="when m-0 mt-space-xs text-body-md">
+              <time [attr.datetime]="i.startsAt">{{ formatInZone(i.startsAt, i.timeZone) }}</time>
+              <span class="text-on-surface-variant"> · {{ durationLabel(i.durationMinutes) }}</span>
+              @if (viewerTime(i.startsAt, i.timeZone); as mine) {
+                <span class="block text-body-sm text-on-surface-variant">{{ mine }} your time</span>
+              }
+            </p>
+            @if (i.location; as where) {
+              <p class="where m-0 mt-space-xs text-body-sm break-words">
+                @if (isLink(where)) {
+                  <a [href]="where" target="_blank" rel="noopener noreferrer">{{ where }}</a>
+                } @else {
+                  {{ where }}
+                }
+              </p>
+            }
+            @if (i.interviewers.length > 0) {
+              <p class="with m-0 mt-space-xs text-body-sm">
+                With
+                @for (p of i.interviewers; track p.id; let last = $last) {
+                  <a [routerLink]="['/people', p.id]">{{ p.name }}</a
+                  >{{ last ? '' : ', ' }}
+                }
+              </p>
+            }
+            @if (i.prepNotes; as notes) {
+              <details class="mt-space-xs">
+                <summary class="text-body-sm text-on-surface-variant">Prep notes</summary>
+                <p
+                  class="m-0 mt-space-xs break-words whitespace-pre-wrap"
+                  [textContent]="notes"
+                ></p>
+              </details>
+            }
+            @if (i.debriefNotes; as notes) {
+              <details class="mt-space-xs">
+                <summary class="text-body-sm text-on-surface-variant">Debrief</summary>
+                <p
+                  class="m-0 mt-space-xs break-words whitespace-pre-wrap"
+                  [textContent]="notes"
+                ></p>
+              </details>
+            }
+          </div>
+          <div class="ml-[30px] flex shrink-0 flex-wrap items-start gap-space-xs sm:ml-0">
+            <a
+              class="calendar btn btn-sm no-underline"
+              [href]="calendarUrl(i)"
+              download
+              [attr.aria-label]="'Add the ' + typeLabels[i.type] + ' to your calendar'"
+              title="Download an .ics file for your calendar"
+            >
+              <span class="material-symbols-outlined !text-base" aria-hidden="true"
+                >calendar_add_on</span
+              >
+              .ics
+            </a>
+            <button
+              type="button"
+              class="btn btn-sm"
+              [attr.aria-label]="'Edit the ' + typeLabels[i.type]"
+              (click)="edit(i)"
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-danger"
+              [attr.aria-label]="'Delete the ' + typeLabels[i.type]"
+              (click)="remove(i)"
+            >
+              Delete
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+} @else if (!error()) {
+  <p class="mt-space-md mb-0">Loading...</p>
+}

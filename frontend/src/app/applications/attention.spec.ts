@@ -51,6 +51,60 @@ describe('attentionFor', () => {
     });
   });
 
+  describe('interviews', () => {
+    const at = (day: number, hour: number) => new Date(2026, 9, day, hour, 0, 0).toISOString();
+
+    it.each([
+      [at(20, 15), 'Interview today 3:00 PM'],
+      [at(21, 14), 'Interview tomorrow 2:00 PM'],
+      [at(23, 9), 'Interview Fri 9:00 AM'],
+      [at(30, 9), 'Interview Oct 30'],
+    ])('a next interview at %s reads "%s"', (nextInterviewAt, label) => {
+      const app = anApplication({ status: 'INTERVIEWING', nextInterviewAt });
+
+      expect(attentionFor(app, now)?.interview).toEqual({ label, urgent: false });
+    });
+
+    it('holds off the age rule while one is scheduled, whatever the status', () => {
+      const app = anApplication({
+        status: 'APPLIED',
+        statusChangedAt: daysAgo(30),
+        nextInterviewAt: at(24, 10),
+      });
+
+      expect(attentionFor(app, now)?.needsAttention).toBe(false);
+    });
+
+    it('flags an interviewing application a week after its last interview', () => {
+      const quiet = anApplication({
+        status: 'INTERVIEWING',
+        statusChangedAt: daysAgo(40),
+        lastInterviewAt: daysAgo(9),
+      });
+      const recent = anApplication({
+        status: 'INTERVIEWING',
+        statusChangedAt: daysAgo(40),
+        lastInterviewAt: daysAgo(6),
+      });
+
+      expect(attentionFor(quiet, now)).toMatchObject({
+        needsAttention: true,
+        reason: 'No news 9 days after the interview',
+      });
+      expect(attentionFor(recent, now)?.needsAttention).toBe(false);
+    });
+
+    it('lets a follow-up date win over the last interview', () => {
+      const app = anApplication({
+        status: 'INTERVIEWING',
+        lastInterviewAt: daysAgo(20),
+        followUpOn: '2026-10-25',
+      });
+
+      expect(attentionFor(app, now)?.needsAttention).toBe(false);
+    });
+  });
+
   describe('apply-by date', () => {
     it.each([
       ['2026-10-30', 'Closes in 10d', false],

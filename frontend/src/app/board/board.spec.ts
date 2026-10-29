@@ -152,6 +152,22 @@ describe('Board', () => {
       expect(el.querySelector('.attention')).toBeNull();
     });
 
+    it('shows the next interview on its card', async () => {
+      const tomorrowAt2 = new Date(Date.now() + DAY);
+      tomorrowAt2.setHours(14, 0, 0, 0);
+      const { el } = await render(
+        anApplication({
+          company: 'Acme',
+          status: 'INTERVIEWING',
+          nextInterviewAt: tomorrowAt2.toISOString(),
+        }),
+      );
+
+      expect(cardFor(el, 'Acme').querySelector('.chip.interview')?.textContent).toContain(
+        'Interview tomorrow 2:00 PM',
+      );
+    });
+
     it('clears a due follow-up from the strip with Done', async () => {
       const app = anApplication({
         id: 'a1',

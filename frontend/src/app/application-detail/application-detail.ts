@@ -28,6 +28,7 @@ import { DocumentsApi } from '../documents/documents-api';
 import { DocumentResponse } from '../documents/document.model';
 import { ApplicationPeople } from '../people/application-people';
 import { ContactLog } from '../contacts/contact-log';
+import { ApplicationInterviews } from '../interviews/application-interviews';
 import { PossibleDuplicates } from '../contacts/possible-duplicates';
 import { PostingPanel } from '../posting-view/posting-panel';
 import { CoverLetterDrafter } from '../documents/cover-letter-drafter';
@@ -51,6 +52,7 @@ interface TimelineEntry extends StatusChange {
     ApplicationPeople,
     ContactLog,
     PossibleDuplicates,
+    ApplicationInterviews,
   ],
   templateUrl: './application-detail.html',
   styleUrl: './application-detail.css',
@@ -207,6 +209,12 @@ export class ApplicationDetail {
   /** People changed: a recruiter's agency may now show for an undisclosed employer. */
   protected reloadApplication(): void {
     this.api.getById(this.id()).subscribe((application) => this.application.set(application));
+  }
+
+  /** The next interview may have moved, and new interviewers are now on the application. */
+  protected interviewsChanged(): void {
+    this.reloadApplication();
+    this.people()?.reload();
   }
 
   private load(): void {

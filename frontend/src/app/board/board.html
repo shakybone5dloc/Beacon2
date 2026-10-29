@@ -131,8 +131,15 @@
               }}</span>
             }
 
-            @if (a?.deadline || a?.followUp) {
+            @if (a?.deadline || a?.followUp || a?.interview) {
               <div class="flex flex-wrap gap-space-xs">
+                @if (a?.interview; as i) {
+                  <span class="chip interview pill pill-blue"
+                    ><span class="material-symbols-outlined !text-[12px]" aria-hidden="true"
+                      >event</span
+                    >{{ i.label }}</span
+                  >
+                }
                 @if (a?.deadline; as d) {
                   <span
                     class="chip deadline pill"

@@ -182,6 +182,12 @@
           (changed)="reloadApplication()"
         />
 
+        <app-application-interviews
+          class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
+          [applicationId]="app.id"
+          (changed)="interviewsChanged()"
+        />
+
         <app-contact-log
           class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
           [applicationId]="app.id"

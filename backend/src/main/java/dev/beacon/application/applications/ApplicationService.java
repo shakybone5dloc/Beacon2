@@ -1,5 +1,6 @@
 package dev.beacon.application.applications;
 
+import dev.beacon.application.applications.ApplicationMappings.Extras;
 import dev.beacon.application.companies.CompanyService;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.CreateApplicationRequest;
@@ -9,9 +10,11 @@ import dev.beacon.contracts.applications.UpdateApplicationRequest;
 import dev.beacon.domain.applications.ApplicationStatus;
 import dev.beacon.domain.applications.JobApplication;
 import dev.beacon.domain.contacts.Contact;
+import dev.beacon.domain.interviews.InterviewOutcome;
 import dev.beacon.domain.people.PersonRole;
 import dev.beacon.infrastructure.persistence.ApplicationPersonRepository;
 import dev.beacon.infrastructure.persistence.ContactRepository;
+import dev.beacon.infrastructure.persistence.InterviewRepository;
 import dev.beacon.infrastructure.persistence.JobApplicationRepository;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -35,14 +38,17 @@ public class ApplicationService {
     private final JobApplicationRepository repository;
     private final ApplicationPersonRepository people;
     private final ContactRepository contacts;
+    private final InterviewRepository interviews;
     private final CompanyService companies;
     private final Clock clock;
 
     public ApplicationService(JobApplicationRepository repository, ApplicationPersonRepository people,
-                              ContactRepository contacts, CompanyService companies, Clock clock) {
+                              ContactRepository contacts, InterviewRepository interviews,
+                              CompanyService companies, Clock clock) {
         this.repository = repository;
         this.people = people;
         this.contacts = contacts;
+        this.interviews = interviews;
         this.companies = companies;
         this.clock = clock;
     }
@@ -78,9 +84,9 @@ public class ApplicationService {
     @Transactional(readOnly = true)
     public List<ApplicationResponse> list(UUID ownerId) {
         var found = repository.findAllByOwnerIdOrderByCreatedAtDesc(ownerId);
-        var agencies = agencies(found);
+        var extras = extras(found);
         return found.stream()
-                .map(app -> ApplicationMappings.toSummary(app, agencies.get(app.getId())))
+                .map(app -> ApplicationMappings.toSummary(app, extras.getOrDefault(app.getId(), Extras.NONE)))
                 .toList();
     }
 
@@ -155,6 +161,7 @@ public class ApplicationService {
         found.ifPresent(application -> {
             // The people and their contact logs stay; only their links to this application go.
             people.deleteAllByApplicationId(application.getId());
+            interviews.deleteAllByApplicationId(application.getId());
             contacts.findAllByApplicationIdOrderByOccurredAtDesc(application.getId()).forEach(Contact::forgetApplication);
             repository.delete(application);
         });
@@ -162,7 +169,25 @@ public class ApplicationService {
     }
 
     private ApplicationResponse toResponse(JobApplication application) {
-        return ApplicationMappings.toResponse(application, agencies(List.of(application)).get(application.getId()));
+        var extras = extras(List.of(application)).getOrDefault(application.getId(), Extras.NONE);
+        return ApplicationMappings.toResponse(application, extras);
+    }
+
+    /** Agencies and interview dates for these applications, by id: two queries however many there are. */
+    private Map<UUID, Extras> extras(List<JobApplication> found) {
+        if (found.isEmpty()) return Map.of();
+        var agencies = agencies(found);
+        var ids = found.stream().map(JobApplication::getId).toList();
+        var nextAndLast = new HashMap<UUID, Instant[]>();
+        for (var row : interviews.findNextAndLast(ids, Instant.now(clock), InterviewOutcome.CANCELLED)) {
+            nextAndLast.put((UUID) row[0], new Instant[] {(Instant) row[1], (Instant) row[2]});
+        }
+        var extras = new HashMap<UUID, Extras>();
+        for (var id : ids) {
+            var dates = nextAndLast.getOrDefault(id, new Instant[2]);
+            extras.put(id, new Extras(agencies.get(id), dates[0], dates[1]));
+        }
+        return extras;
     }
 
     /**

@@ -15,6 +15,7 @@ import { aDocument } from '../documents/testing';
 import { PostingPanel } from '../posting-view/posting-panel';
 import { ContactLog } from '../contacts/contact-log';
 import { PossibleDuplicates } from '../contacts/possible-duplicates';
+import { ApplicationInterviews } from '../interviews/application-interviews';
 
 /** Stand-ins for the child panels, which have their own specs and HTTP calls. */
 @Component({
@@ -40,6 +41,12 @@ class PeopleStub {
 class ContactLogStub {
   readonly applicationId = input<string>();
   readonly logged = output<void>();
+}
+
+@Component({ selector: 'app-application-interviews', template: '' })
+class InterviewsStub {
+  readonly applicationId = input<string>();
+  readonly changed = output<void>();
 }
 
 @Component({ selector: 'app-possible-duplicates', template: '' })
@@ -71,9 +78,19 @@ describe('ApplicationDetail', () => {
           ApplicationPeople,
           ContactLog,
           PossibleDuplicates,
+          ApplicationInterviews,
         ],
       },
-      add: { imports: [DocumentsStub, DrafterStub, PeopleStub, ContactLogStub, DuplicatesStub] },
+      add: {
+        imports: [
+          DocumentsStub,
+          DrafterStub,
+          PeopleStub,
+          ContactLogStub,
+          DuplicatesStub,
+          InterviewsStub,
+        ],
+      },
     });
     http = TestBed.inject(HttpTestingController);
     navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);

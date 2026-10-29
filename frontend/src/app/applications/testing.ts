@@ -27,6 +27,8 @@ export function anApplication(overrides: Partial<ApplicationResponse> = {}): App
     createdAt: '2026-10-23T12:00:00Z',
     updatedAt: '2026-10-23T12:00:00Z',
     statusChangedAt: '2026-10-23T12:00:00Z',
+    nextInterviewAt: null,
+    lastInterviewAt: null,
     version: 0,
     allowedTransitions: [],
     ...overrides,

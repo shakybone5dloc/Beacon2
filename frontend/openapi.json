@@ -356,6 +356,71 @@
         "tags" : [ "Application documents" ]
       }
     },
+    "/api/applications/{applicationId}/interviews" : {
+      "get" : {
+        "operationId" : "listApplicationInterviews",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/InterviewResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Interviews" ]
+      },
+      "post" : {
+        "operationId" : "scheduleInterview",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScheduleInterviewRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InterviewResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Interviews" ]
+      }
+    },
     "/api/applications/{applicationId}/people" : {
       "get" : {
         "operationId" : "listApplicationPeople",
@@ -1127,6 +1192,88 @@
         "tags" : [ "Library documents" ]
       }
     },
+    "/api/interviews/{id}" : {
+      "delete" : {
+        "operationId" : "deleteInterview",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "Interviews" ]
+      },
+      "put" : {
+        "operationId" : "updateInterview",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateInterviewRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InterviewResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Interviews" ]
+      }
+    },
+    "/api/interviews/{id}/calendar.ics" : {
+      "get" : {
+        "operationId" : "getInterviewCalendar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "text/calendar" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Interviews" ]
+      }
+    },
     "/api/me/api-keys" : {
       "get" : {
         "operationId" : "listApiKeys",
@@ -1579,8 +1726,16 @@
           "jobUrl" : {
             "type" : [ "string", "null" ]
           },
+          "lastInterviewAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
           "location" : {
             "type" : [ "string", "null" ]
+          },
+          "nextInterviewAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
           },
           "notes" : {
             "type" : [ "string", "null" ]
@@ -1635,7 +1790,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "allowedTransitions", "appliedAt", "applyBy", "company", "companyId", "createdAt", "employmentType", "followUpOn", "id", "jobDescription", "jobUrl", "location", "notes", "postedOn", "remote", "role", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "source", "status", "statusChangedAt", "updatedAt", "version", "viaAgency" ]
+        "required" : [ "allowedTransitions", "appliedAt", "applyBy", "company", "companyId", "createdAt", "employmentType", "followUpOn", "id", "jobDescription", "jobUrl", "lastInterviewAt", "location", "nextInterviewAt", "notes", "postedOn", "remote", "role", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "source", "status", "statusChangedAt", "updatedAt", "version", "viaAgency" ]
       },
       "CaptureResponse" : {
         "type" : "object",
@@ -2028,6 +2183,90 @@
         },
         "required" : [ "version" ]
       },
+      "InterviewResponse" : {
+        "type" : "object",
+        "properties" : {
+          "applicationId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "debriefNotes" : {
+            "type" : [ "string", "null" ]
+          },
+          "durationMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "endsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "interviewers" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/InterviewerResponse"
+            }
+          },
+          "localStart" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "location" : {
+            "type" : [ "string", "null" ]
+          },
+          "outcome" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "PASSED", "DID_NOT_PASS", "CANCELLED" ]
+          },
+          "prepNotes" : {
+            "type" : [ "string", "null" ]
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "timeZone" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "PHONE_SCREEN", "TECHNICAL", "PANEL", "ONSITE", "OTHER" ]
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "applicationId", "createdAt", "debriefNotes", "durationMinutes", "endsAt", "id", "interviewers", "localStart", "location", "outcome", "prepNotes", "startsAt", "timeZone", "type", "updatedAt", "version" ]
+      },
+      "InterviewerResponse" : {
+        "type" : "object",
+        "properties" : {
+          "company" : {
+            "type" : [ "string", "null" ]
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "company", "id", "name" ]
+      },
       "JobPostingResponse" : {
         "type" : "object",
         "properties" : {
@@ -2404,6 +2643,57 @@
         },
         "required" : [ "text" ]
       },
+      "ScheduleInterviewRequest" : {
+        "type" : "object",
+        "properties" : {
+          "debriefNotes" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 10000,
+            "minLength" : 0
+          },
+          "durationMinutes" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 720,
+            "minimum" : 5
+          },
+          "interviewerIds" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "type" : "string",
+              "format" : "uuid"
+            }
+          },
+          "localStart" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "location" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 2048,
+            "minLength" : 0
+          },
+          "outcome" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "PASSED", "DID_NOT_PASS", "CANCELLED" ]
+          },
+          "prepNotes" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 10000,
+            "minLength" : 0
+          },
+          "timeZone" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "minLength" : 0
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "PHONE_SCREEN", "TECHNICAL", "PANEL", "ONSITE", "OTHER" ]
+          }
+        },
+        "required" : [ "durationMinutes", "localStart", "timeZone", "type" ]
+      },
       "SourceResultResponse" : {
         "type" : "object",
         "properties" : {
@@ -2599,6 +2889,61 @@
           }
         },
         "required" : [ "channel", "direction", "occurredAt", "personId", "version" ]
+      },
+      "UpdateInterviewRequest" : {
+        "type" : "object",
+        "properties" : {
+          "debriefNotes" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 10000,
+            "minLength" : 0
+          },
+          "durationMinutes" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 720,
+            "minimum" : 5
+          },
+          "interviewerIds" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "type" : "string",
+              "format" : "uuid"
+            }
+          },
+          "localStart" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "location" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 2048,
+            "minLength" : 0
+          },
+          "outcome" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "PASSED", "DID_NOT_PASS", "CANCELLED" ]
+          },
+          "prepNotes" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 10000,
+            "minLength" : 0
+          },
+          "timeZone" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "minLength" : 0
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "PHONE_SCREEN", "TECHNICAL", "PANEL", "ONSITE", "OTHER" ]
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "durationMinutes", "localStart", "timeZone", "type", "version" ]
       },
       "UpdatePersonRequest" : {
         "type" : "object",

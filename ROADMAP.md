@@ -23,7 +23,8 @@ Rebuilt from the .NET Beacon, then extended.
 | R0 | Companies per user: V7 backfill, find-or-create by normalized name, undisclosed employers, type-ahead, company pages | caa8455 |
 | R1 | People with a role per application, recruiter agencies ("via"), employment type, people pages | 819c7e6 |
 | - | Stitch redesign (Tailwind v4 design system on every screen) and dark mode | 42f58e5, 85c7236, 7c039cc |
-| R2 | Contact log per person and application, duplicate-pitch warning | after 7c039cc |
+| R2 | Contact log per person and application, duplicate-pitch warning | d5f66c8 |
+| I1 | Interviews with time zones, interviewers, prep/debrief, .ics download; board shows the next one | after d5f66c8 |
 
 ## Next: Companies and people
 
@@ -63,7 +64,8 @@ Rebuilt from the .NET Beacon, then extended.
 
 ## Then: Interviews and timeline
 
-### I1. Interviews
+### I1. Interviews (done)
+- Built as planned below. The start is saved as the wall-clock time and IANA zone it was agreed in, and shown in that zone plus the viewer's own. Interviewers not on the application yet are added to it. Cancelled interviews never count as next or last. A scheduled interview holds off the stale flag for any status; an Interviewing application with none ahead is flagged 7 days after its last one. The .ics file uses UTC times and keeps one UID per interview, so re-importing an edited one updates the event.
 - `interviews`: application, date/time + time zone, type (`PHONE_SCREEN`, `TECHNICAL`, `PANEL`, `ONSITE`, `OTHER`), interviewers (people from R1), location or meeting link, prep notes, debrief notes, outcome.
 - Board shows upcoming interviews ("Interview tomorrow 2:00").
 - `.ics` download per interview so it can go on any calendar.

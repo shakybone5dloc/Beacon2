@@ -15,6 +15,7 @@ import dev.beacon.domain.people.RecruiterType;
 import dev.beacon.infrastructure.persistence.ApplicationPersonRepository;
 import dev.beacon.infrastructure.persistence.CompanyRepository;
 import dev.beacon.infrastructure.persistence.ContactRepository;
+import dev.beacon.infrastructure.persistence.InterviewRepository;
 import dev.beacon.infrastructure.persistence.JobApplicationRepository;
 import dev.beacon.infrastructure.persistence.PersonRepository;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -39,17 +40,19 @@ public class PeopleService {
     private final PersonRepository people;
     private final ApplicationPersonRepository links;
     private final ContactRepository contacts;
+    private final InterviewRepository interviews;
     private final JobApplicationRepository applications;
     private final CompanyRepository companies;
     private final CompanyService companyService;
     private final Clock clock;
 
     public PeopleService(PersonRepository people, ApplicationPersonRepository links, ContactRepository contacts,
-                         JobApplicationRepository applications, CompanyRepository companies,
-                         CompanyService companyService, Clock clock) {
+                         InterviewRepository interviews, JobApplicationRepository applications,
+                         CompanyRepository companies, CompanyService companyService, Clock clock) {
         this.people = people;
         this.links = links;
         this.contacts = contacts;
+        this.interviews = interviews;
         this.applications = applications;
         this.companies = companies;
         this.companyService = companyService;
@@ -93,7 +96,10 @@ public class PeopleService {
         return Optional.of(toResponse(person));
     }
 
-    /** Also removes them from every application they were on, and deletes their contact log. */
+    /**
+     * Also removes them from every application and interview they were on, and
+     * deletes their contact log. The interviews themselves stay.
+     */
     @Transactional
     public boolean delete(UUID ownerId, UUID id) {
         var found = people.findByIdAndOwnerId(id, ownerId);
@@ -102,6 +108,7 @@ public class PeopleService {
             // transaction would then point at a deleted person.
             links.deleteAllByPersonId(person.getId());
             contacts.deleteAllByPersonId(person.getId());
+            interviews.findAllByInterviewersId(person.getId()).forEach(i -> i.removeInterviewer(person));
             people.delete(person);
         });
         return found.isPresent();
