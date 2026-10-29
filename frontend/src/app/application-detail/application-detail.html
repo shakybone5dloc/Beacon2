@@ -179,7 +179,7 @@
         <app-application-people
           class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
           [applicationId]="app.id"
-          (changed)="reloadApplication()"
+          (changed)="peopleChanged()"
         />
 
         <app-application-interviews
@@ -191,7 +191,7 @@
         <app-contact-log
           class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
           [applicationId]="app.id"
-          (logged)="people()?.reload()"
+          (logged)="contactLogged()"
         />
 
         <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
@@ -200,7 +200,7 @@
             [applicationId]="app.id"
             [jobUrl]="app.jobUrl"
             (captured)="onCaptured($event)"
-            (changed)="documentList.set($event)"
+            (changed)="documentsChanged($event)"
           />
         </section>
 
@@ -213,22 +213,10 @@
           />
         </section>
 
-        <section class="card mt-space-lg block p-space-lg [&_h2]:mt-0">
-          <h2>History</h2>
-          <ol class="timeline">
-            @for (entry of timeline(); track $index) {
-              <li>
-                <strong>{{ entry.toStatus | titlecase }}</strong>
-                <time [attr.datetime]="entry.changedAt">{{
-                  entry.changedAt | date: 'medium'
-                }}</time>
-                @if (entry.after; as after) {
-                  <span class="after">{{ after }} later</span>
-                }
-              </li>
-            }
-          </ol>
-        </section>
+        <app-application-timeline
+          class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
+          [applicationId]="app.id"
+        />
 
         <div class="buttons mt-space-lg">
           <a [routerLink]="['/applications', app.id, 'edit']" class="edit btn no-underline">Edit</a>

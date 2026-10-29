@@ -124,7 +124,7 @@ public class InterviewService {
         if (!links.existsById(key)) links.save(ApplicationPerson.link(application, person, null, now));
     }
 
-    private static InterviewResponse toResponse(Interview i) {
+    public static InterviewResponse toResponse(Interview i) {
         var interviewers = i.getInterviewers().stream()
                 .map(p -> new InterviewResponse.InterviewerResponse(p.getId(), p.getName(),
                         p.getCompany() == null ? null : p.getCompany().getName()))

@@ -5,10 +5,10 @@ import { provideRouter, Router } from '@angular/router';
 import { ApplicationDetail } from './application-detail';
 import { ApplicationPeople } from '../people/application-people';
 import { anApplication } from '../applications/testing';
-import { ApplicationResponse, StatusChange } from '../applications/application.model';
+import { ApplicationResponse } from '../applications/application.model';
 import { ApplicationDocuments } from '../documents/application-documents';
 import { CoverLetterDrafter } from '../documents/cover-letter-drafter';
-import { Component, input, output } from '@angular/core';
+import { Component, DebugElement, forwardRef, input, output } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { DocumentResponse } from '../documents/document.model';
 import { aDocument } from '../documents/testing';
@@ -16,6 +16,7 @@ import { PostingPanel } from '../posting-view/posting-panel';
 import { ContactLog } from '../contacts/contact-log';
 import { PossibleDuplicates } from '../contacts/possible-duplicates';
 import { ApplicationInterviews } from '../interviews/application-interviews';
+import { ApplicationTimeline } from '../timeline/application-timeline';
 
 /** Stand-ins for the child panels, which have their own specs and HTTP calls. */
 @Component({
@@ -49,6 +50,20 @@ class InterviewsStub {
   readonly changed = output<void>();
 }
 
+/** Provided as the real class too, so the page's viewChild(ApplicationTimeline) finds it. */
+@Component({
+  selector: 'app-application-timeline',
+  template: '',
+  providers: [{ provide: ApplicationTimeline, useExisting: forwardRef(() => TimelineStub) }],
+})
+class TimelineStub {
+  readonly applicationId = input<string>();
+  reloads = 0;
+  reload(): void {
+    this.reloads++;
+  }
+}
+
 @Component({ selector: 'app-possible-duplicates', template: '' })
 class DuplicatesStub {
   readonly applicationId = input<string>();
@@ -79,6 +94,7 @@ describe('ApplicationDetail', () => {
           ContactLog,
           PossibleDuplicates,
           ApplicationInterviews,
+          ApplicationTimeline,
         ],
       },
       add: {
@@ -89,6 +105,7 @@ describe('ApplicationDetail', () => {
           ContactLogStub,
           DuplicatesStub,
           InterviewsStub,
+          TimelineStub,
         ],
       },
     });
@@ -102,25 +119,22 @@ describe('ApplicationDetail', () => {
     localStorage.clear();
   });
 
-  const created: StatusChange = {
-    fromStatus: null,
-    toStatus: 'SAVED',
-    changedAt: '2026-10-01T12:00:00Z',
-  };
-
-  async function open(app: ApplicationResponse, history: StatusChange[] = [created]) {
+  async function open(app: ApplicationResponse) {
     const fixture = TestBed.createComponent(ApplicationDetail);
     fixture.componentRef.setInput('id', app.id);
     await fixture.whenStable();
 
-    flushLoad(app, history);
+    flushLoad(app);
     await fixture.whenStable();
     return { fixture, el: fixture.nativeElement as HTMLElement };
   }
 
-  function flushLoad(app: ApplicationResponse, history: StatusChange[]) {
+  function flushLoad(app: ApplicationResponse) {
     http.expectOne(`/api/applications/${app.id}`).flush(app);
-    http.expectOne(`/api/applications/${app.id}/history`).flush(history);
+  }
+
+  function timeline(fixture: { debugElement: DebugElement }): TimelineStub {
+    return fixture.debugElement.query(By.directive(TimelineStub)).componentInstance;
   }
 
   function buttonLabelled(el: HTMLElement, label: string): HTMLButtonElement {
@@ -252,7 +266,7 @@ describe('ApplicationDetail', () => {
     const { fixture, el } = await open(app);
 
     fixture.debugElement.query(By.directive(DocumentsStub)).componentInstance.captured.emit(true);
-    flushLoad({ ...app, version: 1, jobDescription: 'Captured text' }, [created]);
+    flushLoad({ ...app, version: 1, jobDescription: 'Captured text' });
     await fixture.whenStable();
 
     expect(el.querySelector('.notice')?.textContent).toContain(
@@ -316,26 +330,27 @@ describe('ApplicationDetail', () => {
     await fixture.whenStable();
 
     http.expectOne('/api/applications/gone').flush(null, { status: 404, statusText: 'Not Found' });
-    http.expectOne('/api/applications/gone/history'); // cancelled once the first request fails
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('no longer exists');
   });
 
-  it('shows the status history oldest first with the gap between steps', async () => {
-    const { el } = await open(anApplication({ id: 'a1', status: 'APPLIED' }), [
-      created,
-      { fromStatus: 'SAVED', toStatus: 'APPLIED', changedAt: '2026-10-04T12:00:00Z' },
-    ]);
+  it('refreshes the timeline after changes that add to it, but not when documents first load', async () => {
+    const app = anApplication({ id: 'a1' });
+    const { fixture } = await open(app);
+    const documents = fixture.debugElement.query(By.directive(DocumentsStub)).componentInstance;
 
-    const entries = Array.from(el.querySelectorAll('.timeline li')).map((li) =>
-      li.textContent!.replace(/\s+/g, ' ').trim(),
-    );
-    expect(entries.length).toBe(2);
-    expect(entries[0]).toContain('Saved');
-    expect(entries[0]).not.toContain('later');
-    expect(entries[1]).toContain('Applied');
-    expect(entries[1]).toContain('3 days later');
+    documents.changed.emit([]);
+    expect(timeline(fixture).reloads).toBe(0);
+
+    documents.changed.emit([aDocument()]);
+    fixture.debugElement.query(By.directive(ContactLogStub)).componentInstance.logged.emit();
+    fixture.debugElement.query(By.directive(InterviewsStub)).componentInstance.changed.emit();
+    http.expectOne('/api/applications/a1').flush(app);
+    fixture.debugElement.query(By.directive(PeopleStub)).componentInstance.changed.emit();
+    http.expectOne('/api/applications/a1').flush(app);
+
+    expect(timeline(fixture).reloads).toBe(4);
   });
 
   it('shows how long the application has been in its current status', async () => {
@@ -347,7 +362,7 @@ describe('ApplicationDetail', () => {
     expect(el.querySelector('.status')?.textContent).toContain('for 2 days');
   });
 
-  it('moves the application and refreshes the history', async () => {
+  it('moves the application and refreshes the timeline', async () => {
     const app = anApplication({
       id: 'a1',
       status: 'INTERVIEWING',
@@ -366,17 +381,11 @@ describe('ApplicationDetail', () => {
       version: 4,
       allowedTransitions: ['ACCEPTED', 'DECLINED', 'REJECTED'],
     });
-    http
-      .expectOne('/api/applications/a1/history')
-      .flush([
-        created,
-        { fromStatus: 'INTERVIEWING', toStatus: 'OFFER', changedAt: '2026-10-05T12:00:00Z' },
-      ]);
     await fixture.whenStable();
 
     expect(el.querySelector('.status')?.textContent).toContain('Offer');
     expect(buttonLabelled(el, 'Accepted')).toBeTruthy();
-    expect(el.querySelectorAll('.timeline li').length).toBe(2);
+    expect(timeline(fixture).reloads).toBe(1);
   });
 
   it('reloads with a notice when the move conflicts', async () => {
@@ -387,7 +396,7 @@ describe('ApplicationDetail', () => {
     http
       .expectOne('/api/applications/a1/status')
       .flush({ title: 'Conflict' }, { status: 409, statusText: 'Conflict' });
-    flushLoad({ ...app, status: 'WITHDRAWN', version: 1, allowedTransitions: [] }, [created]);
+    flushLoad({ ...app, status: 'WITHDRAWN', version: 1, allowedTransitions: [] });
     await fixture.whenStable();
 
     expect(el.querySelector('.notice')?.textContent).toContain('changed somewhere else');

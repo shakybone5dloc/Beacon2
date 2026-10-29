@@ -2,13 +2,18 @@ package dev.beacon.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.JsonSchema;
 import io.swagger.v3.oas.models.servers.Server;
+import jakarta.annotation.Nullable;
 import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springdoc.core.customizers.PropertyCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 public class OpenApiConfig {
@@ -43,6 +48,23 @@ public class OpenApiConfig {
                     schema.setRequired(new ArrayList<>(schema.getProperties().keySet()));
                 }
             });
+        };
+    }
+
+    /**
+     * springdoc drops @Nullable on a property that refers to another schema (a nested
+     * response), since a bare $ref can't say "or null". Spell it out as
+     * {@code anyOf: [{$ref}, {type: null}]}, so the client types it as `X | null`.
+     */
+    @Bean
+    PropertyCustomizer nullableReferences() {
+        return (property, type) -> {
+            var annotations = type.getCtxAnnotations();
+            var nullable = annotations != null && Arrays.stream(annotations).anyMatch(a -> a instanceof Nullable);
+            if (!nullable || property.get$ref() == null) return property;
+            return new JsonSchema().anyOf(List.of(
+                    new JsonSchema().$ref(property.get$ref()),
+                    new JsonSchema().types(Set.of("null"))));
         };
     }
 }

@@ -735,6 +735,36 @@
         "tags" : [ "Applications" ]
       }
     },
+    "/api/applications/{id}/timeline" : {
+      "get" : {
+        "operationId" : "getApplicationTimeline",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/TimelineEntryResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Applications" ]
+      }
+    },
     "/api/auth/csrf" : {
       "get" : {
         "operationId" : "getCsrfToken",
@@ -2711,7 +2741,7 @@
         "required" : [ "count", "error", "id" ]
       },
       "StatusChangeResponse" : {
-        "type" : "object",
+        "type" : "null",
         "properties" : {
           "changedAt" : {
             "type" : "string",
@@ -2727,6 +2757,55 @@
           }
         },
         "required" : [ "changedAt", "fromStatus", "toStatus" ]
+      },
+      "TimelineEntryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "at" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "contact" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/ContactResponse"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "document" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/DocumentResponse"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "interview" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/InterviewResponse"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "kind" : {
+            "type" : "string",
+            "enum" : [ "STATUS_CHANGE", "CONTACT", "INTERVIEW", "DOCUMENT", "PERSON_ADDED" ]
+          },
+          "person" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/ApplicationPersonResponse"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "statusChange" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/StatusChangeResponse"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "at", "contact", "document", "interview", "kind", "person", "statusChange" ]
       },
       "UpdateApplicationRequest" : {
         "type" : "object",

@@ -11,7 +11,7 @@ import {
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
-import { finalize, forkJoin, Observable } from 'rxjs';
+import { finalize, Observable } from 'rxjs';
 import { ApplicationsApi } from '../applications/applications-api';
 import {
   ApplicationResponse,
@@ -20,7 +20,6 @@ import {
   EMPLOYMENT_TYPE_LABELS,
   isForwardMove,
   orderedMoves,
-  StatusChange,
 } from '../applications/application.model';
 import { attentionFor } from '../applications/attention';
 import { ApplicationDocuments } from '../documents/application-documents';
@@ -31,14 +30,10 @@ import { ContactLog } from '../contacts/contact-log';
 import { ApplicationInterviews } from '../interviews/application-interviews';
 import { PossibleDuplicates } from '../contacts/possible-duplicates';
 import { PostingPanel } from '../posting-view/posting-panel';
+import { ApplicationTimeline } from '../timeline/application-timeline';
 import { CoverLetterDrafter } from '../documents/cover-letter-drafter';
 import { formatSalary } from '../postings/format';
 import { durationBetween } from '../applications/durations';
-
-interface TimelineEntry extends StatusChange {
-  /** Time since the previous entry; null for the first. */
-  after: string | null;
-}
 
 @Component({
   selector: 'app-application-detail',
@@ -53,6 +48,7 @@ interface TimelineEntry extends StatusChange {
     ContactLog,
     PossibleDuplicates,
     ApplicationInterviews,
+    ApplicationTimeline,
   ],
   templateUrl: './application-detail.html',
   styleUrl: './application-detail.css',
@@ -70,7 +66,6 @@ export class ApplicationDetail {
   readonly id = input.required<string>();
 
   protected readonly application = signal<ApplicationResponse | null>(null);
-  protected readonly history = signal<StatusChange[]>([]);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
   protected readonly busy = signal(false);
@@ -83,7 +78,9 @@ export class ApplicationDetail {
 
   protected readonly documents = viewChild(ApplicationDocuments);
   protected readonly people = viewChild(ApplicationPeople);
+  protected readonly timeline = viewChild(ApplicationTimeline);
   protected readonly documentList = signal<DocumentResponse[]>([]);
+  private documentsLoaded = false;
   protected readonly panelOpen = signal(initialPanelOpen());
 
   /** The newest saved posting (documents arrive newest first), for the panel's PDF tab. */
@@ -109,13 +106,6 @@ export class ApplicationDetail {
     return app ? attentionFor(app, new Date()) : null;
   });
 
-  protected readonly timeline = computed<TimelineEntry[]>(() =>
-    this.history().map((change, i, all) => ({
-      ...change,
-      after: i === 0 ? null : durationBetween(all[i - 1].changedAt, change.changedAt),
-    })),
-  );
-
   constructor() {
     // The route reuses this page when going from one application to another (a
     // possible duplicate's link), so load whenever the id changes.
@@ -137,7 +127,7 @@ export class ApplicationDetail {
 
   protected move(app: ApplicationResponse, target: ApplicationStatus): void {
     this.write(this.api.changeStatus(app.id, target, app.version), 'move', () =>
-      this.api.history(app.id).subscribe((history) => this.history.set(history)),
+      this.timeline()?.reload(),
     );
   }
 
@@ -207,6 +197,19 @@ export class ApplicationDetail {
   }
 
   /** People changed: a recruiter's agency may now show for an undisclosed employer. */
+  protected peopleChanged(): void {
+    this.reloadApplication();
+    this.timeline()?.reload();
+  }
+
+  /** Documents changed: the posting PDF may be new, and the timeline lists documents. */
+  protected documentsChanged(documents: DocumentResponse[]): void {
+    // The first call is the list loading, which the timeline already covers.
+    if (this.documentsLoaded) this.timeline()?.reload();
+    this.documentsLoaded = true;
+    this.documentList.set(documents);
+  }
+
   protected reloadApplication(): void {
     this.api.getById(this.id()).subscribe((application) => this.application.set(application));
   }
@@ -215,17 +218,18 @@ export class ApplicationDetail {
   protected interviewsChanged(): void {
     this.reloadApplication();
     this.people()?.reload();
+    this.timeline()?.reload();
+  }
+
+  /** Someone logged a contact, which can also put the person on the application. */
+  protected contactLogged(): void {
+    this.people()?.reload();
+    this.timeline()?.reload();
   }
 
   private load(): void {
-    forkJoin({
-      application: this.api.getById(this.id()),
-      history: this.api.history(this.id()),
-    }).subscribe({
-      next: ({ application, history }) => {
-        this.application.set(application);
-        this.history.set(history);
-      },
+    this.api.getById(this.id()).subscribe({
+      next: (application) => this.application.set(application),
       error: (err: HttpErrorResponse) =>
         this.error.set(
           err.status === 404

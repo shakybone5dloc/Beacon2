@@ -113,7 +113,7 @@ public class ContactService {
         if (!links.existsById(key)) links.save(ApplicationPerson.link(application, person, null, now));
     }
 
-    private static ContactResponse toResponse(Contact c) {
+    public static ContactResponse toResponse(Contact c) {
         var app = c.getApplication();
         return new ContactResponse(c.getId(), c.getPerson().getId(), c.getPerson().getName(),
                 app == null ? null : app.getId(), app == null ? null : app.getCompanyName(),

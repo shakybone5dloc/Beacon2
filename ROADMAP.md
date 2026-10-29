@@ -24,7 +24,8 @@ Rebuilt from the .NET Beacon, then extended.
 | R1 | People with a role per application, recruiter agencies ("via"), employment type, people pages | 819c7e6 |
 | - | Stitch redesign (Tailwind v4 design system on every screen) and dark mode | 42f58e5, 85c7236, 7c039cc |
 | R2 | Contact log per person and application, duplicate-pitch warning | d5f66c8 |
-| I1 | Interviews with time zones, interviewers, prep/debrief, .ics download; board shows the next one | after d5f66c8 |
+| I1 | Interviews with time zones, interviewers, prep/debrief, .ics download; board shows the next one | 26f6503 |
+| I2 | Application timeline: status changes, people, contacts, interviews and documents in one feed | after 26f6503 |
 
 ## Next: Companies and people
 
@@ -71,7 +72,8 @@ Rebuilt from the .NET Beacon, then extended.
 - `.ics` download per interview so it can go on any calendar.
 - Stale flag for `INTERVIEWING` comes from the last or next interview date instead of days in the status (interview processes can run for months).
 
-### I2. Application timeline
+### I2. Application timeline (done)
+- Built as planned below, replacing the History section on the application page. `GET /api/applications/{id}/timeline` merges one small query per source in memory, newest first; each entry reuses the response its own endpoint returns. Upcoming interviews sit at the top. Emails and inbox accepts join it with E2/E4.
 - One chronological feed on the detail page: status changes, notes, documents, contacts (R2), interviews (I1), and later emails (E) and inbox accepts.
 - Mostly a combined read model (one query or a union of small ones) plus an Angular view; no new data.
 

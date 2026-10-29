@@ -1,0 +1,85 @@
+<h2>Timeline</h2>
+
+@if (error(); as message) {
+  <p class="notice m-0">{{ message }}</p>
+} @else if (entries(); as list) {
+  <ol class="timeline m-0 list-none border-l-2 border-hairline p-0 pl-space-lg">
+    @for (e of list; track $index) {
+      <li class="relative pb-space-md last:pb-0" [class]="'entry-' + e.kind.toLowerCase()">
+        <span
+          class="material-symbols-outlined absolute top-0 -left-[calc(var(--spacing-space-lg)+11px)] flex h-5 w-5 items-center justify-center rounded-full bg-surface-container-lowest !text-[14px] text-on-surface-variant"
+          aria-hidden="true"
+          >{{ icon(e) }}</span
+        >
+        <div class="flex flex-wrap items-baseline gap-x-space-sm gap-y-space-xs">
+          <span class="what">
+            @switch (e.kind) {
+              @case ('STATUS_CHANGE') {
+                @if (e.statusChange; as s) {
+                  @if (s.fromStatus) {
+                    Moved to <strong>{{ s.toStatus | titlecase }}</strong>
+                  } @else {
+                    Added as <strong>{{ s.toStatus | titlecase }}</strong>
+                  }
+                }
+              }
+              @case ('PERSON_ADDED') {
+                @if (e.person; as p) {
+                  <a [routerLink]="['/people', p.person.id]">{{ p.person.name }}</a>
+                  joined as {{ roleLabels[p.role] }}
+                }
+              }
+              @case ('CONTACT') {
+                @if (e.contact; as c) {
+                  {{ channelLabels[c.channel] }}
+                  {{ c.direction === 'INBOUND' ? 'from' : 'to' }}
+                  <a [routerLink]="['/people', c.personId]">{{ c.personName }}</a>
+                }
+              }
+              @case ('INTERVIEW') {
+                @if (e.interview; as i) {
+                  <strong>{{ interviewLabels[i.type] }}</strong> interview
+                  @if (i.interviewers.length > 0) {
+                    with
+                    @for (p of i.interviewers; track p.id; let last = $last) {
+                      {{ p.name }}{{ last ? '' : ', ' }}
+                    }
+                  }
+                }
+              }
+              @case ('DOCUMENT') {
+                @if (e.document; as d) {
+                  {{ kindLabels[d.kind] }} added:
+                  <a [href]="documentUrl(d)" target="_blank" rel="noopener">{{ d.filename }}</a>
+                }
+              }
+            }
+          </span>
+          @if (e.kind === 'INTERVIEW' && isAhead(e) && e.interview?.outcome !== 'CANCELLED') {
+            <span class="pill pill-blue">Upcoming</span>
+          }
+          @if (e.interview?.outcome; as o) {
+            <span
+              class="pill"
+              [class.pill-green]="o === 'PASSED'"
+              [class.pill-red]="o === 'DID_NOT_PASS'"
+              >{{ outcomeLabels[o] }}</span
+            >
+          }
+          <time class="text-body-sm text-on-surface-variant" [attr.datetime]="e.at">{{
+            e.at | date: 'medium'
+          }}</time>
+        </div>
+        @if (e.contact?.body; as body) {
+          <p class="snippet m-0 mt-space-xs text-body-sm break-words text-on-surface-variant">
+            “{{ snippet(body) }}”
+          </p>
+        }
+      </li>
+    } @empty {
+      <li class="text-on-surface-variant">Nothing yet.</li>
+    }
+  </ol>
+} @else {
+  <p class="m-0">Loading...</p>
+}

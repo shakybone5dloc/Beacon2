@@ -193,7 +193,7 @@ public class PeopleService {
                 p.getEmail(), p.getPhone(), p.getLinkedinUrl(), p.getNotes(), p.getVersion(), p.getCreatedAt(), p.getUpdatedAt());
     }
 
-    private static ApplicationPersonResponse toResponse(ApplicationPerson link) {
+    public static ApplicationPersonResponse toResponse(ApplicationPerson link) {
         return new ApplicationPersonResponse(toResponse(link.getPerson()), link.getRole(), link.getAddedAt());
     }
 }
