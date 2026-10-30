@@ -40,7 +40,7 @@ Rebuilt from the .NET Beacon, then extended.
 - Application form gets a type-ahead company picker instead of a text box.
 - Company page: every application, person and contact for that company.
 - Later: "merge these two companies" for duplicates.
-- Later: optional careers-board id per company (Greenhouse, Lever, Ashby). Those boards need no API key, so Beacon can list a company's open roles directly (a keyless job source per company).
+- Later: optional careers-board id per company (Greenhouse, Lever, Ashby). Those boards need no API key, so Beacon can list a company's open roles directly. Now planned as the company watchlist (J4).
 - Why: people, email domain matching (E3) and the duplicate-pitch warning (R2) all need one company id instead of free-text names that drift apart.
 
 ### R1. People (recruiters, hiring managers, interviewers, referrals) (done)
@@ -142,21 +142,74 @@ Reuses the inbox queue from E4: matches land there to accept or dismiss, same as
 - Evaluation set: a handful of postings hand-labelled good/okay/poor fit, to check scoring changes.
 
 ### J3. Saved searches + daily runs
-- `saved_searches` per user: keywords, location, remote, salary minimum, sources, resume to score against, minimum score, active flag.
-- Scheduled daily run (Spring `@Scheduled`), in the user's time zone, through the existing job-source integrations.
-- Dedupe against existing applications, earlier matches and dismissed postings
-  (fingerprint: source + external id, falling back to normalized company + title + location).
+The in-app version of the daily "new or new-to-me postings" job (run by hand in a Claude conversation as of Oct 2026), reaching well past the job-board APIs while keeping AI to the one step that needs it.
+- `saved_searches` per user: keywords, location, remote, salary minimum, employment types, sources, resume to score against, minimum score, active flag, run days (default weekdays).
+- Scheduled run (Spring `@Scheduled`), in the user's time zone. Each run is a pipeline, and only step 4 uses AI:
+  1. **Gather** from every source the search turns on:
+     - job-board APIs (today's sources plus J0's),
+     - Google Jobs through SerpApi or JSearch (J0), which reaches LinkedIn, Indeed and company sites,
+     - the company watchlist (J4),
+     - job-alert emails (E2/E3), which cover LinkedIn and Indeed alerts,
+     - the optional AI web sweep (J5), for what none of the above reach.
+  2. **Dedupe** against existing applications, earlier matches and dismissed postings
+     (fingerprint: source + external id, falling back to normalized company + title + location), and across sources, so one job found three ways shows once with all three links.
+  3. **Filter** without AI: keywords and exclusions, location and remote, salary floor, employment type, posted within N days.
+  4. **Score** only what survives with fit scoring (J2), cheap pre-filter first.
+  5. **Deliver** to the inbox and the daily summary.
+- Each match records which sources found it, so the run summary can show what each source is worth ("Watchlist: 4 new, Google Jobs: 9, AI sweep: 2 that nothing else found").
+- Cost, estimated Oct 30 for weekday runs on gpt-6-sol: about $5/month for scoring ~20 survivors a day, plus any Google Jobs plan beyond the free tier. Doing the whole search with an AI agent instead would be about $15-25/month, which is why J5 is a top-up, not the main path.
 - Matches at or above the minimum score go to the inbox queue as `JOB_SEARCH_MATCH`, with the fit breakdown shown on the item.
 - Accept creates a `SAVED` application with posting details, company (R0) and the chosen resume attached.
 - The posting's close date (USAJOBS and Himalayas give one) becomes the application's apply-by date. Saving a Find jobs result by hand should do the same today.
 - Dismissals are remembered (and can feed back into the minimum score later).
 - Optional daily summary notification: "6 new matches, best 87".
 
+### J4. Company watchlist (keyless careers boards)
+- Follow companies you'd like to work for; Beacon checks their careers boards every run and finds roles the day they're posted, often before they reach the job boards.
+- Many companies publish their openings through Greenhouse, Lever, Ashby or SmartRecruiters, which offer public job-list endpoints with no key and no cost. Each is a `JobSource` adapter that takes the company's board id.
+- Adding a company: paste its careers page URL and Beacon works out the platform and board id; or pick from companies already in R0. Stored on the company (`careers_platform`, `careers_board_id`), so the company page also lists its open roles.
+- Workday-hosted boards (common at large employers, Elevance among them) have no official API; support them later with care, or leave them to the AI sweep (J5).
+- Learning focus: several small adapters behind one interface, detecting the platform from a URL, polite polling (conditional requests, one call per company per run).
+
+### J5. AI web sweep (optional top-up)
+- An AI agent with web search looks for matching postings that the other sources miss: niche boards, companies hosting their own careers pages, Workday sites. Same idea as the Claude-run daily job, but inside Beacon.
+- Off by default; turned on per saved search, and runs weekly unless set to daily.
+- It returns structured results (title, company, URL, location, posted date) instead of prose. Beacon then fetches each URL itself to confirm the posting exists and is still open before it reaches dedupe, so made-up or expired links never land in the inbox.
+- Uses the user's own AI key and counts against the monthly budget (X6); the sweep is the first thing paused when the budget runs out.
+- Estimated Oct 30: about $0.75-1 per run on gpt-6-sol (20-40 searches plus the pages read), so about $3-4/month weekly or $15-25/month on weekdays.
+- Learning focus: tool-using AI calls with structured output, verifying AI-found data before trusting it, and cost limits on background work.
+
 ## Then: AI helpers and insights
 
-### A1. Interview prep
-- From the posting, the chosen resume (J1) and fit gaps (J2): likely questions, skills to brush up on, and which experiences fit as STAR stories.
-- Saved with the interview (I1) so it can be edited.
+The interview helpers split three ways, by what each one is for:
+
+| | A1 Interview brief | A7 Story bank | A6 Study cards |
+|---|---|---|---|
+| What it is | The document you prepare from and read before each round | Your reusable STAR stories | Flashcards you drill |
+| Belongs to | One application | You, across every application | A deck, usually for one interview |
+| Lifetime | Grows round by round until the application closes | Kept and refined for the whole search | Studied until the interview, then archived |
+| Example | "Elevance Staff IAM Interview Prep" (Oct 22-29) | "PropKnot multi-tenant authorization" | "OAuth vs OIDC vs SAML?" |
+
+### A1. Interview brief
+One living prep document per application that moves to interviews, modeled on the hand-made "Elevance Staff IAM Interview Prep" doc. Opened from the application page, it starts when the first interview is scheduled and gains a section after each round.
+- **Sections**, in this order. Each says where its content comes from:
+  - **At a glance** (filled from Beacon's own data, not AI): role, req number, location and hybrid days, every round from I1 with the next one in bold, format, interviewers from R1, pay from the posting or what the recruiter said.
+  - **The role in one line** and **your pitch in one line** (AI, from the posting and the chosen resume).
+  - **Day-of checklist**: a template you can tick off, saved per brief.
+  - **About the company and team** (AI with web search): size, brands, leadership, strategy, where the role fits, and why it matters to you. Every fact carries a source link; anything without a source is left out.
+  - **Your honest gap, and how to frame it**: a They want / You have / Frame it as table. From J2's fit result once it exists; until then the model writes it from the posting and resume.
+  - **Core stories**: two to four picked from the story bank (A7), each with a "Tie to <company>" line written for this application.
+  - **Likely questions** with answer outlines, split into background and fit, technical and behavioral.
+  - **Technical refresher**: the concepts and vocabulary this role leans on (for Elevance: OAuth/PKCE, OIDC, SAML, JWT, Spring Security, authorization models).
+  - **System design practice**: one prompt to practise out loud, a suggested walkthrough, and small coding questions they might ask.
+  - **Update after each round**, one section per interview (I1): what you learned (process, pay, what the role really is), the next round's format, and how to shift your answers. Written from that interview's debrief notes; the AI suggests the shifts.
+  - **Questions to ask and closing**, then **Sources**.
+- **Storage:** `interview_briefs` (one per application) and `brief_sections` (kind, position, markdown, generated_at, edited_by_user). Each section can be regenerated on its own; a section you've edited is never overwritten without asking, so regenerating the research can't wipe your notes.
+- **AI:** uses the user's own provider keys, the same path as cover letters. Generation is per section, so one failure doesn't lose the rest, and you can regenerate just the part that went stale.
+- **Export:** download as Markdown, and Save as PDF through the existing headless-browser printing.
+- **Can start before J1/J2:** pick a library resume by hand and let the model write the gap table; J2's structured result replaces it later.
+- **Feeds A6:** "Make study cards" turns the brief's likely questions, refresher terms and stories into draft cards.
+- Learning focus: an ordered, section-based document model; prompts per section with structured output; web search with citations; merging regenerated content with user edits.
 
 ### A2. Tailored resume suggestions
 - Turn J2's gaps into concrete edit suggestions for one posting ("move the Spring Boot project up", "mention Testcontainers").
@@ -176,12 +229,19 @@ Reuses the inbox queue from E4: matches land there to accept or dismiss, same as
 ### A6. Study cards (spaced repetition)
 - Flashcards to drill before an interview: terms, likely questions and your own STAR stories. Prototyped as the "Interview Recall" page (Oct 29) for the Elevance hiring manager round.
 - `study_decks` and `study_cards` per user: question, answer (markdown), optional link to an application, interview (I1) or company (R0).
-- Cards come from three places: written by hand, generated from a posting + resume (reuses A1's prep output), or promoted from an interview's prep notes. Generated cards land as drafts to review and edit before they're studied.
+- Cards come from four places: written by hand, made from an interview brief (A1: its likely questions, refresher terms and stories), drilled from the story bank (A7), or promoted from an interview's prep notes. Generated cards land as drafts to review and edit before they're studied.
 - Review flow: show the question, answer out loud, reveal, self-grade (Again / Hard / Good / Easy).
 - Scheduling: start with Leitner boxes (1 to 3), then move to SM-2 (ease factor, interval, due date) in a `card_reviews` table. Due cards come first; "Again" brings a card back in the same session.
 - "Study for this interview" button on the interview page builds a deck from that application's posting and fit gaps (J2); the board's next-interview chip shows how many cards are due.
 - Keyboard shortcuts (Space reveal, 1-4 grade) and a cheat-sheet view listing every answer.
 - Learning focus: modeling a scheduling algorithm as a pure, unit-tested Java service (dates in, next due date out), a "due today" query with an index on `(owner_id, due_at)`, and an Angular study screen with signals and keyboard handling.
+
+### A7. Story bank
+- Your STAR stories, kept once and reused across applications: title, situation, task, action, result, the numbers that back it up, and tags for what each answers ("auth you've built", "leadership", "hardest problem", "legacy to cloud").
+- A brief (A1) picks stories by tag for each application and adds a "Tie to <company>" line; the story itself stays shared, so improving it improves every brief that uses it.
+- Gaps get flagged: the Elevance doc's "[how many tenants/roles]" placeholders become a "needs a number" warning on the story until you fill it in.
+- AI helps draft a story from your resume or from rough notes, and suggests which stories fit a posting. You write the final version.
+- Stories can be drilled as study cards (A6).
 
 ## Board (any time)
 
@@ -213,6 +273,49 @@ Reuses the inbox queue from E4: matches land there to accept or dismiss, same as
 ### X5. Data export and account deletion
 - Export everything a user owns (JSON + documents as a zip); delete account and all data.
 - Becomes important once mailbox credentials and email snippets are stored.
+
+### X6. AI usage tracking
+- Record the token counts the provider returns with every AI response (input, cached input, output including reasoning, web searches) in an `ai_usage` table: user, feature (cover letter, fit score, brief section, email sorting...), provider, model, timestamp.
+- Price it with a small, dated price table per model, kept in config, so a price change doesn't rewrite past months.
+- Settings shows this month's spend: total, by feature and by model, plus the last few months for comparison.
+- Optional monthly budget per user: warn at 80%, and pause the background jobs (daily search scoring, email sorting) at 100% while leaving the ones the user starts by hand working.
+- Turns the Oct 30 estimate (about $30/month on gpt-6-sol for 5 applications a day, about $15 with cheaper models for routine jobs) into measured numbers, and shows which features are worth moving to a cheaper model.
+- Earlier is cheaper: start logging with the cover-letter writer that exists today, so every AI feature added later reports from day one.
+- Learning focus: capturing usage from both OpenAI and Anthropic responses behind one interface, an aggregation query by month and feature, and money math with `BigDecimal`.
+
+## Business (research and decide before opening Beacon to others)
+
+Research items, not code yet. Each ends in a written decision; the answers change what gets built (X4, X6, J0, J3).
+
+### P1. Who pays for API keys
+Today every user brings their own keys (OpenAI or Anthropic for AI; Adzuna, USAJOBS and later JSearch or SerpApi for paid job sources). That's fine for developers, but most job seekers have never heard of an API key, and "go sign up at four other sites first" will turn many of them away before they see what Beacon does.
+- **Options to compare:**
+  - **Bring your own keys** (today): no cost to Beacon, full control for the user, worst sign-up experience.
+  - **Managed keys:** Beacon holds one key per provider and pays for everyone's usage, built into the price. Best experience; Beacon carries the cost and must meter it (X6) and set fair-use limits.
+  - **Hybrid:** managed keys by default within each plan's allowance; power users can add their own keys to go past the limits or pick their model.
+- **Research:**
+  - Each job source's terms: may a commercial app use one key for all its users, or resell access? (Adzuna, USAJOBS, JSearch, SerpApi, Jooble.) Some may need a business agreement or a different plan.
+  - Real per-user cost with managed keys, from X6's measured usage rather than the Oct 30 estimate (about $15-30/month for a heavy AI user; about $5/month for job-search scoring alone).
+  - Abuse: what stops one account running up a large bill (per-plan monthly caps, rate limits, background jobs paused first).
+- **Leaning (to confirm):** hybrid. Free job sources and managed AI within each plan's allowance, so a new user never needs a key; "Bring your own key" stays in Settings for developers and heavy users.
+
+### P2. Plans and pricing
+- **Questions:**
+  - Is there a free plan, and what's in it? (Likely: tracking, board, contacts, interviews, timeline, the free job sources; no AI, or a small taste of it.)
+  - How many paid tiers? One is simplest; two (for example "Job seeker" and "Power search" with the AI sweep and more scoring) only if usage shows two kinds of user.
+  - Monthly, or a job-search pass (a few months at once)? People leave when they're hired, so monthly churn is built in; a pass may fit better.
+  - Price point: what comparable job-search trackers charge, and what each paid plan costs Beacon to run (AI, search APIs, hosting) plus a margin.
+- **Research:**
+  - Competitors' free and paid plans (Huntr, Teal, Simplify, Careerflow and others): what they give away free, what's paid, at what price.
+  - Ask 5-10 job seekers what they'd pay, and for which features (the value test from Oct 30: "would you be upset if it was taken away?").
+  - Cost per user per plan from X6 data, including hosting from X4.
+- **Decide:** free plan yes or no, number of tiers, what each includes, prices, and the AI allowance per tier.
+
+### P3. Payments and accounts
+- Payments through a provider (Stripe most likely): checkout, subscriptions, upgrades and downgrades, cancellations, receipts, failed payments.
+- What happens to a user's data when a plan lapses: read-only rather than deleted, export always available (X5).
+- Taxes on subscriptions (sales tax / VAT rules by location) and a simple terms of service and privacy policy, especially once mailboxes are connected (E2).
+- Decide only after P1 and P2; build alongside X4 (deploy).
 
 ## Backlog (from the original plan)
 
