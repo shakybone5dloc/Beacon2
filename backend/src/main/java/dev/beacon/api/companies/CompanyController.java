@@ -1,18 +1,23 @@
 package dev.beacon.api.companies;
 
 import dev.beacon.api.errors.RequestValidationException;
+import dev.beacon.application.companies.CareersBoardService;
 import dev.beacon.application.companies.CompanyService;
 import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.companies.CompanyResponse;
 import dev.beacon.contracts.companies.UpdateCompanyRequest;
+import dev.beacon.contracts.companies.WatchCompanyRequest;
+import dev.beacon.contracts.postings.JobPostingResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,9 +29,11 @@ import java.util.UUID;
 public class CompanyController {
 
     private final CompanyService service;
+    private final CareersBoardService careersBoards;
 
-    public CompanyController(CompanyService service) {
+    public CompanyController(CompanyService service, CareersBoardService careersBoards) {
         this.service = service;
+        this.careersBoards = careersBoards;
     }
 
     @Operation(operationId = "listCompanies")
@@ -62,6 +69,35 @@ public class CompanyController {
             return ResponseEntity.of(service.update(user.id(), id, request));
         } catch (CompanyService.NameTakenException ex) {
             throw new RequestValidationException("name", ex.getMessage());
+        }
+    }
+
+    /** Puts the company on the watchlist, from a link to its careers page. */
+    @Operation(operationId = "watchCompany")
+    @PutMapping("/{id}/careers-board")
+    public ResponseEntity<CompanyResponse> watch(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID id,
+                                                 @Valid @RequestBody WatchCompanyRequest request) {
+        try {
+            return ResponseEntity.of(careersBoards.watch(user.id(), id, request.url()));
+        } catch (CareersBoardService.UnknownBoardException ex) {
+            throw new RequestValidationException("url", ex.getMessage());
+        }
+    }
+
+    @Operation(operationId = "stopWatchingCompany")
+    @DeleteMapping("/{id}/careers-board")
+    public ResponseEntity<CompanyResponse> stopWatching(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID id) {
+        return ResponseEntity.of(careersBoards.stopWatching(user.id(), id));
+    }
+
+    /** What's open on the company's careers board; an empty list when it isn't watched. */
+    @Operation(operationId = "listCompanyOpenings")
+    @GetMapping("/{id}/openings")
+    public ResponseEntity<List<JobPostingResponse>> openings(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID id) {
+        try {
+            return ResponseEntity.of(careersBoards.openings(user.id(), id));
+        } catch (CareersBoardService.BoardUnavailableException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, ex.getMessage());
         }
     }
 }

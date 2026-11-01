@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -56,6 +57,14 @@ public class Company {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    /** Where the company posts its jobs; null when it isn't watched. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private CareersPlatform careersPlatform;
+
+    @Column(length = 100)
+    private String careersBoardId;
+
     protected Company() { }
 
     public static Company create(UUID ownerId, String name, Instant now) {
@@ -91,6 +100,17 @@ public class Company {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("A company needs a name");
         this.name = name.strip();
         this.normalizedName = CompanyNames.normalize(name);
+    }
+
+    /** Starts watching the company's careers board; null stops. */
+    public void setCareersBoard(CareersBoard board, Instant now) {
+        this.careersPlatform = board == null ? null : board.platform();
+        this.careersBoardId = board == null ? null : board.boardId();
+        this.updatedAt = now;
+    }
+
+    public Optional<CareersBoard> getCareersBoard() {
+        return careersBoardId == null ? Optional.empty() : Optional.of(new CareersBoard(careersPlatform, careersBoardId));
     }
 
     private static String trimToNull(String value) {

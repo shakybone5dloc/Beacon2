@@ -102,6 +102,8 @@ describe('ApplicationForm', () => {
             emailDomains: [],
             notes: null,
             applicationCount: 2,
+            careersPlatform: null,
+            careersBoardId: null,
             version: 0,
             createdAt: '2026-10-23T12:00:00Z',
             updatedAt: '2026-10-23T12:00:00Z',

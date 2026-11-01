@@ -8,15 +8,16 @@ import { ApplicationResponse, ProblemDetail } from '../applications/application.
 import { problemText } from '../documents/application-documents';
 import { PeopleApi } from '../people/people-api';
 import { Person, PERSON_ROLE_LABELS } from '../people/person.model';
+import { CareersBoard } from './careers-board';
 import { CompaniesApi } from './companies-api';
 import { Company, COMPANY_TYPE_LABELS, COMPANY_TYPES, CompanyType } from './company.model';
 
 type FieldName = 'name' | 'website' | 'emailDomains' | 'notes';
 
-/** One company: its details, which can be edited, and every application with it. */
+/** One company: its details, which can be edited, its careers page, and every application with it. */
 @Component({
   selector: 'app-company-detail',
-  imports: [ReactiveFormsModule, RouterLink, TitleCasePipe],
+  imports: [ReactiveFormsModule, RouterLink, TitleCasePipe, CareersBoard],
   templateUrl: './company-detail.html',
   styleUrl: './companies.css',
   host: { class: 'max-w-[720px]' },

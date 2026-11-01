@@ -67,7 +67,8 @@ describe('JobSearch', () => {
     expect(sourceBox(el, 'Remotive').checked).toBe(true);
     expect(sourceBox(el, 'Jobicy').checked).toBe(true);
     expect(el.querySelectorAll('label.source').length).toBe(2);
-    expect(el.querySelector('a.more')?.getAttribute('href')).toBe('/providers');
+    const more = Array.from(el.querySelectorAll('.more a')).map((a) => a.getAttribute('href'));
+    expect(more).toEqual(['/providers', '/companies']);
   });
 
   it('does not search without keywords', async () => {

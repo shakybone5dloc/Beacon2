@@ -16,6 +16,8 @@ function aCompany(overrides: Partial<Company> = {}): Company {
     emailDomains: [],
     notes: null,
     applicationCount: 1,
+    careersPlatform: null,
+    careersBoardId: null,
     version: 0,
     createdAt: '2026-10-23T12:00:00Z',
     updatedAt: '2026-10-23T12:00:00Z',

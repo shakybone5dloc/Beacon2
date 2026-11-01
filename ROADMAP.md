@@ -25,7 +25,8 @@ Rebuilt from the .NET Beacon, then extended.
 | - | Stitch redesign (Tailwind v4 design system on every screen) and dark mode | 42f58e5, 85c7236, 7c039cc |
 | R2 | Contact log per person and application, duplicate-pitch warning | d5f66c8 |
 | I1 | Interviews with time zones, interviewers, prep/debrief, .ics download; board shows the next one | 26f6503 |
-| I2 | Application timeline: status changes, people, contacts, interviews and documents in one feed | after 26f6503 |
+| I2 | Application timeline: status changes, people, contacts, interviews and documents in one feed | d6f1be2 |
+| J4 | Company watchlist: Greenhouse, Lever and Ashby careers boards, open roles on the company page and in Find jobs | after 540cf83 |
 
 ## Next: Companies and people
 
@@ -164,7 +165,8 @@ The in-app version of the daily "new or new-to-me postings" job (run by hand in 
 - Dismissals are remembered (and can feed back into the minimum score later).
 - Optional daily summary notification: "6 new matches, best 87".
 
-### J4. Company watchlist (keyless careers boards)
+### J4. Company watchlist (keyless careers boards) (done)
+- Built as planned below, except: the board is stored on the company and set by pasting its careers link (checked by reading the board once); the company page shows the newest 10 roles with "Show all"; Watchlist keyword searches also match the full description, since careers boards always include it. Still to do: Lever's full description (`lists[]`, `additionalPlain`), Lever's EU host, SmartRecruiters, and saving a role straight from the company page.
 - Follow companies you'd like to work for; Beacon checks their careers boards every run and finds roles the day they're posted, often before they reach the job boards.
 - Many companies publish their openings through Greenhouse, Lever, Ashby or SmartRecruiters, which offer public job-list endpoints with no key and no cost. Each is a `JobSource` adapter that takes the company's board id.
 - Adding a company: paste its careers page URL and Beacon works out the platform and board id; or pick from companies already in R0. Stored on the company (`careers_platform`, `careers_board_id`), so the company page also lists its open roles.

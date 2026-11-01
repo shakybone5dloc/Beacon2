@@ -5,10 +5,13 @@ import {
   getCompany,
   listCompanies,
   listCompanyApplications,
+  listCompanyOpenings,
+  stopWatchingCompany,
   updateCompany,
+  watchCompany,
 } from '../api/functions';
 import { ApplicationResponse } from '../applications/application.model';
-import { Company, UpdateCompanyRequest } from './company.model';
+import { Company, Opening, UpdateCompanyRequest } from './company.model';
 
 @Injectable({ providedIn: 'root' })
 export class CompaniesApi {
@@ -29,5 +32,19 @@ export class CompaniesApi {
 
   update(id: string, request: UpdateCompanyRequest): Observable<Company> {
     return this.api.invoke(updateCompany, { id, body: request });
+  }
+
+  /** Puts the company on the watchlist from a link to its careers page. */
+  watch(id: string, url: string): Observable<Company> {
+    return this.api.invoke(watchCompany, { id, body: { url } });
+  }
+
+  stopWatching(id: string): Observable<Company> {
+    return this.api.invoke(stopWatchingCompany, { id });
+  }
+
+  /** What's open on the company's careers board, newest first. */
+  openings(id: string): Observable<Opening[]> {
+    return this.api.invoke(listCompanyOpenings, { id });
   }
 }

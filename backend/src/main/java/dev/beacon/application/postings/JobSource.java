@@ -2,6 +2,7 @@ package dev.beacon.application.postings;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * A place job postings can be searched. Implementations live in infrastructure.
@@ -28,4 +29,9 @@ public interface JobSource {
      *                    the catalog; empty when it takes none or none are saved
      */
     List<JobPosting> search(PostingQuery query, Map<String, String> credentials);
+
+    /** For sources that depend on the user's own data, like the company watchlist; most ignore the user. */
+    default List<JobPosting> search(UUID userId, PostingQuery query, Map<String, String> credentials) {
+        return search(query, credentials);
+    }
 }

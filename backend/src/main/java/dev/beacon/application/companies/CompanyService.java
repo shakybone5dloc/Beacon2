@@ -5,6 +5,7 @@ import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.CompanyChoice;
 import dev.beacon.contracts.companies.CompanyResponse;
 import dev.beacon.contracts.companies.UpdateCompanyRequest;
+import dev.beacon.domain.companies.CareersBoard;
 import dev.beacon.domain.companies.Company;
 import dev.beacon.domain.companies.CompanyNames;
 import dev.beacon.domain.companies.CompanyType;
@@ -117,8 +118,10 @@ public class CompanyService {
     }
 
     private static CompanyResponse toResponse(Company c, long applicationCount) {
+        var board = c.getCareersBoard();
         return new CompanyResponse(c.getId(), c.getName(), c.getType(), c.getWebsite(), c.getEmailDomains(), c.getNotes(),
-                applicationCount, c.getVersion(), c.getCreatedAt(), c.getUpdatedAt());
+                applicationCount, board.map(CareersBoard::platform).orElse(null), board.map(CareersBoard::boardId).orElse(null),
+                c.getVersion(), c.getCreatedAt(), c.getUpdatedAt());
     }
 
     public static class UnknownCompanyException extends RuntimeException {

@@ -123,7 +123,7 @@ public class PostingSearchService {
                             + " key can't be read any more. Add it again under Settings."));
                     continue;
                 }
-                futures.put(source, executor.submit(() -> source.search(query, keys)));
+                futures.put(source, executor.submit(() -> source.search(userId, query, keys)));
             }
 
             var deadline = Instant.now().plus(sourceTimeout);
@@ -174,7 +174,7 @@ public class PostingSearchService {
         return List.copyOf(byKey.values());
     }
 
-    private static JobPostingResponse toResponse(JobPosting p) {
+    public static JobPostingResponse toResponse(JobPosting p) {
         return new JobPostingResponse(p.source(), p.id(), p.title(), p.company(), p.location(), p.remote(),
                 p.url(), p.postedAt(), p.closesOn(), p.salaryMin(), p.salaryMax(), p.salaryCurrency(),
                 p.salaryPeriod(), p.salaryText(), p.tags(), p.snippet(), p.description());

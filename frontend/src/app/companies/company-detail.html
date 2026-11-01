@@ -84,6 +84,8 @@
     </form>
   }
 
+  <app-careers-board [company]="c" (changed)="company.set($event)" />
+
   <h2>People</h2>
   @if (people().length === 0) {
     <p class="empty">No one at {{ c.name }} yet.</p>

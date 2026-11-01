@@ -60,7 +60,7 @@ class PostingsApiTests extends SignedInApiTests {
         assertThat(result).hasStatus(HttpStatus.OK);
         // No USAJOBS (needs a key), no Adzuna (turned off by default with BEACON_DISABLED_SOURCES).
         assertThat(result).bodyJson().extractingPath("$[*].id").asArray()
-                .containsExactlyInAnyOrder("fake", "himalayas", "jobicy", "remoteok", "remotive");
+                .containsExactlyInAnyOrder("watchlist", "fake", "himalayas", "jobicy", "remoteok", "remotive");
         assertThat(result).bodyJson().extractingPath("$[?(@.id == 'remotive')].attributionUrl").asArray()
                 .containsExactly("https://remotive.com");
         assertThat(result).bodyJson().extractingPath("$[*].usesYourKey").asArray().containsOnly(false);

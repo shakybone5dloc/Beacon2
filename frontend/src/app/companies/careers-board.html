@@ -1,0 +1,87 @@
+@let c = company();
+<h2>Careers page</h2>
+
+@if (c.careersPlatform && c.careersBoardId) {
+  <div class="watching flex flex-wrap items-center gap-space-sm">
+    <span class="pill pill-blue">
+      <span class="material-symbols-outlined !text-[12px]" aria-hidden="true">visibility</span>
+      Watching
+    </span>
+    <span>
+      on {{ platformLabels[c.careersPlatform] }}:
+      <a
+        [href]="careersPageUrl(c.careersPlatform, c.careersBoardId)"
+        target="_blank"
+        rel="noopener noreferrer"
+        >{{ c.careersBoardId }}</a
+      >
+    </span>
+    <button type="button" class="btn btn-sm" [disabled]="busy()" (click)="stop()">
+      Stop watching
+    </button>
+  </div>
+  <p class="m-0 mt-space-xs text-body-sm text-on-surface-variant">
+    Their open roles also show up under "Company watchlist" in Find jobs.
+  </p>
+
+  <h3>
+    Open roles
+    @if (openings(); as list) {
+      <span class="font-normal text-on-surface-variant">({{ list.length }})</span>
+    }
+  </h3>
+  @if (openingsError(); as message) {
+    <p class="notice m-0">{{ message }}</p>
+  } @else if (openings(); as list) {
+    @if (list.length === 0) {
+      <p class="empty m-0 text-on-surface-variant">Nothing open right now.</p>
+    } @else {
+      <ul class="openings m-0 list-none p-0">
+        @for (o of shown(); track o.id) {
+          <li class="border-b border-hairline py-space-sm last:border-b-0">
+            <a [href]="o.url" target="_blank" rel="noopener noreferrer" class="font-semibold">{{
+              o.title
+            }}</a>
+            <span class="block text-body-sm text-on-surface-variant">
+              {{ o.location ?? 'Location not given' }}
+              @if (o.remote) {
+                · Remote
+              }
+              @if (o.postedAt) {
+                · posted {{ o.postedAt | date: 'mediumDate' }}
+              }
+            </span>
+          </li>
+        }
+      </ul>
+      @if (list.length > shown().length) {
+        <button type="button" class="btn btn-sm mt-space-sm" (click)="showAll.set(true)">
+          Show all {{ list.length }} roles
+        </button>
+      }
+    }
+  } @else {
+    <p class="m-0">Loading...</p>
+  }
+} @else {
+  <p class="m-0 mb-space-sm text-on-surface-variant">
+    Watch {{ c.name }} to see their open roles here and in Find jobs, often before they reach the
+    job boards. Works with careers pages hosted on Greenhouse, Lever and Ashby.
+  </p>
+  <form class="watch flex flex-wrap gap-space-sm" (submit)="$event.preventDefault(); watch()">
+    <input
+      class="min-w-[16rem] flex-1"
+      type="url"
+      [value]="url()"
+      (input)="url.set($any($event.target).value)"
+      placeholder="https://jobs.lever.co/{{ c.name.toLowerCase().replaceAll(' ', '') }}"
+      aria-label="Careers page link"
+    />
+    <button type="submit" class="primary" [disabled]="busy()">
+      {{ busy() ? 'Checking…' : 'Watch' }}
+    </button>
+  </form>
+}
+@if (error(); as message) {
+  <p class="error m-0 mt-space-xs text-body-sm text-error">{{ message }}</p>
+}

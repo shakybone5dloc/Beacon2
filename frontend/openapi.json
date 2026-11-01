@@ -1012,6 +1012,98 @@
         "tags" : [ "Companies" ]
       }
     },
+    "/api/companies/{id}/careers-board" : {
+      "delete" : {
+        "operationId" : "stopWatchingCompany",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CompanyResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Companies" ]
+      },
+      "put" : {
+        "operationId" : "watchCompany",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/WatchCompanyRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CompanyResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Companies" ]
+      }
+    },
+    "/api/companies/{id}/openings" : {
+      "get" : {
+        "operationId" : "listCompanyOpenings",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/JobPostingResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Companies" ]
+      }
+    },
     "/api/contacts" : {
       "post" : {
         "operationId" : "createContact",
@@ -1856,6 +1948,13 @@
             "type" : "integer",
             "format" : "int64"
           },
+          "careersBoardId" : {
+            "type" : [ "string", "null" ]
+          },
+          "careersPlatform" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "GREENHOUSE", "LEVER", "ASHBY" ]
+          },
           "createdAt" : {
             "type" : "string",
             "format" : "date-time"
@@ -1892,7 +1991,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "applicationCount", "createdAt", "emailDomains", "id", "name", "notes", "type", "updatedAt", "version", "website" ]
+        "required" : [ "applicationCount", "careersBoardId", "careersPlatform", "createdAt", "emailDomains", "id", "name", "notes", "type", "updatedAt", "version", "website" ]
       },
       "ContactResponse" : {
         "type" : "object",
@@ -3081,6 +3180,17 @@
           }
         },
         "required" : [ "name", "role", "version" ]
+      },
+      "WatchCompanyRequest" : {
+        "type" : "object",
+        "properties" : {
+          "url" : {
+            "type" : "string",
+            "maxLength" : 2048,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "url" ]
       }
     }
   }

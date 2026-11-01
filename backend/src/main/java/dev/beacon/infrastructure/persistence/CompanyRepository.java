@@ -18,4 +18,6 @@ public interface CompanyRepository extends JpaRepository<Company, UUID> {
 
     /** For the type-ahead: {@code query} is already normalized. */
     List<Company> findTop10ByOwnerIdAndNormalizedNameContainingOrderByNameAsc(UUID ownerId, String query);
+
+    List<Company> findAllByOwnerIdAndCareersBoardIdIsNotNullOrderByNameAsc(UUID ownerId);
 }
