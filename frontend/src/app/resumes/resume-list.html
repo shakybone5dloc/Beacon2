@@ -1,0 +1,108 @@
+<h2>Resumes</h2>
+<p class="m-0 mb-space-md text-on-surface-variant">
+  Cover letters use your default resume unless you pick another. Give each one a label and a short
+  summary; fit scoring will compare postings against them.
+</p>
+
+@if (error(); as message) {
+  <p class="notice">{{ message }}</p>
+}
+
+@if (resumes(); as list) {
+  @if (list.length === 0) {
+    <p class="empty m-0 text-on-surface-variant">
+      No resumes yet. Upload one below with the kind set to Resume.
+    </p>
+  } @else {
+    <ul class="resumes m-0 grid list-none gap-space-sm p-0">
+      @for (r of list; track r.documentId) {
+        <li class="card p-space-md">
+          @if (editing() === r.documentId) {
+            <form class="grid gap-space-sm" [formGroup]="form" (ngSubmit)="save(r)">
+              <label class="grid gap-space-xs">
+                Label
+                <input formControlName="label" placeholder="Backend Java" />
+              </label>
+              <label class="grid gap-space-xs">
+                Aimed at these titles
+                <input
+                  formControlName="targetTitles"
+                  placeholder="Senior Java Engineer, Staff Engineer"
+                />
+              </label>
+              <label class="grid gap-space-xs">
+                Key skills
+                <input
+                  formControlName="skills"
+                  placeholder="Java, Spring Boot, Postgres, Angular"
+                />
+              </label>
+              <label class="grid max-w-40 gap-space-xs">
+                Years of experience
+                <input formControlName="yearsExperience" inputmode="numeric" />
+              </label>
+              <p class="m-0 text-body-sm text-on-surface-variant">
+                Separate titles and skills with commas.
+              </p>
+              @if (formError(); as message) {
+                <p class="m-0 text-body-sm text-error">{{ message }}</p>
+              }
+              <div class="flex gap-space-sm">
+                <button type="submit" [disabled]="saving()">
+                  {{ saving() ? 'Saving…' : 'Save' }}
+                </button>
+                <button type="button" (click)="editing.set(null)">Cancel</button>
+              </div>
+            </form>
+          } @else {
+            <div class="flex flex-wrap items-start justify-between gap-space-sm">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-space-sm">
+                  <span class="label font-semibold">{{ r.label }}</span>
+                  @if (r.isDefault) {
+                    <span class="pill pill-blue">Default</span>
+                  }
+                </div>
+                <span class="block text-body-sm text-on-surface-variant">{{ r.filename }}</span>
+                @if (summary(r); as s) {
+                  <span class="summary mt-space-xs block text-body-sm">{{ s }}</span>
+                }
+              </div>
+              <div class="flex flex-wrap gap-space-xs">
+                @if (!r.isDefault) {
+                  <button type="button" class="btn btn-sm" (click)="makeDefault(r)">
+                    Make default
+                  </button>
+                }
+                <button type="button" class="btn btn-sm" (click)="edit(r)">Edit</button>
+                @if (r.textStatus === 'READ') {
+                  <button type="button" class="btn btn-sm" (click)="toggleText(r)">
+                    {{ openText() === r.documentId ? 'Hide text' : 'View text' }}
+                  </button>
+                }
+              </div>
+            </div>
+            @if (r.textStatus === 'UNREADABLE') {
+              <p class="unreadable m-0 mt-space-sm text-body-sm text-attention">
+                Beacon can't read text from this file, so it can't draft or score from it. Upload a
+                PDF, text or Markdown version.
+              </p>
+            }
+            @if (openText() === r.documentId) {
+              @if (texts().get(r.documentId); as text) {
+                <pre
+                  class="text m-0 mt-space-sm max-h-80 overflow-auto rounded-sm bg-surface-container-low p-space-sm font-sans text-body-sm whitespace-pre-wrap"
+                  [textContent]="text"
+                ></pre>
+              } @else {
+                <p class="m-0 mt-space-sm text-body-sm">Loading...</p>
+              }
+            }
+          }
+        </li>
+      }
+    </ul>
+  }
+} @else if (!error()) {
+  <p>Loading...</p>
+}

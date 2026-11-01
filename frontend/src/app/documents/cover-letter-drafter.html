@@ -25,7 +25,7 @@
             Resume
             <select [value]="resumeId()" (change)="resumeId.set($any($event.target).value)">
               @for (r of list; track r.id) {
-                <option [value]="r.id" [selected]="r.id === resumeId()">{{ label(r) }}</option>
+                <option [value]="r.id" [selected]="r.id === resumeId()">{{ r.label }}</option>
               }
             </select>
           </label>

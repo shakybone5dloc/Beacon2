@@ -26,7 +26,8 @@ Rebuilt from the .NET Beacon, then extended.
 | R2 | Contact log per person and application, duplicate-pitch warning | d5f66c8 |
 | I1 | Interviews with time zones, interviewers, prep/debrief, .ics download; board shows the next one | 26f6503 |
 | I2 | Application timeline: status changes, people, contacts, interviews and documents in one feed | d6f1be2 |
-| J4 | Company watchlist: Greenhouse, Lever and Ashby careers boards, open roles on the company page and in Find jobs | after 540cf83 |
+| J4 | Company watchlist: Greenhouse, Lever and Ashby careers boards, open roles on the company page and in Find jobs | 1b2c5c2 |
+| J1 | Resume profiles: labels, a default, saved text, and a short summary per library resume | after 1b2c5c2 |
 
 ## Next: Companies and people
 
@@ -126,7 +127,8 @@ Reuses the inbox queue from E4: matches land there to accept or dismiss, same as
 - In order: **JSearch** (best paid pick), **SerpApi Google Jobs** (has a free tier), **Jooble** (free key on request).
 - Not possible: LinkedIn and Indeed have no job-search API.
 
-### J1. Resume profiles
+### J1. Resume profiles (done)
+- Built as planned below, as `resume_profiles` beside each library resume (V12, which also gives resumes uploaded before it a profile, newest as default). The text is read once and kept; Word files and scans are marked unreadable with a hint. Cover letters start on the default and use the kept text. Still to do: the AI-suggested summary (titles, skills, years are entered by hand for now).
 - Builds on the existing library documents (`kind = RESUME`, no application): no new file storage.
 - Add a label ("Backend Java", "Test Engineering"...), a default flag, and cached extracted text (`DocumentText`).
 - Optional short summary per resume: target titles, key skills, years of experience. AI-suggested from the resume, user-edited.
@@ -318,6 +320,22 @@ Today every user brings their own keys (OpenAI or Anthropic for AI; Adzuna, USAJ
 - What happens to a user's data when a plan lapses: read-only rather than deleted, export always available (X5).
 - Taxes on subscriptions (sales tax / VAT rules by location) and a simple terms of service and privacy policy, especially once mailboxes are connected (E2).
 - Decide only after P1 and P2; build alongside X4 (deploy).
+
+### P4. Name and brand
+"Beacon" is a working name; a crowded one for a public product. Decide before launch, after P1-P3.
+- Ruled out: **Ontraq** (sounds exactly like OnTrac, the parcel carrier, and already has many listings).
+- Shortlist to check, from words for job, career or path in other languages (Oct 2026):
+  - **Baan** (Dutch: both "job" and "track"; *loopbaan* = career, literally "running track"),
+  - **Ura** (Finnish: "career", also "track"),
+  - **Rumbo** (Spanish: "heading, direction"),
+  - **Parcours** (French: "path"; *parcours professionnel* = career path).
+  - Also considered: Waymark, Lodestar, Hirepath, Métier, Kairos.
+- Checks for any candidate:
+  1. Say it to someone: can they type it right the first time?
+  2. Search the name plus "app" and "software": is page one empty or unrelated?
+  3. Is the .com or .app domain available at a normal price, with matching social handles?
+  4. USPTO trademark search (tmsearch.uspto.gov): nothing close in software or online services.
+- Pick 3-4 that pass, then decide; logo and colours follow (the current `flare` icon and blue can stay or change).
 
 ## Backlog (from the original plan)
 

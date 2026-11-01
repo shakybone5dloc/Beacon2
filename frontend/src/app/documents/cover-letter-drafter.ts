@@ -6,6 +6,14 @@ import { CoverLettersApi } from './cover-letters-api';
 import { DocumentsApi } from './documents-api';
 import { DocumentResponse } from './document.model';
 import { problemText } from './application-documents';
+import { ResumesApi } from '../resumes/resumes-api';
+
+/** A resume to draft from: this application's own, or one from the library. */
+interface ResumeChoice {
+  id: string;
+  label: string;
+  isDefault: boolean;
+}
 
 /** Drafts a cover letter with AI from the job description and a chosen resume, then saves it as a PDF. */
 @Component({
@@ -17,6 +25,7 @@ import { problemText } from './application-documents';
 export class CoverLetterDrafter implements OnInit {
   private readonly coverLetters = inject(CoverLettersApi);
   private readonly documents = inject(DocumentsApi);
+  private readonly libraryResumes = inject(ResumesApi);
 
   readonly applicationId = input.required<string>();
   readonly hasJobDescription = input(false);
@@ -25,8 +34,8 @@ export class CoverLetterDrafter implements OnInit {
 
   protected readonly configured = signal<boolean | null>(null);
   protected readonly open = signal(false);
-  /** This application's resumes first, then the library's. */
-  protected readonly resumes = signal<DocumentResponse[] | null>(null);
+  /** This application's resumes first, then the library's (default first). */
+  protected readonly resumes = signal<ResumeChoice[] | null>(null);
   protected readonly resumeId = signal('');
   protected readonly instructions = signal('');
   protected readonly draft = signal<string | null>(null);
@@ -47,13 +56,27 @@ export class CoverLetterDrafter implements OnInit {
     this.notice.set(null);
     forkJoin({
       own: this.documents.list(this.applicationId()),
-      library: this.documents.list(null),
+      library: this.libraryResumes.list(),
     }).subscribe({
       next: ({ own, library }) => {
-        const resumes = [...own, ...library].filter((d) => d.kind === 'RESUME');
+        const resumes: ResumeChoice[] = [
+          ...own
+            .filter((d) => d.kind === 'RESUME')
+            .map((d) => ({
+              id: d.id,
+              label: `${d.filename} (this application)`,
+              isDefault: false,
+            })),
+          ...library.map((r) => ({
+            id: r.documentId,
+            label: r.isDefault ? `${r.label} (default)` : r.label,
+            isDefault: r.isDefault,
+          })),
+        ];
         this.resumes.set(resumes);
+        // Keep the last pick; otherwise start from the default resume.
         if (!resumes.some((r) => r.id === this.resumeId())) {
-          this.resumeId.set(resumes[0]?.id ?? '');
+          this.resumeId.set((resumes.find((r) => r.isDefault) ?? resumes[0])?.id ?? '');
         }
       },
       error: () => this.notice.set('Could not load your resumes.'),
@@ -98,9 +121,5 @@ export class CoverLetterDrafter implements OnInit {
   protected copy(): void {
     const text = this.draft();
     if (text) navigator.clipboard?.writeText(text);
-  }
-
-  protected label(doc: DocumentResponse): string {
-    return doc.applicationId ? `${doc.filename} (this application)` : `${doc.filename} (library)`;
   }
 }

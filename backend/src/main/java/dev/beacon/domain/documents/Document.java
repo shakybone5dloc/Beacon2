@@ -73,6 +73,7 @@ public class Document {
 
     public UUID getId() { return id; }
     public UUID getApplicationId() { return applicationId; }
+    public UUID getOwnerId() { return ownerId; }
     public DocumentKind getKind() { return kind; }
     public String getFilename() { return filename; }
     public String getContentType() { return contentType; }

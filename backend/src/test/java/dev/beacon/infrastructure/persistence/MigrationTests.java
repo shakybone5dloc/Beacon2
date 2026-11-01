@@ -124,6 +124,46 @@ class MigrationTests {
         }
     }
 
+    @Test
+    void v12GivesEachLibraryResumeAProfileWithTheNewestAsDefault() {
+        var dataSource = schema("v12_backfill");
+        var jdbc = new JdbcTemplate(dataSource);
+        flyway(dataSource, "v12_backfill", "11").migrate();
+
+        var alice = user(jdbc, "alice@example.com");
+        var bob = user(jdbc, "bob@example.com");
+        document(jdbc, alice, null, "RESUME", "Alice - Backend.pdf", "2026-10-01T12:00:00Z");
+        document(jdbc, alice, null, "RESUME", "Alice - Test.v2.pdf", "2026-10-05T12:00:00Z");
+        document(jdbc, alice, null, "OTHER", "references.pdf", "2026-10-06T12:00:00Z");
+        var app = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO job_applications (id, owner_id, role, status, version, created_at, updated_at, status_changed_at)
+                VALUES (?, ?, 'Engineer', 'SAVED', 0, now(), now(), now())
+                """, app, alice);
+        document(jdbc, alice, app, "RESUME", "for-acme.pdf", "2026-10-07T12:00:00Z");
+        document(jdbc, bob, null, "RESUME", "bob.pdf", "2026-10-02T12:00:00Z");
+
+        flyway(dataSource, "v12_backfill", "12").migrate();
+
+        assertThat(jdbc.queryForList("""
+                SELECT u.email, p.label, p.is_default, p.text_status
+                FROM resume_profiles p JOIN users u ON u.id = p.owner_id
+                ORDER BY u.email, p.label
+                """))
+                .extracting(row -> row.get("email") + " " + row.get("label") + " " + row.get("is_default") + " " + row.get("text_status"))
+                .containsExactly(
+                        "alice@example.com Alice - Backend false PENDING",
+                        "alice@example.com Alice - Test.v2 true PENDING",
+                        "bob@example.com bob true PENDING");
+    }
+
+    private static void document(JdbcTemplate jdbc, UUID owner, UUID application, String kind, String filename, String createdAt) {
+        jdbc.update("""
+                INSERT INTO documents (id, application_id, owner_id, kind, filename, content_type, size_bytes, content, created_at)
+                VALUES (gen_random_uuid(), ?, ?, ?, ?, 'application/pdf', 1, 'x'::bytea, ?::timestamptz)
+                """, application, owner, kind, filename, createdAt);
+    }
+
     private static UUID user(JdbcTemplate jdbc, String email) {
         var id = UUID.randomUUID();
         jdbc.update("INSERT INTO users (id, email, password_hash, created_at) VALUES (?, ?, '{noop}x', now())", id, email);

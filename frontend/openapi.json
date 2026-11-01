@@ -1761,6 +1761,118 @@
         },
         "tags" : [ "Providers" ]
       }
+    },
+    "/api/resumes" : {
+      "get" : {
+        "operationId" : "listResumes",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ResumeResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Resumes" ]
+      }
+    },
+    "/api/resumes/{documentId}" : {
+      "put" : {
+        "operationId" : "updateResume",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "documentId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateResumeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResumeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Resumes" ]
+      }
+    },
+    "/api/resumes/{documentId}/default" : {
+      "put" : {
+        "operationId" : "makeDefaultResume",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "documentId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResumeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Resumes" ]
+      }
+    },
+    "/api/resumes/{documentId}/text" : {
+      "get" : {
+        "operationId" : "getResumeText",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "documentId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResumeTextResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Resumes" ]
+      }
     }
   },
   "components" : {
@@ -2749,6 +2861,73 @@
         },
         "required" : [ "email", "password" ]
       },
+      "ResumeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "contentType" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "documentId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "filename" : {
+            "type" : "string"
+          },
+          "isDefault" : {
+            "type" : "boolean"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "sizeBytes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "skills" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "targetTitles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "textStatus" : {
+            "type" : "string",
+            "enum" : [ "PENDING", "READ", "UNREADABLE" ]
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "yearsExperience" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          }
+        },
+        "required" : [ "contentType", "createdAt", "documentId", "filename", "isDefault", "label", "sizeBytes", "skills", "targetTitles", "textStatus", "updatedAt", "version", "yearsExperience" ]
+      },
+      "ResumeTextResponse" : {
+        "type" : "object",
+        "properties" : {
+          "text" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "text" ]
+      },
       "SaveApiKeyRequest" : {
         "type" : "object",
         "properties" : {
@@ -3180,6 +3359,47 @@
           }
         },
         "required" : [ "name", "role", "version" ]
+      },
+      "UpdateResumeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "label" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "skills" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "type" : "string",
+              "maxLength" : 60,
+              "minLength" : 0
+            },
+            "maxItems" : 50,
+            "minItems" : 0
+          },
+          "targetTitles" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "type" : "string",
+              "maxLength" : 100,
+              "minLength" : 0
+            },
+            "maxItems" : 10,
+            "minItems" : 0
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "yearsExperience" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32",
+            "maximum" : 60,
+            "minimum" : 0
+          }
+        },
+        "required" : [ "label", "version" ]
       },
       "WatchCompanyRequest" : {
         "type" : "object",

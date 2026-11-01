@@ -6,6 +6,7 @@ import dev.beacon.application.documents.Filenames;
 import dev.beacon.application.documents.PdfPrinter;
 import dev.beacon.application.documents.PostingCaptureException;
 import dev.beacon.application.providers.ProviderCatalog;
+import dev.beacon.application.resumes.ResumeService;
 import dev.beacon.contracts.documents.DocumentResponse;
 import dev.beacon.domain.documents.DocumentKind;
 import dev.beacon.infrastructure.documents.DocumentText;
@@ -36,15 +37,17 @@ public class CoverLetterService {
 
     private final JobApplicationRepository applications;
     private final DocumentService documents;
+    private final ResumeService resumes;
     private final List<CoverLetterWriter> writers;
     private final UserCredentials credentials;
     private final PdfPrinter printer;
     private final Clock clock;
 
-    public CoverLetterService(JobApplicationRepository applications, DocumentService documents,
+    public CoverLetterService(JobApplicationRepository applications, DocumentService documents, ResumeService resumes,
                               List<CoverLetterWriter> writers, UserCredentials credentials, PdfPrinter printer, Clock clock) {
         this.applications = applications;
         this.documents = documents;
+        this.resumes = resumes;
         this.writers = writers;
         this.credentials = credentials;
         this.printer = printer;
@@ -72,7 +75,9 @@ public class CoverLetterService {
         var resume = documents.find(ownerId, applicationId, resumeDocumentId)
                 .or(() -> documents.find(ownerId, null, resumeDocumentId))
                 .orElseThrow(() -> new CoverLetterException("That resume was not found.", false));
-        var resumeText = DocumentText.extract(resume.getContent(), resume.getContentType())
+        // A library resume's text was read once and kept; one attached to the application is read now.
+        var resumeText = resumes.text(ownerId, resume.getId()).flatMap(text -> text)
+                .or(() -> DocumentText.extract(resume.getContent(), resume.getContentType()))
                 .orElseThrow(() -> new CoverLetterException(
                         "Beacon can read PDF, text and Markdown resumes. Upload your resume in one of those formats to draft from it.", false));
 

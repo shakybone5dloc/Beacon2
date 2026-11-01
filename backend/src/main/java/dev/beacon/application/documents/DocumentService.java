@@ -1,5 +1,6 @@
 package dev.beacon.application.documents;
 
+import dev.beacon.application.resumes.ResumeService;
 import dev.beacon.contracts.documents.DocumentResponse;
 import dev.beacon.domain.documents.Document;
 import dev.beacon.domain.documents.DocumentInfo;
@@ -25,11 +26,14 @@ public class DocumentService {
 
     private final DocumentRepository documents;
     private final JobApplicationRepository applications;
+    private final ResumeService resumes;
     private final Clock clock;
 
-    public DocumentService(DocumentRepository documents, JobApplicationRepository applications, Clock clock) {
+    public DocumentService(DocumentRepository documents, JobApplicationRepository applications, ResumeService resumes,
+                           Clock clock) {
         this.documents = documents;
         this.applications = applications;
+        this.resumes = resumes;
         this.clock = clock;
     }
 
@@ -53,9 +57,12 @@ public class DocumentService {
         return Optional.of(save(ownerId, applicationId, kind, filename, contentType, content));
     }
 
+    /** A resume also gets a profile (label, default, its text read once). */
     @Transactional
     public DocumentResponse addToLibrary(UUID ownerId, DocumentKind kind, String filename, String contentType, byte[] content) {
-        return save(ownerId, null, kind, filename, contentType, content);
+        var document = create(ownerId, null, kind, filename, contentType, content);
+        if (kind == DocumentKind.RESUME) resumes.uploaded(document);
+        return toResponse(document.info());
     }
 
     /** A null application id looks in the library. */
@@ -70,15 +77,23 @@ public class DocumentService {
     @Transactional
     public boolean delete(UUID ownerId, UUID applicationId, UUID documentId) {
         var found = find(ownerId, applicationId, documentId);
-        found.ifPresent(documents::delete);
+        found.ifPresent(document -> {
+            // A library resume's profile goes first, and another resume may become the default.
+            if (applicationId == null) resumes.deleting(ownerId, document.getId());
+            documents.delete(document);
+        });
         return found.isPresent();
     }
 
     private DocumentResponse save(UUID ownerId, UUID applicationId, DocumentKind kind, String filename,
                                   String contentType, byte[] content) {
+        return toResponse(create(ownerId, applicationId, kind, filename, contentType, content).info());
+    }
+
+    private Document create(UUID ownerId, UUID applicationId, DocumentKind kind, String filename,
+                            String contentType, byte[] content) {
         var document = Document.create(ownerId, applicationId, kind, filename, contentType, content, Instant.now(clock));
-        documents.save(document);
-        return toResponse(document.info());
+        return documents.save(document);
     }
 
     public static DocumentResponse toResponse(DocumentInfo d) {

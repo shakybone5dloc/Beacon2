@@ -5,6 +5,26 @@ import { provideRouter } from '@angular/router';
 import { CoverLetterDrafter } from './cover-letter-drafter';
 import { aDocument } from './testing';
 import { DocumentResponse } from './document.model';
+import { Resume } from '../resumes/resume.model';
+
+function aResume(overrides: Partial<Resume> = {}): Resume {
+  return {
+    documentId: 'lib',
+    label: 'Main',
+    isDefault: true,
+    filename: 'main.pdf',
+    contentType: 'application/pdf',
+    sizeBytes: 1000,
+    textStatus: 'READ',
+    targetTitles: [],
+    skills: [],
+    yearsExperience: null,
+    version: 0,
+    createdAt: '2026-10-23T12:00:00Z',
+    updatedAt: '2026-10-23T12:00:00Z',
+    ...overrides,
+  };
+}
 
 describe('CoverLetterDrafter', () => {
   let http: HttpTestingController;
@@ -32,13 +52,13 @@ describe('CoverLetterDrafter', () => {
   async function open(
     fixture: Awaited<ReturnType<typeof render>>['fixture'],
     own: DocumentResponse[],
-    library: DocumentResponse[],
+    library: Resume[],
   ) {
     (fixture.nativeElement as HTMLElement)
       .querySelector<HTMLButtonElement>('button.start')!
       .click();
     http.expectOne('/api/applications/a1/documents').flush(own);
-    http.expectOne('/api/documents').flush(library);
+    http.expectOne('/api/resumes').flush(library);
     await fixture.whenStable();
   }
 
@@ -54,7 +74,7 @@ describe('CoverLetterDrafter', () => {
     expect(el.querySelector('button.start')).toBeNull();
   });
 
-  it('offers resumes from the application first, then the library', async () => {
+  it('offers resumes from the application first, then the library, starting on the default', async () => {
     const { fixture, el } = await render();
 
     await open(
@@ -63,18 +83,22 @@ describe('CoverLetterDrafter', () => {
         aDocument({ id: 'own', filename: 'tailored.pdf' }),
         aDocument({ id: 'post', kind: 'POSTING' }),
       ],
-      [aDocument({ id: 'lib', applicationId: null, filename: 'main.pdf' })],
+      [
+        aResume({ documentId: 'lib', label: 'Backend Java' }),
+        aResume({ documentId: 'old', label: 'Test', isDefault: false }),
+      ],
     );
 
     const options = Array.from(el.querySelectorAll('option')).map((o) => o.textContent?.trim());
-    expect(options).toEqual(['tailored.pdf (this application)', 'main.pdf (library)']);
+    expect(options).toEqual(['tailored.pdf (this application)', 'Backend Java (default)', 'Test']);
+    expect(el.querySelector<HTMLSelectElement>('select')!.value).toBe('lib');
   });
 
   it('drafts, lets the draft be edited, and saves it', async () => {
     const { fixture, el } = await render();
     let saved: DocumentResponse | undefined;
     fixture.componentInstance.saved.subscribe((d) => (saved = d));
-    await open(fixture, [], [aDocument({ id: 'lib', applicationId: null })]);
+    await open(fixture, [], [aResume()]);
 
     const guidance = el.querySelector<HTMLInputElement>('input')!;
     guidance.value = 'Mention Denver';
@@ -106,7 +130,7 @@ describe('CoverLetterDrafter', () => {
 
   it('cannot draft until the application has a job description', async () => {
     const { fixture, el } = await render(true, false);
-    await open(fixture, [], [aDocument({ applicationId: null })]);
+    await open(fixture, [], [aResume()]);
 
     expect(el.textContent).toContain('no job description yet');
     expect(button(el, 'Draft').disabled).toBe(true);
@@ -122,7 +146,7 @@ describe('CoverLetterDrafter', () => {
 
   it('shows why a draft failed', async () => {
     const { fixture, el } = await render();
-    await open(fixture, [], [aDocument({ applicationId: null })]);
+    await open(fixture, [], [aResume()]);
 
     button(el, 'Draft').click();
     http
