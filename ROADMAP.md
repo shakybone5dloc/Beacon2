@@ -247,6 +247,33 @@ One living prep document per application that moves to interviews, modeled on th
 - AI helps draft a story from your resume or from rough notes, and suggests which stories fit a posting. You write the final version.
 - Stories can be drilled as study cards (A6).
 
+## Then: Portfolio (public pages)
+
+A page each user builds in Beacon from their resume and extra details, and shares with recruiters and hiring teams, like a LinkedIn public profile: anyone with the link can open it, no account needed. W1 and W2 work before Beacon is hosted; W3 and W4 need it on the internet (X4).
+
+### W1. Portfolio editor, preview and export
+- Pick a resume profile (J1) as the starting point, then add what a resume doesn't hold: a headline and bio, photo, experience highlights, projects (description, tech, screenshots, links), links (GitHub, LinkedIn, personal site) and contact preferences.
+- Structured fields, not the raw resume text: `portfolios` (one per user: slug, headline, bio, theme, published, show_email, noindex) plus `portfolio_sections` / `portfolio_items` (kind, position, content). Photos and screenshots reuse document storage.
+- A few themes, all built from one server-side template; a live preview inside the app.
+- **Export:** download the page as a single HTML file (images inlined) to host on GitHub Pages or Netlify, so it's useful before Beacon is hosted.
+
+### W2. AI drafting
+- Suggest the bio, experience highlights and project write-ups from the resume text and target titles, using the user's AI setup (same path as cover letters). Suggestions land in the editor to review; nothing is published unedited.
+- Shares the extraction with J1's AI-suggested summary.
+
+### W3. Public hosting at `/p/{slug}`
+- A public section of the site: `SecurityConfig` permits `GET /p/**` for anyone, while `/api/**` and the app stay behind sign-in.
+- Rendered by Spring as plain HTML (not the Angular app), so visitors load no app code, get no session, and link previews on LinkedIn and Slack work (Open Graph tags).
+- Only published portfolios are served; anything else is a plain 404, so nobody can tell whether a name exists. Unpublishing takes effect at once.
+- Slugs: unique per user, reserved words blocked (`admin`, `api`, `login`, `p`...); changing one redirects the old link for a while.
+- Privacy and abuse: choose what shows (no phone by default; email or a contact form), a "hide from search engines" switch (`noindex`), rate limiting on `/p/**`, a report link and an admin takedown, since registration is open.
+- Later: custom domains (`yourname.dev`), with certificates and DNS checks; a likely paid-plan feature (P2).
+
+### W4. Per-application links
+- Each application gets its own portfolio link (`/p/{slug}?ref=<token>`); Beacon records when it's opened and shows "Acme opened your portfolio" on that application's timeline (I2), without the visitor signing in.
+- Optionally a tailored version per application: projects and skills that match the posting (J2) shown first.
+- What a job tracker can do that a plain portfolio site can't; a natural paid-plan feature.
+
 ## Board (any time)
 
 ### B1. Search, filter and drag-and-drop
@@ -273,6 +300,7 @@ One living prep document per application that moves to interviews, modeled on th
 ### X4. Deploy to the home server
 - Containerize API and frontend (nginx serves Angular and proxies `/api`), full compose stack, CI pipeline building images.
 - HTTPS, automated Postgres backups with a tested restore.
+- Public on the internet with a real domain once other people use Beacon; portfolio pages (W3) are the first part anyone can open without an account.
 
 ### X5. Data export and account deletion
 - Export everything a user owns (JSON + documents as a zip); delete account and all data.
