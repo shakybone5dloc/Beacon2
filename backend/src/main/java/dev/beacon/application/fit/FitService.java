@@ -127,6 +127,20 @@ public class FitService {
         return Optional.of(toResponse(score, label(ownerId, Optional.of(resume)), true));
     }
 
+    /**
+     * Makes a score the user already has the application's fit, at no cost: a saved
+     * search's match, scored before it was saved to the board. Ignores a score that isn't theirs.
+     */
+    @Transactional
+    public void link(UUID ownerId, UUID applicationId, UUID fitScoreId) {
+        if (scores.findByIdAndOwnerId(fitScoreId, ownerId).isEmpty()) return;
+        if (applications.findByIdAndOwnerId(applicationId, ownerId).isEmpty()) return;
+        var now = Instant.now(clock);
+        links.findById(applicationId).ifPresentOrElse(
+                link -> link.relink(fitScoreId, now),
+                () -> links.save(ApplicationFit.create(applicationId, fitScoreId, now)));
+    }
+
     /** Scores a job search result against a library resume; nothing is saved but the score. */
     @Transactional
     public FitResponse scorePosting(UUID ownerId, ScorePostingFitRequest request) {

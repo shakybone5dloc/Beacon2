@@ -13,16 +13,23 @@
         Beacon
       </a>
       @if (auth.user()) {
-        <div class="hidden h-5 w-px bg-hairline lg:block"></div>
-        <nav class="hidden items-center gap-space-xs lg:flex" aria-label="Main">
+        <div class="hidden h-5 w-px bg-hairline xl:block"></div>
+        <nav class="hidden items-center gap-space-xs xl:flex" aria-label="Main">
           @for (link of links; track link.path) {
             <a
               [routerLink]="link.path"
               routerLinkActive="!bg-surface-container !font-semibold !text-on-surface"
               [routerLinkActiveOptions]="{ exact: link.path === '/' }"
-              class="rounded-sm px-space-md py-1.5 text-body-md text-on-surface-variant no-underline transition-colors hover:bg-surface-container-low hover:text-on-surface"
-              >{{ link.label }}</a
-            >
+              class="rounded-sm px-space-md py-1.5 text-body-md whitespace-nowrap text-on-surface-variant no-underline transition-colors hover:bg-surface-container-low hover:text-on-surface"
+              >{{ link.label }}
+              @if (link.path === '/matches' && matches.newCount() > 0) {
+                <span
+                  class="match-count ml-1 rounded-full bg-primary-container px-1.5 font-mono text-[11px] text-on-primary"
+                  [attr.aria-label]="matches.newCount() + ' new'"
+                  >{{ matches.newCount() }}</span
+                >
+              }
+            </a>
           }
         </nav>
       }
@@ -81,7 +88,7 @@
   @if (auth.user()) {
     <!-- Below lg the nav moves to its own scrollable row. -->
     <nav
-      class="flex items-center gap-space-xs overflow-x-auto border-t border-hairline px-gutter py-1 whitespace-nowrap lg:hidden"
+      class="flex items-center gap-space-xs overflow-x-auto border-t border-hairline px-gutter py-1 whitespace-nowrap xl:hidden"
       aria-label="Main"
     >
       @for (link of mobileLinks; track link.path) {
@@ -90,8 +97,14 @@
           routerLinkActive="!bg-surface-container !font-semibold !text-on-surface"
           [routerLinkActiveOptions]="{ exact: link.path === '/' }"
           class="rounded-sm px-space-sm py-1 text-body-sm text-on-surface-variant no-underline hover:bg-surface-container-low hover:text-on-surface"
-          >{{ link.label }}</a
-        >
+          >{{ link.label }}
+          @if (link.path === '/matches' && matches.newCount() > 0) {
+            <span
+              class="match-count ml-1 rounded-full bg-primary-container px-1.5 font-mono text-[11px] text-on-primary"
+              >{{ matches.newCount() }}</span
+            >
+          }
+        </a>
       }
       <button
         type="button"

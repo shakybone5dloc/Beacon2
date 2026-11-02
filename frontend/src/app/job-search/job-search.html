@@ -1,4 +1,13 @@
-<h1>Find jobs</h1>
+<div class="flex flex-wrap items-baseline justify-between gap-space-sm">
+  <h1>Find jobs</h1>
+  @if (form.controls.keywords.value.trim()) {
+    <a routerLink="/searches" [queryParams]="saveSearchParams()" class="save-search text-body-sm"
+      >Run this search every day →</a
+    >
+  } @else {
+    <a routerLink="/searches" class="text-body-sm">Saved searches →</a>
+  }
+</div>
 
 <form [formGroup]="form" (ngSubmit)="search()" novalidate class="search">
   <label class="keywords">

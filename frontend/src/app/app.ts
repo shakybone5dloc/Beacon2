@@ -1,6 +1,7 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthState } from './auth/auth-state';
+import { MatchesState } from './searches/matches-state';
 import { ThemeChoice, ThemeService } from './theme/theme';
 
 const THEME_ICONS: Record<ThemeChoice, string> = {
@@ -23,6 +24,7 @@ interface NavLink {
 const LINKS: NavLink[] = [
   { path: '/', label: 'Board' },
   { path: '/jobs', label: 'Find jobs' },
+  { path: '/matches', label: 'Matches' },
   { path: '/companies', label: 'Companies' },
   { path: '/people', label: 'People' },
   { path: '/documents', label: 'Documents' },
@@ -37,6 +39,14 @@ export class App {
   private readonly router = inject(Router);
   protected readonly auth = inject(AuthState);
   protected readonly theme = inject(ThemeService);
+  protected readonly matches = inject(MatchesState);
+
+  constructor() {
+    // The Matches badge: counted once on sign-in, then again as matches are saved, dismissed or found.
+    effect(() => {
+      if (this.auth.user()) this.matches.refresh();
+    });
+  }
 
   protected readonly themeIcon = computed(() => THEME_ICONS[this.theme.choice()]);
   /** Says what the button does next, since the icon shows the current choice. */

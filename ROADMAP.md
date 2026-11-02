@@ -30,6 +30,7 @@ Rebuilt from the .NET Beacon, then extended.
 | J1 | Resume profiles: labels, a default, saved text, and a short summary per library resume | f80a798 |
 | J2 | Fit scoring: AI score, matches, gaps and dealbreakers on applications and Find jobs results; free skill match | after dd177fe |
 | X6 | AI usage tracking: tokens and cost per call, this month by feature and model in Settings, optional monthly budget | after d3d5fb7 |
+| J3 | Saved searches on a schedule, a Matches page, fit checks for the newest 20 per run within the AI budget | after 02e5e8d |
 
 ## Next: Companies and people
 
@@ -153,7 +154,10 @@ Reuses the inbox queue from E4: matches land there to accept or dismiss, same as
 - Show the score on job search results and on existing applications; suggest which resume fits a posting best.
 - Evaluation set: a handful of postings hand-labelled good/okay/poor fit, to check scoring changes.
 
-### J3. Saved searches + daily runs
+### J3. Saved searches + daily runs (done, except the items below)
+Built as: `saved_searches` (keywords, left-out title words, location, remote, yearly pay floor, sources, posted within N days, resume, minimum score, run days and hour in the browser's time zone), `search_runs` and `job_matches`. A scheduler checks once a minute for due searches; Run now starts one at once. Each run gathers from the job boards and the company watchlist, filters without AI (a posting that doesn't state pay or a date is kept), drops anything whose normalized company and title is already on the board or was found before, and keeps the rest as NEW matches. With a resume picked, it fit-scores up to 20 unscored matches per run, newest first, stopping at the monthly AI budget (X6); a score under the minimum moves the match to BELOW_MIN. The Matches page (with a count on its nav link) saves a match as a SAVED application with its close date as apply-by and its fit linked at no cost, or dismisses it for good (with Restore). Find jobs links to the saved searches page with its current search filled in.
+Still to do: the sources J0, E2/E3 and J5 add; showing every link when sources find the same job (a match keeps the first source's); per-source counts of what was new; feeding dismissals back into the minimum score; the inbox (E4) instead of the Matches page; a daily summary notification (E5).
+
 The in-app version of the daily "new or new-to-me postings" job (run by hand in a Claude conversation as of Oct 2026), reaching well past the job-board APIs while keeping AI to the one step that needs it.
 - `saved_searches` per user: keywords, location, remote, salary minimum, employment types, sources, resume to score against, minimum score, active flag, run days (default weekdays).
 - Scheduled run (Spring `@Scheduled`), in the user's time zone. Each run is a pipeline, and only step 4 uses AI:

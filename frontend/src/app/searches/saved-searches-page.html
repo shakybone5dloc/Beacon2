@@ -1,0 +1,249 @@
+<div class="mb-space-lg">
+  <div class="flex flex-wrap items-center justify-between gap-space-sm">
+    <h1 class="m-0 mb-space-xs">Saved searches</h1>
+    <div class="flex flex-wrap gap-space-sm">
+      <a routerLink="/matches" class="btn no-underline">Matches</a>
+      @if (!editing()) {
+        <button type="button" class="new btn btn-primary" (click)="startNew()">
+          <span class="material-symbols-outlined !text-[18px]" aria-hidden="true">add</span>
+          New saved search
+        </button>
+      }
+    </div>
+  </div>
+  <p class="m-0 max-w-2xl text-body-md text-on-surface-variant">
+    Beacon runs these for you on the days and hour you pick, searching the job boards and your
+    company watchlist, and keeps what's new on the Matches page. With a resume picked, the newest 20
+    matches per run get an AI fit check, paused once you reach your
+    <a routerLink="/settings/api-keys">monthly AI budget</a>.
+  </p>
+</div>
+
+@if (editing(); as current) {
+  <form
+    class="search-form card mb-space-lg grid max-w-3xl gap-space-md p-space-lg"
+    [formGroup]="form"
+    (ngSubmit)="save()"
+  >
+    <h2 class="m-0">{{ current === 'new' ? 'New saved search' : 'Edit ' + current.name }}</h2>
+
+    <div class="grid gap-space-sm sm:grid-cols-2">
+      <label class="grid content-start gap-space-xs">
+        Keywords
+        <input formControlName="keywords" placeholder="java spring" maxlength="500" />
+        <span class="text-body-sm font-normal text-on-surface-variant"
+          >Every word must appear in the posting.</span
+        >
+      </label>
+      <label class="grid content-start gap-space-xs">
+        <span>Name <span class="font-normal text-on-surface-variant">(optional)</span></span>
+        <input formControlName="name" placeholder="Named after the keywords" maxlength="100" />
+      </label>
+      <label class="grid content-start gap-space-xs">
+        <span
+          >Leave out titles with
+          <span class="font-normal text-on-surface-variant">(optional)</span></span
+        >
+        <input formControlName="excludeWords" placeholder="Senior, Manager, Contract" />
+      </label>
+      <label class="grid content-start gap-space-xs">
+        <span>Location <span class="font-normal text-on-surface-variant">(optional)</span></span>
+        <input formControlName="location" placeholder="USA, Denver..." maxlength="200" />
+      </label>
+      <label class="grid content-start gap-space-xs">
+        <span
+          >Yearly pay at least
+          <span class="font-normal text-on-surface-variant">(optional)</span></span
+        >
+        <input formControlName="salaryMin" type="number" min="0" step="5000" placeholder="120000" />
+      </label>
+      <label class="grid content-start gap-space-xs">
+        Posted within
+        <select formControlName="postedWithinDays">
+          @for (d of [1, 3, 7, 14, 30]; track d) {
+            <option [ngValue]="d">
+              {{ d === 1 ? 'the last day' : 'the last ' + d + ' days' }}
+            </option>
+          }
+        </select>
+      </label>
+    </div>
+    <label class="flex items-center gap-space-xs">
+      <input type="checkbox" formControlName="remoteOnly" />
+      Remote only
+    </label>
+
+    <fieldset class="m-0 grid gap-space-xs border-0 p-0">
+      <legend class="mb-space-xs p-0">
+        Sources
+        <span class="font-normal text-on-surface-variant">(none ticked means all of them)</span>
+      </legend>
+      <div class="flex flex-wrap gap-x-space-md gap-y-space-xs">
+        @for (s of sources(); track s.id) {
+          <label class="flex items-center gap-space-xs font-normal">
+            <input
+              type="checkbox"
+              [checked]="pickedSources().has(s.id)"
+              (change)="toggleSource(s.id)"
+            />
+            {{ s.name }}
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <div class="grid gap-space-sm sm:grid-cols-2">
+      <label class="grid content-start gap-space-xs">
+        Fit-check new matches against
+        <select formControlName="resumeDocumentId">
+          <option value="">Don't check fit</option>
+          @for (r of resumes(); track r.documentId) {
+            <option [value]="r.documentId">
+              {{ r.label }}{{ r.isDefault ? ' (default)' : '' }}
+            </option>
+          }
+        </select>
+      </label>
+      @if (form.controls.resumeDocumentId.value) {
+        <label class="grid content-start gap-space-xs">
+          <span
+            >Hide scores under
+            <span class="font-normal text-on-surface-variant">(optional)</span></span
+          >
+          <input formControlName="minScore" type="number" min="0" max="100" placeholder="60" />
+        </label>
+      }
+    </div>
+
+    <fieldset class="m-0 grid gap-space-xs border-0 p-0">
+      <legend class="mb-space-xs p-0">Run on</legend>
+      <div class="flex flex-wrap items-center gap-space-xs">
+        @for (d of days; track d.day) {
+          <button
+            type="button"
+            class="day"
+            [class.btn-primary]="runDays().has(d.day)"
+            [attr.aria-pressed]="runDays().has(d.day)"
+            (click)="toggleDay(d.day)"
+          >
+            {{ d.short }}
+          </button>
+        }
+        <span class="ml-space-sm">at</span>
+        <select formControlName="runHour" class="w-28" aria-label="Hour">
+          @for (h of hours; track h) {
+            <option [ngValue]="h">{{ hourLabel(h) }}</option>
+          }
+        </select>
+      </div>
+      <span class="text-body-sm text-on-surface-variant">Your time zone: {{ zone }}</span>
+    </fieldset>
+
+    <label class="flex items-center gap-space-xs">
+      <input type="checkbox" formControlName="active" />
+      Run on schedule (untick to pause it)
+    </label>
+
+    @if (formError(); as message) {
+      <p class="m-0 text-body-sm text-error">{{ message }}</p>
+    }
+    <div class="flex gap-space-sm">
+      <button type="submit" class="primary" [disabled]="saving()">
+        {{ saving() ? 'Saving...' : current === 'new' ? 'Save search' : 'Save changes' }}
+      </button>
+      <button type="button" (click)="editing.set(null)">Cancel</button>
+    </div>
+  </form>
+}
+
+@if (loadError()) {
+  <p class="notice">Could not load your saved searches. Try again in a moment.</p>
+} @else if (searches(); as list) {
+  @if (list.length === 0 && !editing()) {
+    <p class="empty max-w-2xl text-on-surface-variant">
+      No saved searches yet. Add one here, or search on
+      <a routerLink="/jobs">Find jobs</a> and save it from there.
+    </p>
+  }
+  <ul class="search-list m-0 grid max-w-3xl list-none gap-space-sm p-0">
+    @for (s of list; track s.id) {
+      <li class="search card grid gap-space-sm p-space-md">
+        <div class="flex flex-wrap items-start justify-between gap-space-sm">
+          <div class="min-w-0">
+            <h2 class="name m-0 text-headline-sm">{{ s.name }}</h2>
+            <span class="block text-body-sm text-on-surface-variant">
+              "{{ s.keywords }}"
+              @if (s.location) {
+                · {{ s.location }}
+              }
+              @if (s.remoteOnly) {
+                · remote only
+              }
+              · {{ sourceNames(s.sources) }}
+            </span>
+          </div>
+          @if (s.newMatches > 0) {
+            <a routerLink="/matches" class="new-count pill pill-blue no-underline"
+              >{{ s.newMatches }} new</a
+            >
+          }
+        </div>
+
+        <div class="schedule flex flex-wrap gap-x-space-md gap-y-space-xs text-body-sm">
+          @if (s.active) {
+            <span>{{ scheduleLabel(s.runDays, s.runHour) }}</span>
+            @if (s.nextRunAt) {
+              <span class="text-on-surface-variant"
+                >Next: {{ s.nextRunAt | date: 'EEE MMM d, h:mm a' }}</span
+              >
+            }
+          } @else {
+            <span class="pill">Paused</span>
+          }
+          <span class="text-on-surface-variant">
+            @if (resumeLabel(s.resumeDocumentId); as resume) {
+              Fit-checked against {{ resume
+              }}{{ s.minScore != null ? ', hiding scores under ' + s.minScore : '' }}
+            } @else {
+              No fit checks
+            }
+          </span>
+        </div>
+
+        @if (s.running) {
+          <p
+            class="running m-0 flex items-center gap-space-xs text-body-sm text-on-surface-variant"
+          >
+            <span class="material-symbols-outlined animate-spin !text-[16px]" aria-hidden="true"
+              >progress_activity</span
+            >
+            Running now...
+          </p>
+        } @else if (s.lastRun; as run) {
+          <details class="last-run text-body-sm">
+            <summary class="cursor-pointer text-on-surface-variant">
+              Last run {{ run.startedAt | date: 'MMM d, h:mm a' }}: {{ run.gathered }} found,
+              {{ run.newMatches }} new{{ run.scored ? ', ' + run.scored + ' fit-checked' : '' }}
+            </summary>
+            <ul class="m-0 mt-space-xs pl-space-lg text-on-surface-variant">
+              @for (note of run.notes; track $index) {
+                <li>{{ note }}</li>
+              }
+            </ul>
+          </details>
+        }
+
+        <div class="flex flex-wrap items-center gap-space-sm">
+          <button type="button" class="run" [disabled]="s.running" (click)="run(s)">Run now</button>
+          <button type="button" class="edit" (click)="startEdit(s)">Edit</button>
+          <button type="button" class="delete danger" (click)="remove(s)">Delete</button>
+          @if (runErrors().get(s.id); as message) {
+            <span class="text-body-sm text-error">{{ message }}</span>
+          }
+        </div>
+      </li>
+    }
+  </ul>
+} @else {
+  <p class="text-on-surface-variant">Loading...</p>
+}

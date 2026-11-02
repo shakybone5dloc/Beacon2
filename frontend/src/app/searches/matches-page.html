@@ -1,0 +1,157 @@
+<div class="mb-space-lg">
+  <div class="flex flex-wrap items-center justify-between gap-space-sm">
+    <h1 class="m-0 mb-space-xs">Matches</h1>
+    <a routerLink="/searches" class="btn no-underline">
+      <span class="material-symbols-outlined !text-[18px]" aria-hidden="true">manage_search</span>
+      Saved searches
+    </a>
+  </div>
+  <p class="m-0 max-w-2xl text-body-md text-on-surface-variant">
+    New postings your saved searches found, best fit first. Postings already on your board, found
+    before, or dismissed don't come back.
+  </p>
+</div>
+
+<div class="tabs mb-space-md flex flex-wrap gap-space-xs" role="tablist">
+  @for (t of tabs; track t.status) {
+    <button
+      type="button"
+      role="tab"
+      class="tab"
+      [class.btn-primary]="status() === t.status"
+      [attr.aria-selected]="status() === t.status"
+      (click)="show(t.status)"
+    >
+      {{ t.label }}
+    </button>
+  }
+</div>
+
+@if (loadError()) {
+  <p class="notice">Could not load your matches. Try again in a moment.</p>
+} @else if (matches(); as list) {
+  @if (list.length === 0) {
+    <p class="empty max-w-2xl text-on-surface-variant">
+      @switch (status()) {
+        @case ('NEW') {
+          Nothing waiting. New postings show up here after your saved searches run.
+          <a routerLink="/searches">Set up or run a saved search →</a>
+        }
+        @case ('BELOW_MIN') {
+          No matches scored under a search's minimum.
+        }
+        @default {
+          Nothing dismissed.
+        }
+      }
+    </p>
+  } @else {
+    <ul class="match-list m-0 grid max-w-3xl list-none gap-space-sm p-0">
+      @for (m of list; track m.id) {
+        <li class="match card grid gap-space-xs p-space-md">
+          <div class="flex items-start justify-between gap-space-sm">
+            <div class="min-w-0">
+              <a
+                [href]="m.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="title text-headline-sm text-on-surface no-underline hover:text-primary-container"
+                >{{ m.title }}</a
+              >
+              <span class="block text-body-sm text-on-surface-variant">
+                {{ m.company ?? 'Employer not disclosed' }}
+                @if (formatLocation(m.location); as where) {
+                  · {{ where }}
+                }
+                @if (m.remote) {
+                  · Remote
+                }
+              </span>
+            </div>
+            @if (m.score != null) {
+              @let v = verdict(m.score);
+              <span
+                class="fit flex shrink-0 items-center gap-1.5 font-mono text-label-code text-on-surface-variant"
+                [title]="'Fit ' + m.score + '% · ' + v.label"
+                [attr.aria-label]="'Fit ' + m.score + ' percent, ' + v.label"
+              >
+                fit
+                <span
+                  class="h-1.5 w-12 overflow-hidden rounded-full bg-surface-container-high"
+                  aria-hidden="true"
+                >
+                  <span
+                    class="block h-full rounded-full"
+                    [class]="fitFill[v.pill]"
+                    [style.width.%]="m.score"
+                  ></span>
+                </span>
+                <span class="fit-score text-on-surface">{{ m.score }}</span>
+              </span>
+            }
+          </div>
+
+          <div class="flex flex-wrap gap-space-xs">
+            @if (formatSalary(m); as pay) {
+              <span class="pill">{{ pay }}</span>
+            }
+            @if (posted(m); as ago) {
+              <span class="pill">{{ ago }}</span>
+            }
+            @if (m.closesOn) {
+              <span class="pill pill-amber">apply by {{ m.closesOn }}</span>
+            }
+            @if (m.searchName) {
+              <span class="pill pill-blue">{{ m.searchName }}</span>
+            }
+          </div>
+
+          @if (m.snippet) {
+            <p class="m-0 line-clamp-2 text-body-sm text-on-surface-variant">{{ m.snippet }}</p>
+          }
+
+          <div class="flex flex-wrap items-center gap-space-sm">
+            @if (savedAs().get(m.id) ?? m.applicationId; as appId) {
+              <a [routerLink]="['/applications', appId]" class="on-board text-body-sm"
+                >On your board →</a
+              >
+            } @else if (status() === 'DISMISSED') {
+              <button
+                type="button"
+                class="restore"
+                [disabled]="busy().has(m.id)"
+                (click)="restore(m)"
+              >
+                Restore
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="save primary"
+                [disabled]="busy().has(m.id)"
+                (click)="save(m)"
+              >
+                Save to board
+              </button>
+              @if (status() === 'NEW') {
+                <button
+                  type="button"
+                  class="dismiss"
+                  [disabled]="busy().has(m.id)"
+                  (click)="dismiss(m)"
+                >
+                  Dismiss
+                </button>
+              }
+            }
+            @if (errors().get(m.id); as message) {
+              <span class="text-body-sm text-error">{{ message }}</span>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+} @else {
+  <p class="text-on-surface-variant">Loading...</p>
+}

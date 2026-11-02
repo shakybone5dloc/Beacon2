@@ -71,6 +71,22 @@ public class AiUsageService {
                 recentMonths(ownerId, zone, month));
     }
 
+    /**
+     * True when the user has a budget and this month's spending has reached it. Work Beacon
+     * starts on its own (like a saved search's scoring) checks this; work the user asks for doesn't.
+     */
+    @Transactional(readOnly = true)
+    public boolean isOverBudget(UUID ownerId, ZoneId zone) {
+        var budget = users.findById(ownerId).map(user -> user.getAiMonthlyBudgetUsd()).orElse(null);
+        if (budget == null) return false;
+        var month = YearMonth.now(clock.withZone(zone));
+        var spent = usage.totalsByFeature(ownerId, month.atDay(1).atStartOfDay(zone).toInstant(),
+                        month.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant()).stream()
+                .map(row -> money(row[4]))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return spent.compareTo(budget) >= 0;
+    }
+
     /** @param monthlyUsd null removes the budget */
     @Transactional
     public void setBudget(UUID ownerId, BigDecimal monthlyUsd) {

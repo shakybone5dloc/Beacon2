@@ -14,6 +14,8 @@ import { CompanyList } from './companies/company-list';
 import { CompanyDetail } from './companies/company-detail';
 import { PeopleList } from './people/people-list';
 import { PersonDetail } from './people/person-detail';
+import { MatchesPage } from './searches/matches-page';
+import { SavedSearchesPage } from './searches/saved-searches-page';
 
 export const routes: Routes = [
   { path: 'login', component: LoginPage, canActivate: [guestGuard], title: 'Beacon · Sign in' },
@@ -29,6 +31,8 @@ export const routes: Routes = [
     children: [
       { path: '', component: Board, title: 'Beacon · Board' },
       { path: 'jobs', component: JobSearch, title: 'Beacon · Find jobs' },
+      { path: 'matches', component: MatchesPage, title: 'Beacon · Matches' },
+      { path: 'searches', component: SavedSearchesPage, title: 'Beacon · Saved searches' },
       { path: 'documents', component: DocumentLibrary, title: 'Beacon · Documents' },
       { path: 'companies', component: CompanyList, title: 'Beacon · Companies' },
       { path: 'companies/:id', component: CompanyDetail, title: 'Beacon · Company' },

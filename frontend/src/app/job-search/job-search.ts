@@ -65,6 +65,18 @@ export class JobSearch implements OnInit {
     () => this.state.results()?.sources.filter((s) => s.error != null) ?? [],
   );
 
+  /** The current search, for the saved searches page to start a new one from. */
+  protected saveSearchParams(): Record<string, string> {
+    const v = this.form.getRawValue();
+    const all = this.selectedSources().length === this.sources().length;
+    return {
+      keywords: v.keywords.trim(),
+      ...(v.location.trim() ? { location: v.location.trim() } : {}),
+      ...(v.remoteOnly ? { remote: 'true' } : {}),
+      ...(all ? {} : { sources: this.selectedSources().join(',') }),
+    };
+  }
+
   protected readonly formatSalary = formatSalary;
   protected readonly formatLocation = formatLocation;
   protected readonly formatPosted = (p: JobPosting) => formatPosted(p, new Date());

@@ -34,9 +34,12 @@ describe('App', () => {
 
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
+    http.expectOne('/api/matches/summary').flush({ newCount: 3 });
+    await fixture.whenStable();
     const el: HTMLElement = fixture.nativeElement;
 
     expect(el.querySelector('nav a')?.getAttribute('href')).toBe('/');
     expect(el.querySelector('.who')?.textContent).toContain('me@example.com');
+    expect(el.querySelector('nav .match-count')?.textContent?.trim()).toBe('3');
   });
 });

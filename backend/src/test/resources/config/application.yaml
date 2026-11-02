@@ -2,3 +2,7 @@
 beacon:
   # A fixed key for tests only; never use it for real data.
   secret-key: "dGVzdC1vbmx5LXNlY3JldC1rZXktMzItYnl0ZXMhISE="
+  saved-searches:
+    # Tests run saved searches themselves, inline, so they can check what a run did.
+    scheduler-enabled: false
+    run-in-background: false
