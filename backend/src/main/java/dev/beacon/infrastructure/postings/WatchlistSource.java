@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -49,8 +48,9 @@ public class WatchlistSource implements JobSource {
         for (var company : companies.findAllByOwnerIdAndCareersBoardIdIsNotNullOrderByNameAsc(userId)) {
             var board = company.getCareersBoard().orElseThrow();
             try {
-                clients.forPlatform(board.platform()).openings(board.boardId(), company.getName()).stream()
-                        .filter(p -> matches(p, query))
+                // Keywords are matched by the client (on the host, for large boards); location and remote here.
+                clients.forPlatform(board.platform()).search(board.boardId(), company.getName(), query.keywords()).stream()
+                        .filter(p -> PostingMatcher.matches(p, new PostingQuery("", query.location(), query.remoteOnly())))
                         .forEach(found::add);
             } catch (RuntimeException ex) {
                 // One company's board being down or renamed shouldn't sink the others.
@@ -58,16 +58,5 @@ public class WatchlistSource implements JobSource {
             }
         }
         return found;
-    }
-
-    /**
-     * Like {@link PostingMatcher#matches}, but keywords also match the full description:
-     * careers boards always include it, and titles rarely name the stack ("Java").
-     */
-    private static boolean matches(JobPosting posting, PostingQuery query) {
-        var texts = new ArrayList<String>(posting.tags());
-        texts.addAll(Arrays.asList(posting.title(), posting.company(), posting.snippet(), posting.description()));
-        return PostingMatcher.matchesKeywords(query.keywords(), texts)
-                && PostingMatcher.matches(posting, new PostingQuery("", query.location(), query.remoteOnly()));
     }
 }

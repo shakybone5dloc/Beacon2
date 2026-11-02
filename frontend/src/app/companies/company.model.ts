@@ -20,9 +20,14 @@ export const CAREERS_PLATFORM_LABELS: Record<CareersPlatform, string> = {
   GREENHOUSE: 'Greenhouse',
   LEVER: 'Lever',
   ASHBY: 'Ashby',
+  WORKDAY: 'Workday',
+  ORACLE: 'Oracle Recruiting Cloud',
 };
 
-/** The public careers page for a watched board, to link to. */
+/**
+ * The public careers page for a watched board, to link to. Workday ids are
+ * "tenant.wdN/site" and Oracle ids "pod.fa.region/CX_n".
+ */
 export function careersPageUrl(platform: CareersPlatform, boardId: string): string {
   switch (platform) {
     case 'GREENHOUSE':
@@ -31,5 +36,18 @@ export function careersPageUrl(platform: CareersPlatform, boardId: string): stri
       return `https://jobs.lever.co/${boardId}`;
     case 'ASHBY':
       return `https://jobs.ashbyhq.com/${boardId}`;
+    case 'WORKDAY': {
+      const [host, site] = boardId.split('/');
+      return `https://${host}.myworkdayjobs.com/${site}`;
+    }
+    case 'ORACLE': {
+      const [host, site] = boardId.split('/');
+      return `https://${host}.oraclecloud.com/hcmUI/CandidateExperience/en/sites/${site}`;
+    }
   }
+}
+
+/** What to show for a watched board: the site name for Workday and Oracle, else the board id. */
+export function boardLabel(platform: CareersPlatform, boardId: string): string {
+  return platform === 'WORKDAY' || platform === 'ORACLE' ? boardId.split('/')[1] : boardId;
 }

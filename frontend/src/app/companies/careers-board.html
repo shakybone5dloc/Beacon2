@@ -13,7 +13,7 @@
         [href]="careersPageUrl(c.careersPlatform, c.careersBoardId)"
         target="_blank"
         rel="noopener noreferrer"
-        >{{ c.careersBoardId }}</a
+        >{{ boardLabel(c.careersPlatform, c.careersBoardId) }}</a
       >
     </span>
     <button type="button" class="btn btn-sm" [disabled]="busy()" (click)="stop()">
@@ -22,6 +22,10 @@
   </div>
   <p class="m-0 mt-space-xs text-body-sm text-on-surface-variant">
     Their open roles also show up under "Company watchlist" in Find jobs.
+    @if (c.careersPlatform === 'WORKDAY' || c.careersPlatform === 'ORACLE') {
+      Their board is large, so only the newest roles are listed here; Find jobs searches all of
+      them.
+    }
   </p>
 
   <h3>
@@ -66,7 +70,8 @@
 } @else {
   <p class="m-0 mb-space-sm text-on-surface-variant">
     Watch {{ c.name }} to see their open roles here and in Find jobs, often before they reach the
-    job boards. Works with careers pages hosted on Greenhouse, Lever and Ashby.
+    job boards. Works with careers pages hosted on Greenhouse, Lever, Ashby, Workday and Oracle, and
+    with a company's own careers page that links to one of those.
   </p>
   <form class="watch flex flex-wrap gap-space-sm" (submit)="$event.preventDefault(); watch()">
     <input

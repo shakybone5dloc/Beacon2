@@ -14,7 +14,13 @@ import { finalize } from 'rxjs';
 import { ProblemDetail } from '../applications/application.model';
 import { problemText } from '../documents/application-documents';
 import { CompaniesApi } from './companies-api';
-import { CAREERS_PLATFORM_LABELS, careersPageUrl, Company, Opening } from './company.model';
+import {
+  boardLabel,
+  CAREERS_PLATFORM_LABELS,
+  careersPageUrl,
+  Company,
+  Opening,
+} from './company.model';
 
 const FIRST_ROLES = 10;
 
@@ -48,6 +54,7 @@ export class CareersBoard {
 
   protected readonly platformLabels = CAREERS_PLATFORM_LABELS;
   protected readonly careersPageUrl = careersPageUrl;
+  protected readonly boardLabel = boardLabel;
 
   constructor() {
     // Load the roles whenever the company starts being watched, or moves to another board.

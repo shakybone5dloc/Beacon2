@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -34,11 +35,34 @@ final class TtlCache<K, V> {
         }
 
         var value = loader.get();
+        store(key, value, now);
+        return value;
+    }
+
+    /**
+     * Loads outside the lock, so several keys can load at once (careers-site detail
+     * calls run in parallel). Two callers asking for the same missing key may both load it.
+     */
+    V getConcurrently(K key, Supplier<V> loader) {
+        return peek(key).orElseGet(() -> {
+            var value = loader.get();
+            synchronized (this) {
+                store(key, value, clock.instant());
+            }
+            return value;
+        });
+    }
+
+    private synchronized Optional<V> peek(K key) {
+        var cached = entries.get(key);
+        return cached != null && cached.expiresAt().isAfter(clock.instant()) ? Optional.of(cached.value()) : Optional.empty();
+    }
+
+    private void store(K key, V value, Instant now) {
         entries.values().removeIf(e -> !e.expiresAt().isAfter(now));
         if (entries.size() >= maxEntries) {
             entries.clear();
         }
         entries.put(key, new Entry<>(value, now.plus(ttl)));
-        return value;
     }
 }

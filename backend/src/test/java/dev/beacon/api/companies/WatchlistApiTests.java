@@ -113,7 +113,7 @@ class WatchlistApiTests extends SignedInApiTests {
 
         var unknown = watch(companyId, "https://acme.example/careers");
         assertThat(unknown).hasStatus(HttpStatus.BAD_REQUEST);
-        assertThat(unknown).bodyJson().extractingPath("$.errors.url[0]").asString().contains("Greenhouse, Lever or Ashby");
+        assertThat(unknown).bodyJson().extractingPath("$.errors.url[0]").asString().contains("Greenhouse, Lever, Ashby, Workday or Oracle");
 
         // Looks like a Greenhouse board, but there's no such board.
         var missing = watch(companyId, "https://boards.greenhouse.io/no-such-company");

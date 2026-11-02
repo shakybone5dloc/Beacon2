@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { CareersBoard } from './careers-board';
-import { careersPageUrl, Company, Opening } from './company.model';
+import { boardLabel, careersPageUrl, Company, Opening } from './company.model';
 
 function aCompany(overrides: Partial<Company> = {}): Company {
   return {
@@ -162,5 +162,27 @@ describe('CareersBoard', () => {
   it('links each platform to its public careers page', () => {
     expect(careersPageUrl('LEVER', 'acme')).toBe('https://jobs.lever.co/acme');
     expect(careersPageUrl('ASHBY', 'acme')).toBe('https://jobs.ashbyhq.com/acme');
+    expect(careersPageUrl('WORKDAY', 'elevancehealth.wd1/ANT')).toBe(
+      'https://elevancehealth.wd1.myworkdayjobs.com/ANT',
+    );
+    expect(careersPageUrl('ORACLE', 'eeho.fa.us2/CX_45001')).toBe(
+      'https://eeho.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_45001',
+    );
+    expect(boardLabel('WORKDAY', 'elevancehealth.wd1/ANT')).toBe('ANT');
+    expect(boardLabel('LEVER', 'acme')).toBe('acme');
+  });
+
+  it('says a large board lists only its newest roles here', async () => {
+    const { el } = await open(
+      aCompany({
+        careersPlatform: 'WORKDAY',
+        careersBoardId: 'elevancehealth.wd1/ANT',
+        version: 1,
+      }),
+    );
+    http.expectOne('/api/companies/c1/openings').flush([opening]);
+
+    expect(el.querySelector('.watching a')?.textContent?.trim()).toBe('ANT');
+    expect(el.textContent).toContain('only the newest roles are listed here');
   });
 });
