@@ -12,6 +12,7 @@ import dev.beacon.domain.applications.JobApplication;
 import dev.beacon.domain.contacts.Contact;
 import dev.beacon.domain.interviews.InterviewOutcome;
 import dev.beacon.domain.people.PersonRole;
+import dev.beacon.infrastructure.persistence.ApplicationFitRepository;
 import dev.beacon.infrastructure.persistence.ApplicationPersonRepository;
 import dev.beacon.infrastructure.persistence.ContactRepository;
 import dev.beacon.infrastructure.persistence.InterviewRepository;
@@ -39,16 +40,18 @@ public class ApplicationService {
     private final ApplicationPersonRepository people;
     private final ContactRepository contacts;
     private final InterviewRepository interviews;
+    private final ApplicationFitRepository fits;
     private final CompanyService companies;
     private final Clock clock;
 
     public ApplicationService(JobApplicationRepository repository, ApplicationPersonRepository people,
                               ContactRepository contacts, InterviewRepository interviews,
-                              CompanyService companies, Clock clock) {
+                              ApplicationFitRepository fits, CompanyService companies, Clock clock) {
         this.repository = repository;
         this.people = people;
         this.contacts = contacts;
         this.interviews = interviews;
+        this.fits = fits;
         this.companies = companies;
         this.clock = clock;
     }
@@ -173,7 +176,7 @@ public class ApplicationService {
         return ApplicationMappings.toResponse(application, extras);
     }
 
-    /** Agencies and interview dates for these applications, by id: two queries however many there are. */
+    /** Agencies, interview dates and fit scores for these applications, by id: three queries however many there are. */
     private Map<UUID, Extras> extras(List<JobApplication> found) {
         if (found.isEmpty()) return Map.of();
         var agencies = agencies(found);
@@ -182,10 +185,14 @@ public class ApplicationService {
         for (var row : interviews.findNextAndLast(ids, Instant.now(clock), InterviewOutcome.CANCELLED)) {
             nextAndLast.put((UUID) row[0], new Instant[] {(Instant) row[1], (Instant) row[2]});
         }
+        var scores = new HashMap<UUID, Integer>();
+        for (var row : fits.findScores(ids)) {
+            scores.put((UUID) row[0], (Integer) row[1]);
+        }
         var extras = new HashMap<UUID, Extras>();
         for (var id : ids) {
             var dates = nextAndLast.getOrDefault(id, new Instant[2]);
-            extras.put(id, new Extras(agencies.get(id), dates[0], dates[1]));
+            extras.put(id, new Extras(agencies.get(id), dates[0], dates[1], scores.get(id)));
         }
         return extras;
     }

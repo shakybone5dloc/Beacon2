@@ -76,6 +76,30 @@ describe('Board', () => {
     expect(link.getAttribute('href')).toBe('/applications/a1');
   });
 
+  it('shows a fit bar on cards whose fit has been checked', async () => {
+    const fixture = TestBed.createComponent(Board);
+    await fixture.whenStable();
+
+    http
+      .expectOne('/api/applications')
+      .flush([
+        anApplication({ id: 'a1', company: 'Acme', fitScore: 72 }),
+        anApplication({ id: 'a2', company: 'Initech', fitScore: null }),
+      ]);
+    await fixture.whenStable();
+
+    const [checked, unchecked] = Array.from<HTMLElement>(
+      fixture.nativeElement.querySelectorAll('.card'),
+    );
+    const fit = checked.querySelector('.fit')!;
+    expect(fit.querySelector('.fit-score')?.textContent).toBe('72');
+    expect(fit.getAttribute('title')).toBe('Fit 72% · Good fit');
+    const fill = fit.querySelector<HTMLElement>('.fit-fill')!;
+    expect(fill.style.width).toBe('72%');
+    expect(fill.classList).toContain('bg-info');
+    expect(unchecked.querySelector('.fit')).toBeNull();
+  });
+
   describe('attention', () => {
     const DAY = 24 * 60 * 60 * 1000;
     const daysAgo = (days: number) => new Date(Date.now() - days * DAY - 60_000).toISOString();

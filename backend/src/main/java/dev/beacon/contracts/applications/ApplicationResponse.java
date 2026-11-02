@@ -47,6 +47,8 @@ public record ApplicationResponse (
         @Nullable Instant nextInterviewAt,
         /** The most recent interview that has started, cancelled ones left out; null when none has. */
         @Nullable Instant lastInterviewAt,
+        /** The latest fit score (0-100); null until fit has been checked. */
+        @Nullable Integer fitScore,
         Long version,
         @ArraySchema(schema = @Schema(implementation = ApplicationStatus.class))
         List<String> allowedTransitions

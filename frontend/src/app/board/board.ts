@@ -14,6 +14,7 @@ import {
 } from '../applications/application.model';
 import { Attention, attentionFor } from '../applications/attention';
 import { formatLocation, formatSalary } from '../postings/format';
+import { verdict, Verdict } from '../fit/fit.model';
 
 interface Card {
   app: ApplicationResponse;
@@ -53,6 +54,14 @@ export class Board implements OnInit {
   protected readonly employerLabel = employerLabel;
   /** A forward move is the primary button, with an arrow after its label. */
   protected readonly forwardClasses = "btn-primary after:content-['_→']";
+  protected readonly verdict = verdict;
+  /** The fit bar's fill, in the verdict's colour. */
+  protected readonly fitFill: Record<Verdict['pill'], string> = {
+    'pill-green': 'bg-success',
+    'pill-blue': 'bg-info',
+    'pill-amber': 'bg-attention',
+    'pill-red': 'bg-error',
+  };
 
   protected readonly applications = signal<ApplicationResponse[] | null>(null);
   protected readonly error = signal<string | null>(null);

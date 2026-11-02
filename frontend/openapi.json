@@ -2067,6 +2067,10 @@
             "type" : [ "string", "null" ],
             "enum" : [ "FULL_TIME", "CONTRACT", "CONTRACT_TO_HIRE", "C2C", "PART_TIME" ]
           },
+          "fitScore" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
           "followUpOn" : {
             "type" : [ "string", "null" ],
             "format" : "date"
@@ -2145,7 +2149,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "allowedTransitions", "appliedAt", "applyBy", "company", "companyId", "createdAt", "employmentType", "followUpOn", "id", "jobDescription", "jobUrl", "lastInterviewAt", "location", "nextInterviewAt", "notes", "postedOn", "remote", "role", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "source", "status", "statusChangedAt", "updatedAt", "version", "viaAgency" ]
+        "required" : [ "allowedTransitions", "appliedAt", "applyBy", "company", "companyId", "createdAt", "employmentType", "fitScore", "followUpOn", "id", "jobDescription", "jobUrl", "lastInterviewAt", "location", "nextInterviewAt", "notes", "postedOn", "remote", "role", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "source", "status", "statusChangedAt", "updatedAt", "version", "viaAgency" ]
       },
       "CaptureResponse" : {
         "type" : "object",

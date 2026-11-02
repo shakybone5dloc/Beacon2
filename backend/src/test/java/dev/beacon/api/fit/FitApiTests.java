@@ -75,6 +75,23 @@ class FitApiTests extends SignedInApiTests {
 
         assertThat(mvc.get().uri("/api/applications/{id}/fit", appId).exchange())
                 .bodyJson().extractingPath("$.fit").isNull();
+        assertThat(mvc.get().uri("/api/applications").exchange())
+                .bodyJson().extractingPath("$[0].fitScore").isNull();
+    }
+
+    @Test
+    void theBoardShowsEachApplicationsLatestScore() {
+        var appId = createApplication(APPLICATION);
+        createApplication("{\"companyName\": \"Other\", \"role\": \"Engineer\"}");
+        score(appId, uploadToLibrary("backend.txt", "Jordan Smith\nJava"));
+
+        var board = mvc.get().uri("/api/applications").exchange();
+
+        // Newest first: the unchecked one, then the checked one.
+        assertThat(board).bodyJson().extractingPath("$[0].fitScore").isNull();
+        assertThat(board).bodyJson().extractingPath("$[1].fitScore").isEqualTo(82);
+        assertThat(mvc.get().uri("/api/applications/{id}", appId).exchange())
+                .bodyJson().extractingPath("$.fitScore").isEqualTo(82);
     }
 
     @Test

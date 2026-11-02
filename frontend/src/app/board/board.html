@@ -101,7 +101,7 @@
             [class]="a?.needsAttention ? 'flagged border-l-[3px] border-l-secondary-container' : ''"
           >
             <div class="min-w-0">
-              <div class="flex items-baseline justify-between gap-space-sm">
+              <div class="flex items-center justify-between gap-space-sm">
                 <a
                   [routerLink]="['/applications', app.id]"
                   class="company min-w-0 truncate text-headline-sm text-on-surface no-underline hover:text-primary-container"
@@ -110,15 +110,25 @@
                   [title]="employerLabel(app)"
                   >{{ employerLabel(app) }}</a
                 >
-                @if (a) {
+                @if (app.fitScore != null) {
+                  @let v = verdict(app.fitScore);
                   <span
-                    class="age shrink-0 font-mono text-label-code text-on-surface-variant"
-                    [class.text-attention]="a.needsAttention"
-                    [class.font-semibold]="a.needsAttention"
-                    [title]="a.ageDescription"
-                    [attr.aria-label]="a.ageDescription"
+                    class="fit flex shrink-0 items-center gap-1.5 font-mono text-label-code text-on-surface-variant"
+                    [title]="'Fit ' + app.fitScore + '% · ' + v.label"
+                    [attr.aria-label]="'Fit ' + app.fitScore + ' percent, ' + v.label"
                   >
-                    {{ a.age }}
+                    fit
+                    <span
+                      class="h-1.5 w-12 overflow-hidden rounded-full bg-surface-container-high"
+                      aria-hidden="true"
+                    >
+                      <span
+                        class="fit-fill block h-full rounded-full"
+                        [class]="fitFill[v.pill]"
+                        [style.width.%]="app.fitScore"
+                      ></span>
+                    </span>
+                    <span class="fit-score text-on-surface">{{ app.fitScore }}</span>
                   </span>
                 }
               </div>
@@ -169,9 +179,20 @@
               }
             }
 
-            @if (app.allowedTransitions.length > 0) {
-              <div class="pt-space-xs">
-                <div class="actions flex flex-wrap justify-end gap-space-xs">
+            @if (a || app.allowedTransitions.length > 0) {
+              <div class="flex items-center justify-between gap-space-sm pt-space-xs">
+                @if (a) {
+                  <span
+                    class="age shrink-0 font-mono text-label-code text-on-surface-variant"
+                    [class.text-attention]="a.needsAttention"
+                    [class.font-semibold]="a.needsAttention"
+                    [title]="a.ageDescription"
+                    [attr.aria-label]="a.ageDescription"
+                  >
+                    {{ a.age }}
+                  </span>
+                }
+                <div class="actions ml-auto flex flex-wrap justify-end gap-space-xs">
                   @for (target of moves(app); track target) {
                     <button
                       type="button"

@@ -15,11 +15,11 @@ public final class ApplicationMappings {
 
     /**
      * What a response says that comes from other tables, looked up in batches.
-     * See {@link ApplicationResponse#viaAgency()}, {@link ApplicationResponse#nextInterviewAt()}
-     * and {@link ApplicationResponse#lastInterviewAt()}.
+     * See {@link ApplicationResponse#viaAgency()}, {@link ApplicationResponse#nextInterviewAt()},
+     * {@link ApplicationResponse#lastInterviewAt()} and {@link ApplicationResponse#fitScore()}.
      */
-    public record Extras(String viaAgency, Instant nextInterviewAt, Instant lastInterviewAt) {
-        public static final Extras NONE = new Extras(null, null, null);
+    public record Extras(String viaAgency, Instant nextInterviewAt, Instant lastInterviewAt, Integer fitScore) {
+        public static final Extras NONE = new Extras(null, null, null, null);
     }
 
     /** Everything about one application, including its description and applied date. */
@@ -68,6 +68,7 @@ public final class ApplicationMappings {
                 a.getStatusChangedAt(),
                 extras.nextInterviewAt(),
                 extras.lastInterviewAt(),
+                extras.fitScore(),
                 a.getVersion(),
                 allowedTransitions
         );

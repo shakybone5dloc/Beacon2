@@ -141,7 +141,8 @@ Reuses the inbox queue from E4: matches land there to accept or dismiss, same as
 - A deadline the posting states fills an empty apply-by date; it never replaces one you set.
 - Free first look: every Find jobs result shows how many of the default resume's skills (J1) it mentions, so you can choose what's worth an AI check. Nothing is scored automatically.
 - The OpenAI and Claude calls now go through shared helpers (`OpenAiChat`, `ClaudeMessages`) that cover letters use too, so later AI features get the same error messages.
-- Still to do: score on the board cards; "which resume fits best" (one check per resume); the evaluation set; the embedding pre-filter, which matters once J3 scores in bulk. Checked live only up to the provider call (a real key was not used).
+- Board cards show the latest score as a small bar in the top right ("fit ▬▬▬░ 72", coloured by verdict); the time in status moved to the card's bottom row.
+- Still to do: "which resume fits best" (one check per resume); the evaluation set; the embedding pre-filter, which matters once J3 scores in bulk. Checked live only up to the provider call (a real key was not used).
 - Compare a posting with a resume and return a structured result, not just a number:
   score (0-100), matched skills, gaps, dealbreakers (location, salary floor, clearance, sponsorship), one-paragraph rationale.
 - Uses the user's own AI provider keys, same path as cover letters.
