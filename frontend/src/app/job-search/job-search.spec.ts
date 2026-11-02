@@ -7,6 +7,9 @@ import { aPosting, aSource } from '../postings/testing';
 import { anApplication } from '../applications/testing';
 import { JobPosting, JobSource } from '../postings/posting.model';
 import { ApplicationResponse } from '../applications/application.model';
+import { Resume } from '../resumes/resume.model';
+import { aResume } from '../resumes/testing';
+import { aFit } from '../fit/testing';
 
 describe('JobSearch', () => {
   let http: HttpTestingController;
@@ -26,10 +29,15 @@ describe('JobSearch', () => {
 
   afterEach(() => http.verify());
 
-  async function render(board: ApplicationResponse[] = []) {
+  async function render(
+    board: ApplicationResponse[] = [],
+    fit: { configured: boolean; resumes: Resume[] } = { configured: false, resumes: [] },
+  ) {
     const fixture = TestBed.createComponent(JobSearch);
     await fixture.whenStable();
     http.expectOne('/api/postings/sources').flush(sources);
+    http.expectOne('/api/fit/status').flush({ configured: fit.configured });
+    http.expectOne('/api/resumes').flush(fit.resumes);
     http.expectOne('/api/applications').flush(board);
     await fixture.whenStable();
     return { fixture, el: fixture.nativeElement as HTMLElement };
@@ -224,5 +232,87 @@ describe('JobSearch', () => {
 
     expect(el.querySelector('button.save')).toBeNull();
     expect(el.querySelector('a.saved')?.getAttribute('href')).toBe('/applications/existing');
+  });
+
+  describe('fit', () => {
+    const withSkills = aResume({ skills: ['Java', 'Spring Boot', 'Kubernetes', 'C#'] });
+
+    it("shows how many of the default resume's skills a posting mentions, for free", async () => {
+      const { fixture, el } = await render([], { configured: false, resumes: [withSkills] });
+
+      await searchFor(fixture, [
+        aPosting({ title: 'Java Engineer', snippet: 'Spring Boot services', tags: ['javascript'] }),
+      ]);
+
+      const chip = el.querySelector('.skills')!;
+      expect(chip.textContent?.trim()).toBe('2/4 skills');
+      expect(chip.getAttribute('title')).toBe('Your skills it mentions: Java, Spring Boot');
+      // Without an AI key there's nothing to check with.
+      expect(el.querySelector('button.check-fit')).toBeNull();
+    });
+
+    it('checks a result against the default resume and shows the score', async () => {
+      const { fixture, el } = await render([], { configured: true, resumes: [withSkills] });
+      await searchFor(fixture, [
+        aPosting({ title: 'Java Engineer', company: 'Acme', description: '  Build services.  ' }),
+      ]);
+
+      el.querySelector<HTMLButtonElement>('button.check-fit')!.click();
+      const req = http.expectOne((r) => r.method === 'POST' && r.url === '/api/fit');
+      expect(req.request.body).toEqual({
+        resumeDocumentId: 'r1',
+        title: 'Java Engineer',
+        company: 'Acme',
+        description: 'Build services.',
+      });
+      req.flush(aFit({ score: 88 }));
+      await fixture.whenStable();
+
+      expect(el.querySelector('.fit .score')?.textContent).toBe('88');
+      expect(el.querySelector('.fit .verdict')?.textContent).toBe('Strong fit');
+      expect(el.querySelector('button.check-fit')).toBeNull();
+    });
+
+    it('shows why a check failed', async () => {
+      const { fixture, el } = await render([], { configured: true, resumes: [withSkills] });
+      await searchFor(fixture, [aPosting({ snippet: 'Java' })]);
+
+      el.querySelector<HTMLButtonElement>('button.check-fit')!.click();
+      http
+        .expectOne('/api/fit')
+        .flush(
+          { detail: 'Your OpenAI account is out of credits.' },
+          { status: 422, statusText: 'Unprocessable' },
+        );
+      await fixture.whenStable();
+
+      expect(el.querySelector('.posting .error')?.textContent).toContain('out of credits');
+    });
+
+    it('gives a saved result the fit already checked', async () => {
+      const { fixture, el } = await render([], { configured: true, resumes: [withSkills] });
+      await searchFor(fixture, [aPosting({ description: 'Build services.' })]);
+      el.querySelector<HTMLButtonElement>('button.check-fit')!.click();
+      http.expectOne('/api/fit').flush(aFit());
+      await fixture.whenStable();
+
+      el.querySelector<HTMLButtonElement>('button.save')!.click();
+      http.expectOne('/api/applications').flush(anApplication({ id: 'new-app' }));
+      await fixture.whenStable();
+
+      const link = http.expectOne('/api/applications/new-app/fit');
+      expect(link.request.body).toEqual({ resumeDocumentId: 'r1' });
+      link.flush(aFit());
+    });
+
+    it('cannot check a result that has no text, or with an unreadable resume', async () => {
+      const { fixture, el } = await render([], {
+        configured: true,
+        resumes: [aResume({ textStatus: 'UNREADABLE' })],
+      });
+      await searchFor(fixture, [aPosting({ description: 'Java' })]);
+
+      expect(el.querySelector('button.check-fit')).toBeNull();
+    });
   });
 });

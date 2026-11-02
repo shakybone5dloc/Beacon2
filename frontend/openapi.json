@@ -356,6 +356,68 @@
         "tags" : [ "Application documents" ]
       }
     },
+    "/api/applications/{applicationId}/fit" : {
+      "get" : {
+        "operationId" : "getApplicationFit",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApplicationFitResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Fit" ]
+      },
+      "post" : {
+        "operationId" : "scoreApplicationFit",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScoreApplicationFitRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FitResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Fit" ]
+      }
+    },
     "/api/applications/{applicationId}/interviews" : {
       "get" : {
         "operationId" : "listApplicationInterviews",
@@ -1314,6 +1376,52 @@
         "tags" : [ "Library documents" ]
       }
     },
+    "/api/fit" : {
+      "post" : {
+        "operationId" : "scorePostingFit",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScorePostingFitRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FitResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Fit" ]
+      }
+    },
+    "/api/fit/status" : {
+      "get" : {
+        "operationId" : "getFitStatus",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FitStatusResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Fit" ]
+      }
+    },
     "/api/interviews/{id}" : {
       "delete" : {
         "operationId" : "deleteInterview",
@@ -1896,6 +2004,19 @@
         },
         "required" : [ "hint", "provider", "saved", "updatedAt" ]
       },
+      "ApplicationFitResponse" : {
+        "type" : "object",
+        "properties" : {
+          "fit" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/FitResponse"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "fit" ]
+      },
       "ApplicationPersonResponse" : {
         "type" : "object",
         "properties" : {
@@ -2409,6 +2530,68 @@
           }
         },
         "required" : [ "applicationId", "contentType", "createdAt", "filename", "id", "kind", "sizeBytes" ]
+      },
+      "FitResponse" : {
+        "type" : "object",
+        "properties" : {
+          "applyBy" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "current" : {
+            "type" : "boolean"
+          },
+          "dealbreakers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "gaps" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "matchedSkills" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "rationale" : {
+            "type" : "string"
+          },
+          "resumeDocumentId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "resumeLabel" : {
+            "type" : "string"
+          },
+          "score" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "scoredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "applyBy", "current", "dealbreakers", "gaps", "id", "matchedSkills", "rationale", "resumeDocumentId", "resumeLabel", "score", "scoredAt" ]
+      },
+      "FitStatusResponse" : {
+        "type" : "object",
+        "properties" : {
+          "configured" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "configured" ]
       },
       "FollowUpRequest" : {
         "type" : "object",
@@ -3001,6 +3184,41 @@
           }
         },
         "required" : [ "durationMinutes", "localStart", "timeZone", "type" ]
+      },
+      "ScoreApplicationFitRequest" : {
+        "type" : "object",
+        "properties" : {
+          "resumeDocumentId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "resumeDocumentId" ]
+      },
+      "ScorePostingFitRequest" : {
+        "type" : "object",
+        "properties" : {
+          "company" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "description" : {
+            "type" : "string",
+            "maxLength" : 60000,
+            "minLength" : 0
+          },
+          "resumeDocumentId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "title" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "description", "resumeDocumentId", "title" ]
       },
       "SourceResultResponse" : {
         "type" : "object",

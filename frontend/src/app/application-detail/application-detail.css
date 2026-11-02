@@ -140,7 +140,8 @@ h2 {
 }
 
 section,
-app-application-people {
+app-application-people,
+app-application-fit {
   max-width: 720px;
 }
 .salary {

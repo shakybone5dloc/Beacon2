@@ -2,6 +2,7 @@ package dev.beacon.api.errors;
 
 import dev.beacon.application.coverletters.CoverLetterException;
 import dev.beacon.application.documents.PostingCaptureException;
+import dev.beacon.application.fit.FitScoreException;
 import dev.beacon.domain.DomainException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.*;
@@ -74,6 +75,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
         var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
         problem.setTitle("Could not prepare the cover letter");
+        return problem;
+    }
+
+    @ExceptionHandler(FitScoreException.class)
+    public ProblemDetail handleFitScore(FitScoreException ex) {
+        var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
+        var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        problem.setTitle("Could not check the fit");
         return problem;
     }
 

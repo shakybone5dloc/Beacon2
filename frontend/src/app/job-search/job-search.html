@@ -108,6 +108,22 @@
             <span class="tag">{{ tag }}</span>
           }
           <span class="spacer"></span>
+          @let matched = skillMatches(p);
+          @if (matched.length > 0) {
+            <span class="skills pill" [title]="'Your skills it mentions: ' + matched.join(', ')">
+              {{ matched.length }}/{{ defaultResume()!.skills.length }} skills
+            </span>
+          }
+          @if (canCheckFit(p) && !fits().has(key(p))) {
+            <button
+              type="button"
+              class="check-fit"
+              [disabled]="checkingFits().has(key(p))"
+              (click)="checkFit(p)"
+            >
+              {{ checkingFits().has(key(p)) ? 'Checking...' : 'Check fit' }}
+            </button>
+          }
           @if (savedByUrl().get(p.url); as appId) {
             <a class="saved" [routerLink]="['/applications', appId]">On your board</a>
           } @else {
@@ -123,6 +139,15 @@
         </div>
         @if (saveErrors().get(p.url); as saveError) {
           <p class="error">{{ saveError }}</p>
+        }
+        @if (fits().get(key(p)); as fit) {
+          <app-fit-result
+            class="fit mt-space-sm block border-t border-hairline pt-space-sm"
+            [fit]="fit"
+          />
+        }
+        @if (fitErrors().get(key(p)); as fitError) {
+          <p class="error">{{ fitError }}</p>
         }
       </li>
     } @empty {

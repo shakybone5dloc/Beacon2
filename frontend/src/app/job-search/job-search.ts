@@ -10,18 +10,26 @@ import { formatLocation, formatPosted, formatSalary } from '../postings/format';
 import { JobSearchState } from '../postings/job-search-state';
 import { JobPosting, JobSource } from '../postings/posting.model';
 import { PostingsApi } from '../postings/postings-api';
+import { problemText } from '../documents/application-documents';
+import { FitApi } from '../fit/fit-api';
+import { Fit, matchingSkills } from '../fit/fit.model';
+import { FitResult } from '../fit/fit-result';
+import { Resume } from '../resumes/resume.model';
+import { ResumesApi } from '../resumes/resumes-api';
 
 const MAX_FIELD = 200;
 
 @Component({
   selector: 'app-job-search',
-  imports: [ReactiveFormsModule, RouterLink, DatePipe],
+  imports: [ReactiveFormsModule, RouterLink, DatePipe, FitResult],
   templateUrl: './job-search.html',
   styleUrl: './job-search.css',
 })
 export class JobSearch implements OnInit {
   private readonly postingsApi = inject(PostingsApi);
   private readonly applicationsApi = inject(ApplicationsApi);
+  private readonly fitApi = inject(FitApi);
+  private readonly resumesApi = inject(ResumesApi);
   private readonly fb = inject(NonNullableFormBuilder);
   protected readonly state = inject(JobSearchState);
 
@@ -32,6 +40,14 @@ export class JobSearch implements OnInit {
   protected readonly savedByUrl = signal<ReadonlyMap<string, string>>(new Map());
   protected readonly savingUrls = signal<ReadonlySet<string>>(new Set());
   protected readonly saveErrors = signal<ReadonlyMap<string, string>>(new Map());
+
+  /** Fit checks run against the default resume. */
+  protected readonly defaultResume = signal<Resume | null>(null);
+  protected readonly fitConfigured = signal(false);
+  /** By posting key (source + id). */
+  protected readonly fits = signal<ReadonlyMap<string, Fit>>(new Map());
+  protected readonly checkingFits = signal<ReadonlySet<string>>(new Set());
+  protected readonly fitErrors = signal<ReadonlyMap<string, string>>(new Map());
 
   protected readonly form = this.fb.group({
     keywords: ['', [Validators.required]],
@@ -66,6 +82,15 @@ export class JobSearch implements OnInit {
     this.postingsApi.sources().subscribe({
       next: (sources) => this.sources.set(sources),
       error: () => this.error.set('Could not load job sources. Is the API running?'),
+    });
+
+    this.fitApi.isConfigured().subscribe({
+      next: (configured) => this.fitConfigured.set(configured),
+      error: () => this.fitConfigured.set(false),
+    });
+    this.resumesApi.list().subscribe({
+      next: (resumes) => this.defaultResume.set(resumes.find((r) => r.isDefault) ?? null),
+      error: () => this.defaultResume.set(null),
     });
 
     this.applicationsApi.list().subscribe((apps) => {
@@ -160,7 +185,16 @@ export class JobSearch implements OnInit {
         ),
       )
       .subscribe({
-        next: (app) => this.savedByUrl.update((m) => new Map(m).set(posting.url, app.id)),
+        next: (app) => {
+          this.savedByUrl.update((m) => new Map(m).set(posting.url, app.id));
+          // Give the new application the fit already checked; same inputs, so no new AI call.
+          const fit = this.fits().get(key(posting));
+          if (fit && posting.description) {
+            this.fitApi
+              .scoreApplication(app.id, fit.resumeDocumentId)
+              .subscribe({ error: () => {} });
+          }
+        },
         error: (err: HttpErrorResponse) =>
           this.saveErrors.update((m) =>
             new Map(m).set(
@@ -173,6 +207,59 @@ export class JobSearch implements OnInit {
       });
   }
 
+  /** The default resume's skills this posting mentions; free, before any AI check. */
+  protected skillMatches(posting: JobPosting): string[] {
+    const skills = this.defaultResume()?.skills ?? [];
+    if (skills.length === 0) return [];
+    const text = [posting.title, posting.snippet, posting.description, ...posting.tags].join(' ');
+    return matchingSkills(skills, text);
+  }
+
+  protected canCheckFit(posting: JobPosting): boolean {
+    const resume = this.defaultResume();
+    return (
+      this.fitConfigured() &&
+      resume != null &&
+      resume.textStatus === 'READ' &&
+      !!(posting.description || posting.snippet)
+    );
+  }
+
+  protected checkFit(posting: JobPosting): void {
+    const resume = this.defaultResume();
+    const text = (posting.description || posting.snippet || '').trim();
+    if (!resume || !text) return;
+    const k = key(posting);
+    this.checkingFits.update((s) => new Set(s).add(k));
+    this.fitErrors.update((m) => withoutKey(m, k));
+
+    this.fitApi
+      .scorePosting({
+        resumeDocumentId: resume.documentId,
+        title: truncate(posting.title),
+        company: posting.company ? truncate(posting.company) : null,
+        description: text.slice(0, 60_000),
+      })
+      .pipe(
+        finalize(() =>
+          this.checkingFits.update((s) => {
+            const next = new Set(s);
+            next.delete(k);
+            return next;
+          }),
+        ),
+      )
+      .subscribe({
+        next: (fit) => this.fits.update((m) => new Map(m).set(k, fit)),
+        error: (err: HttpErrorResponse) =>
+          this.fitErrors.update((m) =>
+            new Map(m).set(k, problemText(err, 'Could not check the fit. Try again.')),
+          ),
+      });
+  }
+
+  protected readonly key = key;
+
   protected source(id: string): JobSource | undefined {
     return this.sources().find((s) => s.id === id);
   }
@@ -180,6 +267,10 @@ export class JobSearch implements OnInit {
   protected sourceName(id: string): string {
     return this.source(id)?.name ?? id;
   }
+}
+
+function key(posting: JobPosting): string {
+  return posting.source + '|' + posting.id;
 }
 
 function truncate(text: string): string {

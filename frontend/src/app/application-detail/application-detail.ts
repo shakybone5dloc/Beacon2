@@ -32,6 +32,7 @@ import { PossibleDuplicates } from '../contacts/possible-duplicates';
 import { PostingPanel } from '../posting-view/posting-panel';
 import { ApplicationTimeline } from '../timeline/application-timeline';
 import { CoverLetterDrafter } from '../documents/cover-letter-drafter';
+import { ApplicationFit } from '../fit/application-fit';
 import { formatSalary } from '../postings/format';
 import { durationBetween } from '../applications/durations';
 
@@ -49,6 +50,7 @@ import { durationBetween } from '../applications/durations';
     PossibleDuplicates,
     ApplicationInterviews,
     ApplicationTimeline,
+    ApplicationFit,
   ],
   templateUrl: './application-detail.html',
   styleUrl: './application-detail.css',

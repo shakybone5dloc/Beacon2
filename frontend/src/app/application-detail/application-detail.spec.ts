@@ -17,6 +17,7 @@ import { ContactLog } from '../contacts/contact-log';
 import { PossibleDuplicates } from '../contacts/possible-duplicates';
 import { ApplicationInterviews } from '../interviews/application-interviews';
 import { ApplicationTimeline } from '../timeline/application-timeline';
+import { ApplicationFit } from '../fit/application-fit';
 
 /** Stand-ins for the child panels, which have their own specs and HTTP calls. */
 @Component({
@@ -76,6 +77,13 @@ class DrafterStub {
   readonly saved = output<unknown>();
 }
 
+@Component({ selector: 'app-application-fit', template: '' })
+class FitStub {
+  readonly applicationId = input<string>();
+  readonly hasJobDescription = input(false);
+  readonly scored = output<unknown>();
+}
+
 describe('ApplicationDetail', () => {
   let http: HttpTestingController;
   let navigate: ReturnType<typeof vi.spyOn>;
@@ -95,6 +103,7 @@ describe('ApplicationDetail', () => {
           PossibleDuplicates,
           ApplicationInterviews,
           ApplicationTimeline,
+          ApplicationFit,
         ],
       },
       add: {
@@ -106,6 +115,7 @@ describe('ApplicationDetail', () => {
           DuplicatesStub,
           InterviewsStub,
           TimelineStub,
+          FitStub,
         ],
       },
     });

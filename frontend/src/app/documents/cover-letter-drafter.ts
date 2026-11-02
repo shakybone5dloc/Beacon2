@@ -7,13 +7,7 @@ import { DocumentsApi } from './documents-api';
 import { DocumentResponse } from './document.model';
 import { problemText } from './application-documents';
 import { ResumesApi } from '../resumes/resumes-api';
-
-/** A resume to draft from: this application's own, or one from the library. */
-interface ResumeChoice {
-  id: string;
-  label: string;
-  isDefault: boolean;
-}
+import { pickResume, ResumeChoice, resumeChoices } from '../resumes/resume.model';
 
 /** Drafts a cover letter with AI from the job description and a chosen resume, then saves it as a PDF. */
 @Component({
@@ -59,25 +53,10 @@ export class CoverLetterDrafter implements OnInit {
       library: this.libraryResumes.list(),
     }).subscribe({
       next: ({ own, library }) => {
-        const resumes: ResumeChoice[] = [
-          ...own
-            .filter((d) => d.kind === 'RESUME')
-            .map((d) => ({
-              id: d.id,
-              label: `${d.filename} (this application)`,
-              isDefault: false,
-            })),
-          ...library.map((r) => ({
-            id: r.documentId,
-            label: r.isDefault ? `${r.label} (default)` : r.label,
-            isDefault: r.isDefault,
-          })),
-        ];
+        const resumes = resumeChoices(own, library);
         this.resumes.set(resumes);
         // Keep the last pick; otherwise start from the default resume.
-        if (!resumes.some((r) => r.id === this.resumeId())) {
-          this.resumeId.set((resumes.find((r) => r.isDefault) ?? resumes[0])?.id ?? '');
-        }
+        this.resumeId.set(pickResume(resumes, this.resumeId()));
       },
       error: () => this.notice.set('Could not load your resumes.'),
     });

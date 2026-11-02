@@ -27,7 +27,8 @@ Rebuilt from the .NET Beacon, then extended.
 | I1 | Interviews with time zones, interviewers, prep/debrief, .ics download; board shows the next one | 26f6503 |
 | I2 | Application timeline: status changes, people, contacts, interviews and documents in one feed | d6f1be2 |
 | J4 | Company watchlist: Greenhouse, Lever and Ashby careers boards, open roles on the company page and in Find jobs | 1b2c5c2 |
-| J1 | Resume profiles: labels, a default, saved text, and a short summary per library resume | after 1b2c5c2 |
+| J1 | Resume profiles: labels, a default, saved text, and a short summary per library resume | f80a798 |
+| J2 | Fit scoring: AI score, matches, gaps and dealbreakers on applications and Find jobs results; free skill match | after dd177fe |
 
 ## Next: Companies and people
 
@@ -134,7 +135,13 @@ Reuses the inbox queue from E4: matches land there to accept or dismiss, same as
 - Optional short summary per resume: target titles, key skills, years of experience. AI-suggested from the resume, user-edited.
 - Cover letters and fit scoring pick from these resumes.
 
-### J2. Fit scoring
+### J2. Fit scoring (done, except the items below)
+- Built as a **Fit** section on the application page (pick a resume, default first; "Check again" when the description or resume changed) and a **Check fit** button on each Find jobs result, scored against the default resume. Each result shows the score with a verdict (Strong 85+, Good 70+, Stretch 50+, Poor), what matches, the gaps, anything that could rule you out, and a short rationale.
+- Structured output on both providers (OpenAI strict JSON schema, Claude output format), same key choice as cover letters. Scores are kept in `fit_scores` (V13) by a SHA-256 of the posting, resume and its text, and prompt version, so the same inputs never pay twice; saving a checked result to the board reuses its score. `application_fits` points each application at its latest score.
+- A deadline the posting states fills an empty apply-by date; it never replaces one you set.
+- Free first look: every Find jobs result shows how many of the default resume's skills (J1) it mentions, so you can choose what's worth an AI check. Nothing is scored automatically.
+- The OpenAI and Claude calls now go through shared helpers (`OpenAiChat`, `ClaudeMessages`) that cover letters use too, so later AI features get the same error messages.
+- Still to do: score on the board cards; "which resume fits best" (one check per resume); the evaluation set; the embedding pre-filter, which matters once J3 scores in bulk. Checked live only up to the provider call (a real key was not used).
 - Compare a posting with a resume and return a structured result, not just a number:
   score (0-100), matched skills, gaps, dealbreakers (location, salary floor, clearance, sponsorship), one-paragraph rationale.
 - Uses the user's own AI provider keys, same path as cover letters.

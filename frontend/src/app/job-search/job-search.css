@@ -207,6 +207,23 @@
   opacity: 0.6;
   cursor: wait;
 }
+.check-fit {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--color-surface-container-lowest);
+  color: var(--color-on-surface);
+  cursor: pointer;
+}
+.check-fit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.skills {
+  cursor: help;
+}
 .saved {
   font-size: 0.85rem;
   font-weight: 600;

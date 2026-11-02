@@ -3,6 +3,7 @@ package dev.beacon;
 import dev.beacon.application.coverletters.CoverLetterWriter;
 import dev.beacon.application.documents.PdfPrinter;
 import dev.beacon.application.documents.PostingCaptureException;
+import dev.beacon.application.fit.FitScorer;
 import dev.beacon.application.providers.ProviderCatalog;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -18,10 +19,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Stand-ins for the headless browser and the AI writer, so tests never call either. */
+/** Stand-ins for the headless browser and the AI writer and scorer, so tests never call them. */
 @TestConfiguration(proxyBeanMethods = false)
 public class DocumentTestDoubles {
 
@@ -34,6 +36,11 @@ public class DocumentTestDoubles {
     @Bean
     FakeCoverLetterWriter fakeCoverLetterWriter() {
         return new FakeCoverLetterWriter();
+    }
+
+    @Bean
+    FakeFitScorer fakeFitScorer() {
+        return new FakeFitScorer();
     }
 
     /** Builds a one-page PDF containing the given lines, the way a printed posting would. */
@@ -116,6 +123,42 @@ public class DocumentTestDoubles {
             lastInput = input;
             lastApiKey = apiKey;
             return "Dear Hiring Team,\n\nI would like to join " + input.company() + ".";
+        }
+    }
+
+    /** Stands in for OpenAI's scorer; counts calls so tests can see when a kept score was reused. */
+    public static class FakeFitScorer implements FitScorer, Ordered {
+        public final List<FitInput> inputs = new ArrayList<>();
+        public String lastApiKey;
+        public LocalDate applyBy;
+
+        @Override
+        public String provider() {
+            return ProviderCatalog.OPENAI;
+        }
+
+        @Override
+        public String model() {
+            return "fake-model";
+        }
+
+        @Override
+        public int getOrder() {
+            return Ordered.HIGHEST_PRECEDENCE;
+        }
+
+        @Override
+        public FitResult score(FitInput input, String apiKey) {
+            inputs.add(input);
+            lastApiKey = apiKey;
+            return new FitResult(82, List.of("Java", "Spring Boot"), List.of("Kubernetes"), List.of(),
+                    "Strong Java background; no Kubernetes shown.", applyBy);
+        }
+
+        public void reset() {
+            inputs.clear();
+            lastApiKey = null;
+            applyBy = null;
         }
     }
 }

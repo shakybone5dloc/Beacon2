@@ -176,6 +176,13 @@
           </section>
         }
 
+        <app-application-fit
+          class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
+          [applicationId]="app.id"
+          [hasJobDescription]="app.jobDescription != null"
+          (scored)="reloadApplication()"
+        />
+
         <app-application-people
           class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
           [applicationId]="app.id"

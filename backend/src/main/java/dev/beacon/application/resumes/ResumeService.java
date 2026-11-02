@@ -106,6 +106,12 @@ public class ResumeService {
         });
     }
 
+    /** The resume's label. Empty when it isn't a library resume. */
+    @Transactional(readOnly = true)
+    public Optional<String> label(UUID ownerId, UUID documentId) {
+        return profiles.findByDocumentIdAndOwnerId(documentId, ownerId).map(ResumeProfile::getLabel);
+    }
+
     /**
      * The library resume is being deleted: its profile goes too, and if it was the
      * default, the newest remaining resume takes over.

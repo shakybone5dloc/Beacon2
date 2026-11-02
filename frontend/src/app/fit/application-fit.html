@@ -1,0 +1,70 @@
+<h2>Fit</h2>
+
+@if (fit(); as f) {
+  <app-fit-result [fit]="f" />
+  @if (!f.current) {
+    <p class="stale m-0 mt-space-sm text-body-sm text-attention">
+      The job description or the resume has changed since this check. Check again for a fresh score.
+    </p>
+  }
+} @else if (fit() === null && configured() !== false) {
+  <p class="m-0 text-body-sm text-on-surface-variant">
+    See how well one of your resumes fits this posting: a score, what matches, what's missing, and
+    anything that could rule you out.
+  </p>
+}
+
+@if (configured() === false) {
+  <p class="m-0 mt-space-sm text-body-sm text-on-surface-variant">
+    To check fit with AI, add an OpenAI or Anthropic key under
+    <a routerLink="/settings/api-keys">Settings · API keys</a>.
+  </p>
+} @else if (configured() && fit() !== undefined) {
+  @if (!open()) {
+    <button type="button" class="start mt-space-sm" (click)="start()">
+      {{ fit() ? 'Check again' : 'Check fit with AI' }}
+    </button>
+  } @else {
+    <div class="mt-space-sm grid gap-space-sm">
+      @if (!hasJobDescription()) {
+        <p class="notice m-0">
+          This application has no job description yet. Save the posting as PDF or paste it in Edit
+          first.
+        </p>
+      }
+      @if (resumes(); as list) {
+        @if (list.length === 0) {
+          <p class="m-0 text-body-sm text-on-surface-variant">
+            Upload a resume (PDF, text or Markdown) here or in the Documents library to check fit.
+          </p>
+        } @else {
+          <label class="grid gap-space-xs">
+            Resume
+            <select [value]="resumeId()" (change)="resumeId.set($any($event.target).value)">
+              @for (r of list; track r.id) {
+                <option [value]="r.id" [selected]="r.id === resumeId()">{{ r.label }}</option>
+              }
+            </select>
+          </label>
+          <div class="flex gap-space-sm">
+            <button
+              type="button"
+              class="primary"
+              [disabled]="checking() || !hasJobDescription()"
+              (click)="check()"
+            >
+              {{ checking() ? 'Checking...' : 'Check' }}
+            </button>
+            <button type="button" (click)="open.set(false)">Cancel</button>
+          </div>
+        }
+      } @else {
+        <p class="m-0 text-body-sm text-on-surface-variant">Loading resumes...</p>
+      }
+    </div>
+  }
+}
+
+@if (notice(); as text) {
+  <p class="notice mt-space-sm">{{ text }}</p>
+}
