@@ -26,26 +26,37 @@ import { Fit, verdict } from './fit.model';
     <p class="rationale m-0 mt-space-sm text-body-sm">{{ f.rationale }}</p>
     <div class="mt-space-sm grid gap-space-sm sm:grid-cols-2">
       @if (f.matchedSkills.length > 0) {
-        <div>
+        <div class="min-w-0">
           <span class="text-label-sm font-semibold text-success">Matches</span>
           <ul class="matched m-0 mt-space-xs flex list-none flex-wrap gap-space-xs p-0">
             @for (s of f.matchedSkills; track s) {
-              <li class="pill pill-green">{{ s }}</li>
+              <li class="pill pill-green wrap">{{ s }}</li>
             }
           </ul>
         </div>
       }
       @if (f.gaps.length > 0) {
-        <div>
+        <div class="min-w-0">
           <span class="text-label-sm font-semibold text-attention">Gaps</span>
           <ul class="gaps m-0 mt-space-xs flex list-none flex-wrap gap-space-xs p-0">
             @for (s of f.gaps; track s) {
-              <li class="pill pill-amber">{{ s }}</li>
+              <li class="pill pill-amber wrap">{{ s }}</li>
             }
           </ul>
         </div>
       }
     </div>
+  `,
+  styles: `
+    /* Pills stay on one line elsewhere; these hold phrases, so long ones wrap inside the column. */
+    .pill.wrap {
+      height: auto;
+      min-height: 1.25rem;
+      max-width: 100%;
+      padding-block: 0.15rem;
+      line-height: 1.3;
+      white-space: normal;
+    }
   `,
 })
 export class FitResult {
