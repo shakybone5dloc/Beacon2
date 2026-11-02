@@ -4,6 +4,7 @@ import dev.beacon.application.applications.ApplicationMappings;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.CompanyChoice;
 import dev.beacon.contracts.companies.CompanyResponse;
+import dev.beacon.contracts.companies.CreateCompanyRequest;
 import dev.beacon.contracts.companies.UpdateCompanyRequest;
 import dev.beacon.domain.companies.CareersBoard;
 import dev.beacon.domain.companies.Company;
@@ -63,6 +64,24 @@ public class CompanyService {
                 applications.findAllByOwnerIdAndCompanyIdOrderByCreatedAtDesc(ownerId, company.getId()).stream()
                         .map(ApplicationMappings::toSummary)
                         .toList());
+    }
+
+    /** A company added by hand, and whether it's new: a name the user already has gives that company back. */
+    public record Created(CompanyResponse company, boolean isNew) {}
+
+    @Transactional
+    public Created create(UUID ownerId, CreateCompanyRequest request) {
+        var existing = companies.findByOwnerIdAndNormalizedName(ownerId, CompanyNames.normalize(request.name()));
+        if (existing.isPresent()) return new Created(get(ownerId, existing.get().getId()).orElseThrow(), false);
+
+        var now = Instant.now(clock);
+        var type = request.type() != null ? request.type() : CompanyType.EMPLOYER;
+        var company = companies.save(Company.create(ownerId, request.name().strip(), type, now));
+        if (request.website() != null && !request.website().isBlank()) {
+            company.update(company.getName(), type, request.website().strip(), List.of(), null, now);
+        }
+        companies.flush();
+        return new Created(toResponse(company, 0), true);
     }
 
     /** Throws {@link NameTakenException} when another of the user's companies already has the name. */

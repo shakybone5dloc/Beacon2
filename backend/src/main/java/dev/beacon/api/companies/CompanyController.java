@@ -6,11 +6,13 @@ import dev.beacon.application.companies.CompanyService;
 import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.companies.CompanyResponse;
+import dev.beacon.contracts.companies.CreateCompanyRequest;
 import dev.beacon.contracts.companies.UpdateCompanyRequest;
 import dev.beacon.contracts.companies.WatchCompanyRequest;
 import dev.beacon.contracts.postings.JobPostingResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -19,10 +21,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
-/** Companies are created by naming them on an application; here they are listed, looked at and edited. */
+/** Companies are created by naming them on an application or person, or added here by hand; here they are listed, looked at and edited. */
 @Tag(name = "Companies")
 @RestController
 @RequestMapping("/api/companies")
@@ -44,6 +47,17 @@ public class CompanyController {
             @RequestParam(required = false) String q
     ) {
         return service.list(user.id(), q);
+    }
+
+    /** Adds a company by hand; a name the user already has returns that company (200) instead of a duplicate (201). */
+    @Operation(operationId = "createCompany")
+    @ApiResponse(responseCode = "201", useReturnTypeSchema = true)
+    @PostMapping
+    public ResponseEntity<CompanyResponse> create(@AuthenticationPrincipal SignedInUser user,
+                                                  @Valid @RequestBody CreateCompanyRequest request) {
+        var created = service.create(user.id(), request);
+        if (!created.isNew()) return ResponseEntity.ok(created.company());
+        return ResponseEntity.created(URI.create("/api/companies/" + created.company().id())).body(created.company());
     }
 
     @Operation(operationId = "getCompany")

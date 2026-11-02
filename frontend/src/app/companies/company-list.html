@@ -1,17 +1,66 @@
 <div class="mb-space-lg">
-  <h1 class="mb-space-xs">Companies</h1>
+  <div class="flex flex-wrap items-center justify-between gap-space-sm">
+    <h1 class="m-0 mb-space-xs">Companies</h1>
+    @if (!adding()) {
+      <button type="button" class="new btn btn-primary" (click)="startAdding()">
+        <span class="material-symbols-outlined !text-[18px]" aria-hidden="true">add</span>
+        New company
+      </button>
+    }
+  </div>
   <p class="intro m-0 max-w-2xl text-body-md text-on-surface-variant">
-    A company is added the first time you name it on an application or a person, and the same
-    company is linked again however you write it ("Acme, Inc." and "ACME" are one company).
+    A company is added the first time you name it on an application or a person, or here by hand,
+    and the same company is linked again however you write it ("Acme, Inc." and "ACME" are one
+    company).
   </p>
 </div>
+
+@if (adding()) {
+  <form
+    class="add card mb-space-lg grid max-w-2xl gap-space-sm p-space-lg"
+    [formGroup]="form"
+    (ngSubmit)="add()"
+  >
+    <h2 class="m-0">New company</h2>
+    <label class="grid gap-space-xs">
+      Name
+      <input formControlName="name" placeholder="Okta" maxlength="200" />
+    </label>
+    <div class="grid gap-space-sm sm:grid-cols-2">
+      <label class="grid gap-space-xs">
+        Type
+        <select formControlName="type">
+          @for (t of types; track t) {
+            <option [value]="t">{{ typeLabels[t] }}</option>
+          }
+        </select>
+      </label>
+      <label class="grid gap-space-xs">
+        <span>Website <span class="font-normal text-on-surface-variant">(optional)</span></span>
+        <input formControlName="website" type="url" placeholder="https://www.okta.com" />
+      </label>
+    </div>
+    <p class="m-0 text-body-sm text-on-surface-variant">
+      You can watch its careers page from the company page once it's added.
+    </p>
+    @if (formError(); as message) {
+      <p class="m-0 text-body-sm text-error">{{ message }}</p>
+    }
+    <div class="flex gap-space-sm">
+      <button type="submit" class="primary" [disabled]="saving()">
+        {{ saving() ? 'Adding...' : 'Add company' }}
+      </button>
+      <button type="button" (click)="adding.set(false)">Cancel</button>
+    </div>
+  </form>
+}
 
 @if (error()) {
   <p class="notice">Could not load your companies. Try again in a moment.</p>
 } @else if (companies(); as list) {
   @if (list.length === 0) {
     <p class="empty text-on-surface-variant">
-      No companies yet. They appear here once you add an application.
+      No companies yet. They appear here once you add an application, or add one with New company.
     </p>
   } @else {
     <div class="card overflow-x-auto">

@@ -130,6 +130,48 @@ class CompanyApiTests extends SignedInApiTests {
                 .hasStatus(HttpStatus.NOT_FOUND);
     }
 
+    @Test
+    void aCompanyCanBeAddedWithoutAnApplication() {
+        var created = createCompany("""
+                {"name": " Okta ", "website": "https://www.okta.com"}
+                """);
+
+        assertThat(created).hasStatus(HttpStatus.CREATED);
+        assertThat(created).bodyJson().extractingPath("$.name").isEqualTo("Okta");
+        assertThat(created).bodyJson().extractingPath("$.type").isEqualTo("EMPLOYER");
+        assertThat(created).bodyJson().extractingPath("$.website").isEqualTo("https://www.okta.com");
+        assertThat(created).bodyJson().extractingPath("$.applicationCount").isEqualTo(0);
+        assertThat(mvc.get().uri("/api/companies").exchange())
+                .bodyJson().extractingPath("$[*].name").asArray().containsExactly("Okta");
+    }
+
+    @Test
+    void addingANameYouAlreadyHaveGivesThatCompanyBack() {
+        var first = read(createCompany("{\"name\": \"Acme Corp\", \"type\": \"AGENCY\"}"), "$.id");
+
+        var again = createCompany("{\"name\": \"acme, inc.\"}");
+
+        assertThat(again).hasStatus(HttpStatus.OK);
+        assertThat(again).bodyJson().extractingPath("$.id").isEqualTo(first);
+        assertThat(again).bodyJson().extractingPath("$.type").isEqualTo("AGENCY");
+        assertThat(mvc.get().uri("/api/companies").exchange()).bodyJson().extractingPath("$").asArray().hasSize(1);
+    }
+
+    @Test
+    void addingACompanyNeedsANameAndAWebAddress() {
+        var blank = createCompany("{\"name\": \"  \"}");
+        assertThat(blank).hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(blank).bodyJson().extractingPath("$.errors.name").isNotNull();
+
+        var badSite = createCompany("{\"name\": \"Okta\", \"website\": \"not a link\"}");
+        assertThat(badSite).hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(badSite).bodyJson().extractingPath("$.errors.website").isNotNull();
+    }
+
+    private MvcTestResult createCompany(String json) {
+        return mvc.post().uri("/api/companies").contentType(MediaType.APPLICATION_JSON).content(json).exchange();
+    }
+
     private MvcTestResult createApplication(String json) {
         var result = mvc.post().uri("/api/applications").contentType(MediaType.APPLICATION_JSON).content(json).exchange();
         assertThat(result).hasStatus(HttpStatus.CREATED);

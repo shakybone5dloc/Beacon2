@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { anApplication } from '../applications/testing';
 import { CompanyDetail } from './company-detail';
 import { CompanyList } from './company-list';
@@ -59,6 +59,67 @@ describe('companies', () => {
       ['Globex', 'Recruiting agency', '3 applications'],
     ]);
     expect(el.querySelector('.company-table a')?.getAttribute('href')).toBe('/companies/c1');
+  });
+
+  describe('adding a company', () => {
+    async function openList() {
+      const fixture = TestBed.createComponent(CompanyList);
+      fixture.detectChanges();
+      http.expectOne('/api/companies').flush([]);
+      await fixture.whenStable();
+      const el: HTMLElement = fixture.nativeElement;
+      el.querySelector<HTMLButtonElement>('button.new')!.click();
+      await fixture.whenStable();
+      return { fixture, el };
+    }
+
+    function set(el: HTMLElement, selector: string, value: string): void {
+      const input = el.querySelector<HTMLInputElement | HTMLSelectElement>(selector)!;
+      input.value = value;
+      input.dispatchEvent(new Event(input instanceof HTMLSelectElement ? 'change' : 'input'));
+    }
+
+    it('adds a company without an application and opens it', async () => {
+      const { fixture, el } = await openList();
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+      set(el, 'input[formControlName=name]', '  Okta ');
+      set(el, 'select[formControlName=type]', 'BOTH');
+      set(el, 'input[formControlName=website]', 'https://www.okta.com');
+      el.querySelector('form.add')!.dispatchEvent(new Event('submit'));
+
+      const req = http.expectOne((r) => r.method === 'POST' && r.url === '/api/companies');
+      expect(req.request.body).toEqual({
+        name: 'Okta',
+        type: 'BOTH',
+        website: 'https://www.okta.com',
+      });
+      req.flush(aCompany({ id: 'okta', name: 'Okta' }), { status: 201, statusText: 'Created' });
+      await fixture.whenStable();
+
+      expect(navigate).toHaveBeenCalledWith(['/companies', 'okta']);
+    });
+
+    it('needs a name, and shows what the server turned down', async () => {
+      const { fixture, el } = await openList();
+
+      el.querySelector('form.add')!.dispatchEvent(new Event('submit'));
+      await fixture.whenStable();
+      expect(el.textContent).toContain('Give the company a name.');
+
+      set(el, 'input[formControlName=name]', 'Okta');
+      set(el, 'input[formControlName=website]', 'okta');
+      el.querySelector('form.add')!.dispatchEvent(new Event('submit'));
+      http
+        .expectOne('/api/companies')
+        .flush(
+          { errors: { website: ['must be a valid URL'] } },
+          { status: 400, statusText: 'Bad Request' },
+        );
+      await fixture.whenStable();
+
+      expect(el.querySelector('form.add')?.textContent).toContain('must be a valid URL');
+    });
   });
 
   describe('CompanyDetail', () => {

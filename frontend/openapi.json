@@ -950,6 +950,32 @@
           }
         },
         "tags" : [ "Companies" ]
+      },
+      "post" : {
+        "operationId" : "createCompany",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateCompanyRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CompanyResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Companies" ]
       }
     },
     "/api/companies/{companyId}/people" : {
@@ -2401,6 +2427,26 @@
           }
         },
         "required" : [ "role" ]
+      },
+      "CreateCompanyRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "type" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "EMPLOYER", "AGENCY", "BOTH" ]
+          },
+          "website" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 2048,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "name" ]
       },
       "CreateContactRequest" : {
         "type" : "object",

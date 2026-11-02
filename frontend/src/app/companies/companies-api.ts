@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { BeaconApi } from '../api/beacon-api';
 import {
+  createCompany,
   getCompany,
   listCompanies,
   listCompanyApplications,
@@ -11,7 +12,7 @@ import {
   watchCompany,
 } from '../api/functions';
 import { ApplicationResponse } from '../applications/application.model';
-import { Company, Opening, UpdateCompanyRequest } from './company.model';
+import { Company, CreateCompanyRequest, Opening, UpdateCompanyRequest } from './company.model';
 
 @Injectable({ providedIn: 'root' })
 export class CompaniesApi {
@@ -20,6 +21,11 @@ export class CompaniesApi {
   /** Every company by name, or up to ten whose name contains {@code query}. */
   list(query?: string): Observable<Company[]> {
     return this.api.invoke(listCompanies, { q: query?.trim() || undefined });
+  }
+
+  /** A name the user already has gives that company back instead of a duplicate. */
+  create(request: CreateCompanyRequest): Observable<Company> {
+    return this.api.invoke(createCompany, { body: request });
   }
 
   getById(id: string): Observable<Company> {

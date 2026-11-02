@@ -3,6 +3,7 @@ import * as api from '../api/models';
 /** Generated from the API; the names here are the ones the app uses. */
 export type Company = api.CompanyResponse;
 export type UpdateCompanyRequest = api.UpdateCompanyRequest;
+export type CreateCompanyRequest = api.CreateCompanyRequest;
 export type CompanyType = Company['type'];
 export type CareersPlatform = NonNullable<Company['careersPlatform']>;
 /** A role open on a watched company's careers board. */
