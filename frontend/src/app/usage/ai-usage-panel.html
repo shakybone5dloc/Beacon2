@@ -1,0 +1,200 @@
+<section
+  class="usage card grid max-w-[640px] gap-space-md p-space-lg"
+  aria-labelledby="ai-usage-title"
+>
+  @if (loadError()) {
+    <h2 id="ai-usage-title" class="m-0">AI usage</h2>
+    <p class="notice m-0">Could not load your AI usage. Try again in a moment.</p>
+  } @else if (usage(); as u) {
+    <div class="flex flex-wrap items-baseline justify-between gap-space-sm">
+      <h2 id="ai-usage-title" class="m-0">AI usage · {{ monthLabel(u.month, 'long') }}</h2>
+      <span class="font-mono text-label-sm text-on-surface-variant">
+        {{ u.calls }} {{ u.calls === 1 ? 'call' : 'calls' }}
+      </span>
+    </div>
+
+    <div class="grid gap-space-md sm:grid-cols-[1fr_auto] sm:items-end">
+      <div>
+        <p class="total m-0 font-mono text-[2rem] leading-none text-on-surface">
+          {{ usd(u.totalUsd) }}
+        </p>
+        <p class="m-0 mt-space-xs text-body-sm text-on-surface-variant">
+          spent with your own keys this month
+          @if (u.budgetUsd != null) {
+            of a {{ usd(u.budgetUsd) }} budget
+          }
+        </p>
+      </div>
+
+      @if (bars().length) {
+        <figure class="m-0" aria-label="Spending in recent months">
+          <div class="flex h-12 items-end gap-[2px]" aria-hidden="true">
+            @for (m of bars(); track m.month; let last = $last) {
+              <div class="group relative flex h-full w-6 items-end">
+                <span
+                  class="bar block w-full rounded-t-[4px]"
+                  [class]="last ? 'bg-primary' : 'bg-primary/40'"
+                  [style.height.%]="m.height"
+                ></span>
+                <span
+                  class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-sm bg-on-surface px-2 py-1 font-mono text-[11px] whitespace-nowrap text-surface group-hover:block"
+                  >{{ monthLabel(m.month) }} · {{ usd(m.costUsd) }}</span
+                >
+              </div>
+            }
+          </div>
+          <div class="mt-1 flex gap-[2px] border-t border-hairline pt-1" aria-hidden="true">
+            @for (m of bars(); track m.month) {
+              <span class="w-6 text-center font-mono text-[10px] text-on-surface-variant">{{
+                monthLabel(m.month).charAt(0)
+              }}</span>
+            }
+          </div>
+          <ul class="sr-only">
+            @for (m of bars(); track m.month) {
+              <li>{{ monthLabel(m.month, 'long') }}: {{ usd(m.costUsd) }}, {{ m.calls }} calls</li>
+            }
+          </ul>
+        </figure>
+      }
+    </div>
+
+    @if (budgetUsed(); as used) {
+      <div class="grid gap-space-xs">
+        <div
+          class="h-2 overflow-hidden rounded-full bg-subtle"
+          role="meter"
+          aria-label="Monthly budget used"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          [attr.aria-valuenow]="budgetPercent()"
+        >
+          <span
+            class="meter-fill block h-full rounded-full"
+            [class]="
+              budgetState() === 'over'
+                ? 'bg-error'
+                : budgetState() === 'warning'
+                  ? 'bg-attention'
+                  : 'bg-success'
+            "
+            [style.width.%]="Math.min(used * 100, 100)"
+          ></span>
+        </div>
+        @if (budgetState() === 'over') {
+          <p class="budget-note m-0 flex items-center gap-1 text-body-sm text-error">
+            <span class="material-symbols-outlined !text-[16px]" aria-hidden="true">error</span>
+            Over budget: {{ usd(u.totalUsd - u.budgetUsd!) }} past your {{ usd(u.budgetUsd!) }} for
+            the month.
+          </p>
+        } @else if (budgetState() === 'warning') {
+          <p class="budget-note m-0 flex items-center gap-1 text-body-sm text-attention">
+            <span class="material-symbols-outlined !text-[16px]" aria-hidden="true">warning</span>
+            {{ budgetPercent() }}% of your monthly budget used.
+          </p>
+        } @else {
+          <p class="budget-note m-0 text-body-sm text-on-surface-variant">
+            {{ budgetPercent() }}% of your monthly budget used.
+          </p>
+        }
+      </div>
+    }
+
+    @if (u.calls === 0) {
+      <p class="empty m-0 text-body-sm text-on-surface-variant">
+        No AI calls yet this month. Drafting a cover letter or checking fit shows up here; checking
+        the same posting and resume again reuses the saved score and costs nothing.
+      </p>
+    } @else {
+      <div class="grid gap-space-md sm:grid-cols-2">
+        @for (
+          table of [
+            { title: 'By feature', lines: u.byFeature, label: featureLabel },
+            { title: 'By model', lines: u.byModel, label: null },
+          ];
+          track table.title
+        ) {
+          <table
+            class="w-full border-collapse text-left text-body-sm"
+            [class]="table.label ? 'by-feature' : 'by-model'"
+          >
+            <caption
+              class="mb-1 text-left font-mono text-label-sm tracking-wide text-on-surface-variant uppercase"
+            >
+              {{
+                table.title
+              }}
+            </caption>
+            <tbody>
+              @for (line of table.lines; track line.name) {
+                <tr class="border-b border-hairline last:border-b-0">
+                  <th scope="row" class="py-1 pr-space-sm font-normal">
+                    <span [class.font-mono]="!table.label">{{
+                      table.label ? table.label(line.name) : line.name
+                    }}</span>
+                    <span class="block font-mono text-[11px] text-on-surface-variant"
+                      >{{ line.calls }} · {{ tokens(line.inputTokens) }} in ·
+                      {{ tokens(line.outputTokens) }} out</span
+                    >
+                  </th>
+                  <td class="py-1 text-right font-mono">{{ usd(line.costUsd) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+      @if (u.unpricedCalls > 0) {
+        <p class="unpriced m-0 text-body-sm text-on-surface-variant">
+          {{ u.unpricedCalls }} {{ u.unpricedCalls === 1 ? 'call' : 'calls' }} on a model Beacon has
+          no price for {{ u.unpricedCalls === 1 ? 'is' : 'are' }} counted but not in the totals.
+        </p>
+      }
+    }
+
+    @if (editingBudget()) {
+      <form
+        class="budget-form flex flex-wrap items-end gap-space-sm"
+        (submit)="$event.preventDefault(); saveBudget()"
+      >
+        <label class="grid gap-space-xs">
+          Monthly budget (US dollars)
+          <input
+            type="number"
+            min="1"
+            step="1"
+            inputmode="decimal"
+            class="w-32"
+            [formControl]="budget"
+            placeholder="20"
+          />
+        </label>
+        <button type="submit" class="primary" [disabled]="saving()">
+          {{ saving() ? 'Saving...' : 'Save budget' }}
+        </button>
+        @if (u.budgetUsd != null) {
+          <button type="button" class="danger" [disabled]="saving()" (click)="saveBudget(null)">
+            Remove
+          </button>
+        }
+        <button type="button" (click)="editingBudget.set(false)">Cancel</button>
+        @if (budgetError(); as message) {
+          <p class="m-0 w-full text-body-sm text-error">{{ message }}</p>
+        }
+      </form>
+    } @else {
+      <div>
+        <button type="button" class="set-budget" (click)="startBudget()">
+          {{ u.budgetUsd != null ? 'Change budget' : 'Set a monthly budget' }}
+        </button>
+      </div>
+    }
+    <p class="m-0 text-[11px] text-on-surface-variant">
+      Estimated from the tokens each provider reports and its published prices; your provider's bill
+      is the final word.
+    </p>
+  } @else {
+    <h2 id="ai-usage-title" class="m-0">AI usage</h2>
+    <p class="m-0 text-on-surface-variant">Loading...</p>
+  }
+</section>

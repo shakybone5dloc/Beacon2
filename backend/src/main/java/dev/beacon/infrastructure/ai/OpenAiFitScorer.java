@@ -3,6 +3,7 @@ package dev.beacon.infrastructure.ai;
 import dev.beacon.application.fit.FitScoreException;
 import dev.beacon.application.fit.FitScorer;
 import dev.beacon.application.providers.ProviderCatalog;
+import dev.beacon.application.usage.AiUsageMeter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -38,12 +39,14 @@ public class OpenAiFitScorer implements FitScorer {
     }
 
     @Override
-    public FitResult score(FitInput input, String apiKey) {
+    public FitResult score(FitInput input, String apiKey, AiUsageMeter meter) {
         var format = Map.of(
                 "type", "json_schema",
                 "json_schema", Map.of("name", "fit_score", "strict", true, "schema", FitPrompt.SCHEMA));
-        var message = chat.complete(apiKey, FitPrompt.INSTRUCTIONS, FitPrompt.userMessage(input),
+        var reply = chat.complete(apiKey, FitPrompt.INSTRUCTIONS, FitPrompt.userMessage(input),
                 Map.of("response_format", format), FitScoreException::new);
+        meter.record(reply.usage());
+        var message = reply.message();
         if (OpenAiChat.refused(message)) {
             throw new FitScoreException("The AI declined to score this posting.", true);
         }

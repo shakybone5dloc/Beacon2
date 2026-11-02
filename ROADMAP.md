@@ -29,6 +29,7 @@ Rebuilt from the .NET Beacon, then extended.
 | J4 | Company watchlist: Greenhouse, Lever and Ashby careers boards, open roles on the company page and in Find jobs | 1b2c5c2 |
 | J1 | Resume profiles: labels, a default, saved text, and a short summary per library resume | f80a798 |
 | J2 | Fit scoring: AI score, matches, gaps and dealbreakers on applications and Find jobs results; free skill match | after dd177fe |
+| X6 | AI usage tracking: tokens and cost per call, this month by feature and model in Settings, optional monthly budget | after d3d5fb7 |
 
 ## Next: Companies and people
 
@@ -314,7 +315,10 @@ A page each user builds in Beacon from their resume and extra details, and share
 - Export everything a user owns (JSON + documents as a zip); delete account and all data.
 - Becomes important once mailbox credentials and email snippets are stored.
 
-### X6. AI usage tracking
+### X6. AI usage tracking (done, except the items below)
+Built as: every AI call reports the tokens the provider returned to an `AiUsageMeter` as soon as the response arrives (so refused and unreadable replies are counted too), and `ai_usage` keeps one row per call in its own transaction, priced on the day from `beacon.ai.prices`. A fit score reused from its cache records nothing. Settings shows the month in the browser's time zone, by feature and by model, the last six months, and the budget meter (amber from 80%, red at 100%). `ai_usage.owner_id` has no foreign key (see V14), so X5 must delete its rows.
+Still to do: pausing background jobs at 100% of the budget (none exist yet; J3 should check it before scoring), counting web searches once a feature uses them, and pricing Claude cache writes at their real rate if Beacon starts caching prompts.
+
 - Record the token counts the provider returns with every AI response (input, cached input, output including reasoning, web searches) in an `ai_usage` table: user, feature (cover letter, fit score, brief section, email sorting...), provider, model, timestamp.
 - Price it with a small, dated price table per model, kept in config, so a price change doesn't rewrite past months.
 - Settings shows this month's spend: total, by feature and by model, plus the last few months for comparison.

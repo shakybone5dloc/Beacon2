@@ -3,6 +3,7 @@ package dev.beacon.infrastructure.ai;
 import dev.beacon.application.coverletters.CoverLetterException;
 import dev.beacon.application.coverletters.CoverLetterWriter;
 import dev.beacon.application.providers.ProviderCatalog;
+import dev.beacon.application.usage.AiUsageMeter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -33,9 +34,11 @@ public class OpenAiCoverLetterWriter implements CoverLetterWriter {
     }
 
     @Override
-    public String draft(CoverLetterInput input, String apiKey) {
-        var message = chat.complete(apiKey, CoverLetterPrompt.INSTRUCTIONS, CoverLetterPrompt.userMessage(input),
+    public String draft(CoverLetterInput input, String apiKey, AiUsageMeter meter) {
+        var reply = chat.complete(apiKey, CoverLetterPrompt.INSTRUCTIONS, CoverLetterPrompt.userMessage(input),
                 Map.of(), CoverLetterException::new);
+        meter.record(reply.usage());
+        var message = reply.message();
         if (OpenAiChat.refused(message)) {
             throw new CoverLetterException("The AI declined to write this letter.", true);
         }

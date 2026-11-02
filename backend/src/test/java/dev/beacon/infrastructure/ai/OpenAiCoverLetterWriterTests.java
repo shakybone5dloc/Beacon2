@@ -2,6 +2,8 @@ package dev.beacon.infrastructure.ai;
 
 import dev.beacon.application.coverletters.CoverLetterException;
 import dev.beacon.application.coverletters.CoverLetterWriter.CoverLetterInput;
+import dev.beacon.application.usage.AiUsage;
+import dev.beacon.application.usage.AiUsageMeter;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -54,7 +56,7 @@ class OpenAiCoverLetterWriterTests {
                           "message": {"role": "assistant", "content": "  Dear Hiring Team,\\n\\nHello.  ", "refusal": null}}]}
                         """, MediaType.APPLICATION_JSON));
 
-        assertThat(s.writer().draft(INPUT, "sk-test")).isEqualTo("Dear Hiring Team,\n\nHello.");
+        assertThat(s.writer().draft(INPUT, "sk-test", AiUsageMeter.NONE)).isEqualTo("Dear Hiring Team,\n\nHello.");
         s.server().verify();
     }
 
@@ -64,7 +66,7 @@ class OpenAiCoverLetterWriterTests {
         s.server().expect(requestTo(URL)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
                 .contentType(MediaType.APPLICATION_JSON).body(error("insufficient_quota")));
 
-        assertThatThrownBy(() -> s.writer().draft(INPUT, "sk-test"))
+        assertThatThrownBy(() -> s.writer().draft(INPUT, "sk-test", AiUsageMeter.NONE))
                 .isInstanceOf(CoverLetterException.class)
                 .hasMessageContaining("out of credits")
                 .satisfies(ex -> assertThat(((CoverLetterException) ex).isUpstream()).isFalse());
@@ -76,7 +78,7 @@ class OpenAiCoverLetterWriterTests {
         s.server().expect(requestTo(URL)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
                 .contentType(MediaType.APPLICATION_JSON).body(error("rate_limit_exceeded")));
 
-        assertThatThrownBy(() -> s.writer().draft(INPUT, "sk-test"))
+        assertThatThrownBy(() -> s.writer().draft(INPUT, "sk-test", AiUsageMeter.NONE))
                 .hasMessageContaining("busy")
                 .satisfies(ex -> assertThat(((CoverLetterException) ex).isUpstream()).isTrue());
     }
@@ -86,12 +88,12 @@ class OpenAiCoverLetterWriterTests {
         var s = setup();
         s.server().expect(requestTo(URL)).andRespond(withStatus(HttpStatus.UNAUTHORIZED)
                 .contentType(MediaType.APPLICATION_JSON).body(error("invalid_api_key")));
-        assertThatThrownBy(() -> s.writer().draft(INPUT, "sk-test")).hasMessageContaining("under Settings");
+        assertThatThrownBy(() -> s.writer().draft(INPUT, "sk-test", AiUsageMeter.NONE)).hasMessageContaining("under Settings");
 
         var t = setup();
         t.server().expect(requestTo(URL)).andRespond(withStatus(HttpStatus.NOT_FOUND)
                 .contentType(MediaType.APPLICATION_JSON).body(error("model_not_found")));
-        assertThatThrownBy(() -> t.writer().draft(INPUT, "sk-test")).hasMessageContaining("OPENAI_MODEL");
+        assertThatThrownBy(() -> t.writer().draft(INPUT, "sk-test", AiUsageMeter.NONE)).hasMessageContaining("OPENAI_MODEL");
     }
 
     @Test
@@ -101,6 +103,6 @@ class OpenAiCoverLetterWriterTests {
                 {"choices": [{"message": {"role": "assistant", "content": null, "refusal": "I can't help with that."}}]}
                 """, MediaType.APPLICATION_JSON));
 
-        assertThatThrownBy(() -> s.writer().draft(INPUT, "sk-test")).hasMessageContaining("declined");
+        assertThatThrownBy(() -> s.writer().draft(INPUT, "sk-test", AiUsageMeter.NONE)).hasMessageContaining("declined");
     }
 }

@@ -10,6 +10,8 @@
 } @else if (loadError()) {
   <p class="notice">Could not load your keys. Try again in a moment.</p>
 } @else {
+  <app-ai-usage-panel class="mt-8 block" />
+
   <h2>Cover letter writers</h2>
   <div class="list">
     @for (e of aiWriters(); track e.provider.id) {

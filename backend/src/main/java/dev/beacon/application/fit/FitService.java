@@ -4,6 +4,8 @@ import dev.beacon.application.apikeys.UserCredentials;
 import dev.beacon.application.documents.DocumentService;
 import dev.beacon.application.providers.ProviderCatalog;
 import dev.beacon.application.resumes.ResumeService;
+import dev.beacon.application.usage.AiFeature;
+import dev.beacon.application.usage.AiUsageService;
 import dev.beacon.contracts.fit.ApplicationFitResponse;
 import dev.beacon.contracts.fit.FitResponse;
 import dev.beacon.contracts.fit.ScorePostingFitRequest;
@@ -51,11 +53,12 @@ public class FitService {
     private final ResumeService resumes;
     private final List<FitScorer> scorers;
     private final UserCredentials credentials;
+    private final AiUsageService usage;
     private final Clock clock;
 
     public FitService(JobApplicationRepository applications, FitScoreRepository scores, ApplicationFitRepository links,
                       DocumentService documents, ResumeService resumes, List<FitScorer> scorers,
-                      UserCredentials credentials, Clock clock) {
+                      UserCredentials credentials, AiUsageService usage, Clock clock) {
         this.applications = applications;
         this.scores = scores;
         this.links = links;
@@ -63,6 +66,7 @@ public class FitService {
         this.resumes = resumes;
         this.scorers = scorers;
         this.credentials = credentials;
+        this.usage = usage;
         this.clock = clock;
     }
 
@@ -153,7 +157,8 @@ public class FitService {
         }
 
         var scorer = scorer(provider);
-        var result = scorer.score(new FitScorer.FitInput(company, role, description, resumeText, LocalDate.now(clock)), apiKey);
+        var result = scorer.score(new FitScorer.FitInput(company, role, description, resumeText, LocalDate.now(clock)), apiKey,
+                call -> usage.record(ownerId, AiFeature.FIT_SCORE, call));
         return scores.save(FitScore.create(ownerId, resume.getId(), inputHash, result.score(), result.matchedSkills(),
                 result.gaps(), result.dealbreakers(), result.rationale(), result.applyBy(), provider, scorer.model(),
                 Instant.now(clock)));

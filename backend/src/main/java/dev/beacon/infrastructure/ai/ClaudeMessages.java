@@ -11,6 +11,8 @@ import com.anthropic.errors.UnauthorizedException;
 import com.anthropic.models.beta.messages.BetaMessage;
 import com.anthropic.models.beta.messages.BetaStopReason;
 import com.anthropic.models.beta.messages.MessageCreateParams;
+import dev.beacon.application.providers.ProviderCatalog;
+import dev.beacon.application.usage.AiUsage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +57,20 @@ final class ClaudeMessages {
         } finally {
             client.close();
         }
+    }
+
+    /**
+     * Claude reports cache reads and writes apart from {@code input_tokens}; they're added
+     * back in so the input count covers everything sent. Cache writes are priced as plain
+     * input, which is close enough while Beacon doesn't ask Claude to cache anything.
+     * The model is the one that answered, which differs from the one asked for after a fallback.
+     */
+    static AiUsage usage(BetaMessage response) {
+        var usage = response.usage();
+        long cacheRead = usage.cacheReadInputTokens().orElse(0L);
+        long cacheWrite = usage.cacheCreationInputTokens().orElse(0L);
+        return new AiUsage(ProviderCatalog.ANTHROPIC, response.model().asString(),
+                usage.inputTokens() + cacheRead + cacheWrite, cacheRead, usage.outputTokens());
     }
 
     static boolean refused(BetaMessage response) {

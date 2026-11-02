@@ -7,6 +7,7 @@ import com.anthropic.models.beta.messages.MessageCreateParams;
 import dev.beacon.application.fit.FitScoreException;
 import dev.beacon.application.fit.FitScorer;
 import dev.beacon.application.providers.ProviderCatalog;
+import dev.beacon.application.usage.AiUsageMeter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +32,7 @@ public class ClaudeFitScorer implements FitScorer {
     }
 
     @Override
-    public FitResult score(FitInput input, String apiKey) {
+    public FitResult score(FitInput input, String apiKey, AiUsageMeter meter) {
         var schema = BetaJsonOutputFormat.Schema.builder();
         FitPrompt.SCHEMA.forEach((key, value) -> schema.putAdditionalProperty(key, JsonValue.from(value)));
         var params = ClaudeMessages.withFallback(MessageCreateParams.builder()
@@ -47,6 +48,7 @@ public class ClaudeFitScorer implements FitScorer {
                 .build();
 
         var response = ClaudeMessages.create(apiKey, params, FitScoreException::new);
+        meter.record(ClaudeMessages.usage(response));
         if (ClaudeMessages.refused(response)) {
             throw new FitScoreException("The AI declined to score this posting.", true);
         }

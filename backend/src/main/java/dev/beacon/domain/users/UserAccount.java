@@ -2,6 +2,7 @@ package dev.beacon.domain.users;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
@@ -25,6 +26,10 @@ public class UserAccount {
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
+
+    /** An optional monthly AI budget in US dollars; null means none. */
+    @Column(name = "ai_monthly_budget_usd", precision = 10, scale = 2)
+    private BigDecimal aiMonthlyBudgetUsd;
 
     protected UserAccount() { }
 
@@ -52,4 +57,13 @@ public class UserAccount {
     public String getPasswordHash() { return passwordHash; }
     public String getDisplayName() { return displayName; }
     public Instant getCreatedAt() { return createdAt; }
+    public BigDecimal getAiMonthlyBudgetUsd() { return aiMonthlyBudgetUsd; }
+
+    /** @param budgetUsd null to remove the budget */
+    public void setAiMonthlyBudget(BigDecimal budgetUsd) {
+        if (budgetUsd != null && budgetUsd.signum() <= 0) {
+            throw new IllegalArgumentException("A budget must be more than zero");
+        }
+        this.aiMonthlyBudgetUsd = budgetUsd;
+    }
 }

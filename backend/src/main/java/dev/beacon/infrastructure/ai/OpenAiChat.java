@@ -1,5 +1,7 @@
 package dev.beacon.infrastructure.ai;
 
+import dev.beacon.application.providers.ProviderCatalog;
+import dev.beacon.application.usage.AiUsage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -42,11 +44,14 @@ final class OpenAiChat {
         return RestClient.builder().requestFactory(requestFactory);
     }
 
+    /** The reply's {@code message} node, and the tokens the call used. */
+    record Reply(JsonNode message, AiUsage usage) {}
+
     /**
-     * Sends the instructions and the user's message and returns the reply's
-     * {@code message} node. {@code extra} adds request fields such as {@code response_format}.
+     * Sends the instructions and the user's message and returns the reply.
+     * {@code extra} adds request fields such as {@code response_format}.
      */
-    JsonNode complete(String apiKey, String instructions, String userMessage, Map<String, Object> extra, AiErrors errors) {
+    Reply complete(String apiKey, String instructions, String userMessage, Map<String, Object> extra, AiErrors errors) {
         var body = new LinkedHashMap<String, Object>();
         body.put("model", model);
         // "developer" is the instructions role for current OpenAI models (it replaced "system").
@@ -63,7 +68,7 @@ final class OpenAiChat {
                     .body(body)
                     .retrieve()
                     .body(JsonNode.class);
-            return response.path("choices").path(0).path("message");
+            return new Reply(response.path("choices").path(0).path("message"), usage(response.path("usage")));
         } catch (HttpClientErrorException ex) {
             throw clientError(ex, errors);
         } catch (HttpServerErrorException ex) {
@@ -73,6 +78,17 @@ final class OpenAiChat {
             log.warn("Could not reach OpenAI", ex);
             throw errors.create("Could not reach the AI service. Check your connection.", true);
         }
+    }
+
+    /**
+     * OpenAI counts cached tokens inside {@code prompt_tokens} and reasoning tokens inside
+     * {@code completion_tokens}, which matches how {@link AiUsage} counts them.
+     */
+    private AiUsage usage(JsonNode usage) {
+        return new AiUsage(ProviderCatalog.OPENAI, model,
+                usage.path("prompt_tokens").asLong(0),
+                usage.path("prompt_tokens_details").path("cached_tokens").asLong(0),
+                usage.path("completion_tokens").asLong(0));
     }
 
     /** True when the model declined to answer. */

@@ -7,6 +7,8 @@ import dev.beacon.application.documents.PdfPrinter;
 import dev.beacon.application.documents.PostingCaptureException;
 import dev.beacon.application.providers.ProviderCatalog;
 import dev.beacon.application.resumes.ResumeService;
+import dev.beacon.application.usage.AiFeature;
+import dev.beacon.application.usage.AiUsageService;
 import dev.beacon.contracts.documents.DocumentResponse;
 import dev.beacon.domain.documents.DocumentKind;
 import dev.beacon.infrastructure.documents.DocumentText;
@@ -41,16 +43,19 @@ public class CoverLetterService {
     private final List<CoverLetterWriter> writers;
     private final UserCredentials credentials;
     private final PdfPrinter printer;
+    private final AiUsageService usage;
     private final Clock clock;
 
     public CoverLetterService(JobApplicationRepository applications, DocumentService documents, ResumeService resumes,
-                              List<CoverLetterWriter> writers, UserCredentials credentials, PdfPrinter printer, Clock clock) {
+                              List<CoverLetterWriter> writers, UserCredentials credentials, PdfPrinter printer,
+                              AiUsageService usage, Clock clock) {
         this.applications = applications;
         this.documents = documents;
         this.resumes = resumes;
         this.writers = writers;
         this.credentials = credentials;
         this.printer = printer;
+        this.usage = usage;
         this.clock = clock;
     }
 
@@ -92,7 +97,7 @@ public class CoverLetterService {
 
         return Optional.of(writer(provider).draft(new CoverLetterWriter.CoverLetterInput(
                 application.getCompanyName(), application.getRole(), application.getJobDescription(), resumeText, instructions),
-                apiKey));
+                apiKey, call -> usage.record(ownerId, AiFeature.COVER_LETTER, call)));
     }
 
     private Optional<String> chooseProvider(Set<String> saved) {

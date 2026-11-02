@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
+import { anUsage } from '../usage/testing';
 import { ApiKeysPage } from './api-keys-page';
 import { ProviderGuide } from './provider-guide';
 import { accessLabel, ApiKeyStatus, Provider } from './provider.model';
@@ -92,6 +93,8 @@ describe('providers', () => {
       fixture.detectChanges();
       http.expectOne('/api/providers').flush([aProvider(), USAJOBS, OPENAI]);
       http.expectOne('/api/me/api-keys').flush(keys);
+      await fixture.whenStable();
+      http.expectOne((r) => r.url === '/api/me/ai-usage').flush(anUsage());
       await fixture.whenStable();
       return { fixture, el: fixture.nativeElement as HTMLElement };
     }

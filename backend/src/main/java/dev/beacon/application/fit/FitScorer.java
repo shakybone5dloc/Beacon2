@@ -1,5 +1,7 @@
 package dev.beacon.application.fit;
 
+import dev.beacon.application.usage.AiUsageMeter;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -15,7 +17,8 @@ public interface FitScorer {
     /** The model it scores with, kept with each result. */
     String model();
 
-    FitResult score(FitInput input, String apiKey);
+    /** Reports the tokens used to {@code meter} as soon as the response arrives, even if it then fails. */
+    FitResult score(FitInput input, String apiKey, AiUsageMeter meter);
 
     /**
      * @param company null when the employer isn't disclosed

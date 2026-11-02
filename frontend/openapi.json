@@ -1530,6 +1530,68 @@
         "tags" : [ "Interviews" ]
       }
     },
+    "/api/me/ai-usage" : {
+      "get" : {
+        "operationId" : "getAiUsage",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "zone",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AiUsageResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "AI Usage" ]
+      }
+    },
+    "/api/me/ai-usage/budget" : {
+      "put" : {
+        "operationId" : "saveAiBudget",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "zone",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveAiBudgetRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AiUsageResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "AI Usage" ]
+      }
+    },
     "/api/me/api-keys" : {
       "get" : {
         "operationId" : "listApiKeys",
@@ -2011,6 +2073,87 @@
   },
   "components" : {
     "schemas" : {
+      "AiUsageLineResponse" : {
+        "type" : "object",
+        "properties" : {
+          "calls" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "costUsd" : {
+            "type" : "number"
+          },
+          "inputTokens" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "outputTokens" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "calls", "costUsd", "inputTokens", "name", "outputTokens" ]
+      },
+      "AiUsageMonthResponse" : {
+        "type" : "object",
+        "properties" : {
+          "calls" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "costUsd" : {
+            "type" : "number"
+          },
+          "month" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "calls", "costUsd", "month" ]
+      },
+      "AiUsageResponse" : {
+        "type" : "object",
+        "properties" : {
+          "budgetUsd" : {
+            "type" : [ "number", "null" ]
+          },
+          "byFeature" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AiUsageLineResponse"
+            }
+          },
+          "byModel" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AiUsageLineResponse"
+            }
+          },
+          "calls" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "month" : {
+            "type" : "string"
+          },
+          "recentMonths" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AiUsageMonthResponse"
+            }
+          },
+          "totalUsd" : {
+            "type" : "number"
+          },
+          "unpricedCalls" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "budgetUsd", "byFeature", "byModel", "calls", "month", "recentMonths", "totalUsd", "unpricedCalls" ]
+      },
       "ApiKeyResponse" : {
         "type" : "object",
         "properties" : {
@@ -3160,6 +3303,16 @@
           }
         },
         "required" : [ "text" ]
+      },
+      "SaveAiBudgetRequest" : {
+        "type" : "object",
+        "properties" : {
+          "monthlyUsd" : {
+            "type" : [ "number", "null" ],
+            "maximum" : 100000,
+            "minimum" : 1.0
+          }
+        }
       },
       "SaveApiKeyRequest" : {
         "type" : "object",

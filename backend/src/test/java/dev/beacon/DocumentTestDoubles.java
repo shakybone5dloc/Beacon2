@@ -5,6 +5,8 @@ import dev.beacon.application.documents.PdfPrinter;
 import dev.beacon.application.documents.PostingCaptureException;
 import dev.beacon.application.fit.FitScorer;
 import dev.beacon.application.providers.ProviderCatalog;
+import dev.beacon.application.usage.AiUsage;
+import dev.beacon.application.usage.AiUsageMeter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -105,6 +107,9 @@ public class DocumentTestDoubles {
 
     /** Stands in for OpenAI; ordered first so it wins over the real writer for the same provider. */
     public static class FakeCoverLetterWriter implements CoverLetterWriter, Ordered {
+        /** What each draft reports using: $0.012 at gpt-6-sol prices. */
+        public static final AiUsage USAGE = new AiUsage(ProviderCatalog.OPENAI, "gpt-6-sol", 2000, 0, 800);
+
         public CoverLetterInput lastInput;
         public String lastApiKey;
 
@@ -119,7 +124,8 @@ public class DocumentTestDoubles {
         }
 
         @Override
-        public String draft(CoverLetterInput input, String apiKey) {
+        public String draft(CoverLetterInput input, String apiKey, AiUsageMeter meter) {
+            meter.record(USAGE);
             lastInput = input;
             lastApiKey = apiKey;
             return "Dear Hiring Team,\n\nI would like to join " + input.company() + ".";
@@ -128,6 +134,9 @@ public class DocumentTestDoubles {
 
     /** Stands in for OpenAI's scorer; counts calls so tests can see when a kept score was reused. */
     public static class FakeFitScorer implements FitScorer, Ordered {
+        /** What each score reports using: $0.00664 at gpt-6-sol prices (200 of the input tokens cached). */
+        public static final AiUsage USAGE = new AiUsage(ProviderCatalog.OPENAI, "gpt-6-sol", 1000, 200, 500);
+
         public final List<FitInput> inputs = new ArrayList<>();
         public String lastApiKey;
         public LocalDate applyBy;
@@ -148,7 +157,8 @@ public class DocumentTestDoubles {
         }
 
         @Override
-        public FitResult score(FitInput input, String apiKey) {
+        public FitResult score(FitInput input, String apiKey, AiUsageMeter meter) {
+            meter.record(USAGE);
             inputs.add(input);
             lastApiKey = apiKey;
             return new FitResult(82, List.of("Java", "Spring Boot"), List.of("Kubernetes"), List.of(),

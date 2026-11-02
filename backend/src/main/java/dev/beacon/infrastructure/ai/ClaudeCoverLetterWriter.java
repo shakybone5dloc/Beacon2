@@ -5,6 +5,7 @@ import com.anthropic.models.beta.messages.MessageCreateParams;
 import dev.beacon.application.coverletters.CoverLetterException;
 import dev.beacon.application.coverletters.CoverLetterWriter;
 import dev.beacon.application.providers.ProviderCatalog;
+import dev.beacon.application.usage.AiUsageMeter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -26,7 +27,7 @@ public class ClaudeCoverLetterWriter implements CoverLetterWriter {
     }
 
     @Override
-    public String draft(CoverLetterInput input, String apiKey) {
+    public String draft(CoverLetterInput input, String apiKey, AiUsageMeter meter) {
         var params = ClaudeMessages.withFallback(MessageCreateParams.builder()
                         .model(model)
                         .maxTokens(16000L)
@@ -38,6 +39,7 @@ public class ClaudeCoverLetterWriter implements CoverLetterWriter {
                 .build();
 
         var response = ClaudeMessages.create(apiKey, params, CoverLetterException::new);
+        meter.record(ClaudeMessages.usage(response));
         if (ClaudeMessages.refused(response)) {
             throw new CoverLetterException("The AI declined to write this letter.", true);
         }
