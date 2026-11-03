@@ -1,4 +1,5 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -31,6 +32,7 @@ export class JobSearch implements OnInit {
   private readonly fitApi = inject(FitApi);
   private readonly resumesApi = inject(ResumesApi);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly state = inject(JobSearchState);
 
   protected readonly sources = signal<JobSource[]>([]);
@@ -82,7 +84,7 @@ export class JobSearch implements OnInit {
   protected readonly formatPosted = (p: JobPosting) => formatPosted(p, new Date());
 
   ngOnInit(): void {
-    const last = this.state.query();
+    const last = this.state.options() ?? this.state.query();
     if (last) {
       this.form.setValue({
         keywords: last.keywords,
@@ -90,6 +92,9 @@ export class JobSearch implements OnInit {
         remoteOnly: last.remoteOnly,
       });
     }
+    this.form.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.state.options.set(this.form.getRawValue()));
 
     this.postingsApi.sources().subscribe({
       next: (sources) => this.sources.set(sources),

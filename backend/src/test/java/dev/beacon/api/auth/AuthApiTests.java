@@ -1,6 +1,7 @@
 package dev.beacon.api.auth;
 
 import dev.beacon.TestcontainersConfiguration;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -99,6 +100,40 @@ class AuthApiTests {
     }
 
     @Test
+    void rememberMeKeepsYouSignedInWithoutTheSession() {
+        var email = email();
+        register(email, PASSWORD);
+
+        assertThat(login(email, PASSWORD).getResponse().getCookie("remember-me")).isNull();
+
+        var remembered = login(email, PASSWORD, true);
+        var cookie = remembered.getResponse().getCookie("remember-me");
+        assertThat(cookie).isNotNull();
+        assertThat(cookie.getMaxAge()).isEqualTo(30 * 24 * 60 * 60);
+        assertThat(cookie.isHttpOnly()).isTrue();
+
+        // A new browser session, or a restarted server: only the cookie is left.
+        var me = mvc.get().uri("/api/auth/me").cookie(cookie).exchange();
+        assertThat(me).hasStatus(HttpStatus.OK);
+        assertThat(me).bodyJson().extractingPath("$.email").isEqualTo(email);
+
+        var logout = mvc.post().uri("/api/auth/logout").cookie(cookie).with(csrf()).exchange();
+        assertThat(logout).hasStatus(HttpStatus.NO_CONTENT);
+        assertThat(logout.getResponse().getCookie("remember-me").getMaxAge()).isZero();
+    }
+
+    @Test
+    void aTamperedRememberMeCookieSignsNobodyIn() {
+        var email = email();
+        register(email, PASSWORD);
+        var cookie = login(email, PASSWORD, true).getResponse().getCookie("remember-me");
+        var value = cookie.getValue();
+        var tampered = new Cookie("remember-me", value.substring(0, value.length() - 2) + (value.endsWith("A") ? "BB" : "AA"));
+
+        assertThat(mvc.get().uri("/api/auth/me").cookie(tampered).exchange()).hasStatus(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     void writesWithoutACsrfTokenAreRejected() {
         var session = session(register(email(), PASSWORD));
 
@@ -122,11 +157,15 @@ class AuthApiTests {
     }
 
     private MvcTestResult login(String email, String password) {
+        return login(email, password, false);
+    }
+
+    private MvcTestResult login(String email, String password, boolean rememberMe) {
         return mvc.post().uri("/api/auth/login").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"email": "%s", "password": "%s"}
-                        """.formatted(email, password))
+                        {"email": "%s", "password": "%s", "rememberMe": %s}
+                        """.formatted(email, password, rememberMe))
                 .exchange();
     }
 

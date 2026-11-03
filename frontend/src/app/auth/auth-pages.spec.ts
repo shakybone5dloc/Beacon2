@@ -34,12 +34,17 @@ describe('sign-in pages', () => {
 
     type(el, 'input[type=email]', 'me@example.com');
     type(el, 'input[type=password]', 'correct horse battery');
+    el.querySelector<HTMLInputElement>('input[type=checkbox]')!.click();
     el.querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
 
     http.expectOne('/api/auth/csrf').flush(null);
-    http
-      .expectOne('/api/auth/login')
-      .flush({ id: 'u1', email: 'me@example.com', displayName: null });
+    const req = http.expectOne('/api/auth/login');
+    expect(req.request.body).toEqual({
+      email: 'me@example.com',
+      password: 'correct horse battery',
+      rememberMe: true,
+    });
+    req.flush({ id: 'u1', email: 'me@example.com', displayName: null });
 
     expect(navigate).toHaveBeenCalledWith('/jobs');
   });

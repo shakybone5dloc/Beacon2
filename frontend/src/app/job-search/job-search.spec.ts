@@ -10,6 +10,7 @@ import { ApplicationResponse } from '../applications/application.model';
 import { Resume } from '../resumes/resume.model';
 import { aResume } from '../resumes/testing';
 import { aFit } from '../fit/testing';
+import { AuthState } from '../auth/auth-state';
 
 describe('JobSearch', () => {
   let http: HttpTestingController;
@@ -99,6 +100,94 @@ describe('JobSearch', () => {
     expect(req.request.params.get('keywords')).toBe('java');
     expect(req.request.params.get('location')).toBe('USA');
     expect(req.request.params.get('sources')).toBe('remotive');
+  });
+
+  it('shows that it is searching until the results arrive', async () => {
+    const { fixture, el } = await render();
+    fill(el, 'keywords', 'java');
+    el.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+    await fixture.whenStable();
+
+    const searching = el.querySelector('.searching');
+    expect(searching?.getAttribute('role')).toBe('status');
+    expect(searching?.querySelectorAll('.dots span').length).toBe(3);
+    expect(searching?.textContent).toContain('Searching 2 sources...');
+    expect(searching?.textContent).toContain('a minute or two');
+
+    http
+      .expectOne((r) => r.url === '/api/postings/search')
+      .flush({ postings: [], sources: [{ id: 'remotive', count: 0, error: null }] });
+    await fixture.whenStable();
+
+    expect(el.querySelector('.searching')).toBeNull();
+    expect(el.querySelector('.results')).not.toBeNull();
+  });
+
+  describe('remembered options', () => {
+    function signIn(id: string) {
+      TestBed.inject(AuthState).login({ email: `${id}@example.com`, password: 'x' }).subscribe();
+      http.expectOne('/api/auth/csrf').flush(null);
+      http.expectOne('/api/auth/login').flush({ id, email: `${id}@example.com`, displayName: null });
+    }
+
+    afterEach(() => localStorage.clear());
+
+    it('keeps the options and unticked sources in this browser as they change', async () => {
+      signIn('u1');
+      const { fixture, el } = await render();
+
+      fill(el, 'keywords', 'java spring');
+      fill(el, 'location', 'Denver');
+      el.querySelector<HTMLInputElement>('input[formControlName=remoteOnly]')!.click();
+      sourceBox(el, 'Jobicy').click();
+      await fixture.whenStable();
+
+      expect(JSON.parse(localStorage.getItem('beacon.jobSearch.u1')!)).toEqual({
+        keywords: 'java spring',
+        location: 'Denver',
+        remoteOnly: true,
+        excludedSources: ['jobicy'],
+      });
+    });
+
+    it('fills the form from what this user had last time', async () => {
+      localStorage.setItem(
+        'beacon.jobSearch.u1',
+        JSON.stringify({
+          keywords: 'kotlin',
+          location: 'USA',
+          remoteOnly: true,
+          excludedSources: ['jobicy'],
+        }),
+      );
+      localStorage.setItem(
+        'beacon.jobSearch.u2',
+        JSON.stringify({ keywords: 'cobol', location: '', remoteOnly: false, excludedSources: [] }),
+      );
+      signIn('u1');
+      const { el } = await render();
+
+      expect(el.querySelector<HTMLInputElement>('input[formControlName=keywords]')!.value).toBe(
+        'kotlin',
+      );
+      expect(el.querySelector<HTMLInputElement>('input[formControlName=location]')!.value).toBe(
+        'USA',
+      );
+      expect(
+        el.querySelector<HTMLInputElement>('input[formControlName=remoteOnly]')!.checked,
+      ).toBe(true);
+      expect(sourceBox(el, 'Remotive').checked).toBe(true);
+      expect(sourceBox(el, 'Jobicy').checked).toBe(false);
+    });
+
+    it('starts blank when what was saved is damaged', async () => {
+      localStorage.setItem('beacon.jobSearch.u1', '{not json');
+      signIn('u1');
+      const { el } = await render();
+
+      expect(el.querySelector<HTMLInputElement>('input[formControlName=keywords]')!.value).toBe('');
+      expect(sourceBox(el, 'Jobicy').checked).toBe(true);
+    });
   });
 
   it('shows postings with their source credited and linked', async () => {

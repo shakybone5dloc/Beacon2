@@ -1,6 +1,7 @@
 package dev.beacon.config;
 
 import dev.beacon.application.users.AccountService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,8 +15,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices.RememberMeTokenAlgorithm;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+
+import java.time.Duration;
 
 /**
  * Session-cookie sign-in for the Angular app. Everything under /api needs a signed-in
@@ -25,8 +30,12 @@ import org.springframework.security.web.context.SecurityContextRepository;
 @Configuration
 public class SecurityConfig {
 
+    /** How long "Remember me" keeps someone signed in. */
+    static final Duration REMEMBER_FOR = Duration.ofDays(30);
+
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository contextRepository) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository contextRepository,
+                                            TokenBasedRememberMeServices rememberMe) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
@@ -40,10 +49,26 @@ public class SecurityConfig {
                 .exceptionHandling(errors -> errors.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
+                // Signs the user back in from the remember-me cookie when the session is gone; sign-out clears it.
+                .rememberMe(remember -> remember.rememberMeServices(rememberMe).key(rememberMe.getKey()))
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)));
         return http.build();
+    }
+
+    /**
+     * A signed cookie (SHA-256 over the email, expiry, password hash and the server secret),
+     * so it survives server restarts with nothing stored. Changing the password invalidates it.
+     * Set only when the sign-in asks for it, so it always remembers once called.
+     */
+    @Bean
+    TokenBasedRememberMeServices rememberMeServices(AccountService accounts,
+                                                    @Value("${beacon.secret-key:}") String secretKey) {
+        var services = new TokenBasedRememberMeServices(secretKey, accounts, RememberMeTokenAlgorithm.SHA256);
+        services.setAlwaysRemember(true);
+        services.setTokenValiditySeconds((int) REMEMBER_FOR.toSeconds());
+        return services;
     }
 
     @Bean

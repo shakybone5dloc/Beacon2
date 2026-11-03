@@ -24,6 +24,18 @@ input {
   border: 1px solid var(--border);
   border-radius: 6px;
 }
+label.check {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 0.5rem;
+  font-weight: normal;
+}
+label.check input {
+  width: auto;
+}
+label.check .hint {
+  grid-column: 2;
+}
 input.ng-invalid.ng-touched {
   border-color: var(--color-error);
 }

@@ -24,6 +24,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
@@ -37,12 +38,14 @@ public class AuthController {
     private final AccountService accounts;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository contextRepository;
+    private final RememberMeServices rememberMe;
 
     public AuthController(AccountService accounts, AuthenticationManager authenticationManager,
-                          SecurityContextRepository contextRepository) {
+                          SecurityContextRepository contextRepository, RememberMeServices rememberMe) {
         this.accounts = accounts;
         this.authenticationManager = authenticationManager;
         this.contextRepository = contextRepository;
+        this.rememberMe = rememberMe;
     }
 
     /** Touching the token makes Spring write the XSRF-TOKEN cookie the frontend sends back. */
@@ -90,6 +93,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
         }
         signIn(authentication, request, response);
+        if (body.rememberMe()) rememberMe.loginSuccess(request, response, authentication);
         return ResponseEntity.ok(toResponse((SignedInUser) authentication.getPrincipal()));
     }
 

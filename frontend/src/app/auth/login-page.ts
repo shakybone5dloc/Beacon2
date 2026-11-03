@@ -27,6 +27,7 @@ export class LoginPage {
   protected readonly form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
+    rememberMe: [false],
   });
 
   protected submit(): void {

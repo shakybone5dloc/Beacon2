@@ -22,6 +22,12 @@
       }
     </label>
 
+    <label class="check">
+      <input formControlName="rememberMe" type="checkbox" />
+      Remember me
+      <span class="hint">Stay signed in on this browser for 30 days.</span>
+    </label>
+
     <button type="submit" [disabled]="submitting()">
       {{ submitting() ? 'Signing in...' : 'Sign in' }}
     </button>
