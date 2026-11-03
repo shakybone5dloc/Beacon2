@@ -72,14 +72,15 @@ public class ProviderCatalog {
                     List.of(new Field("apiKey", "API key", true, true))),
             new Provider(JSEARCH, "JSearch", Kind.JOB_SOURCE, Cost.PAID,
                     "Google's job listings, already parsed into pay, location and closing date.",
-                    "https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch/pricing",
-                    "Free plan: 200 requests a month. Paid plans start at about $25 a month. "
+                    "https://app.openwebninja.com",
+                    "Free plan: 200 requests a month, from OpenWeb Ninja (its maker) or RapidAPI. "
                             + "Each Beacon search uses one request, and the same search is reused for six hours.",
                     List.of(
-                            "Sign up at rapidapi.com and open the JSearch API.",
-                            "Subscribe to a plan under Pricing; Basic is free.",
-                            "Copy the X-RapidAPI-Key shown on the API's Playground page and paste it here."),
-                    List.of(new Field("apiKey", "RapidAPI key", true, true))),
+                            "Sign up at app.openwebninja.com; the free plan needs no card.",
+                            "Subscribe to JSearch's free plan; a key only works for the APIs you've subscribed to.",
+                            "Copy your API key from the developer portal and paste it here. "
+                                    + "A RapidAPI key for JSearch (the X-RapidAPI-Key) works too."),
+                    List.of(new Field("apiKey", "API key (OpenWeb Ninja or RapidAPI)", true, true))),
             new Provider(OPENAI, "OpenAI", Kind.AI, Cost.PAID,
                     "Drafts cover letters from a job description and your resume.",
                     "https://platform.openai.com/api-keys",

@@ -2,11 +2,13 @@ package dev.beacon.infrastructure.postings;
 
 import dev.beacon.application.postings.JobPosting;
 import dev.beacon.application.postings.JobSource;
+import dev.beacon.application.postings.JobSourceException;
 import dev.beacon.application.postings.PostingQuery;
 import dev.beacon.application.providers.ProviderCatalog;
 import dev.beacon.config.PostingsConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 
@@ -24,29 +26,33 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * JSearch (on RapidAPI) reads Google's job listings and returns them already parsed:
- * numeric pay, an expiry date, the board each one came from. Each user brings their own
- * RapidAPI key; every page of 10 results is one request against their monthly quota,
- * so a search reads one page and is cached for six hours.
+ * JSearch reads Google's job listings and returns them already parsed: numeric pay, an
+ * expiry date, the board each one came from. It is sold both by its maker, OpenWeb Ninja,
+ * and on RapidAPI, with different keys and headers; a user's key is tried on OpenWeb Ninja
+ * first and on RapidAPI if that rejects it (a rejected call costs nothing). Every page of
+ * 10 results is one request against their monthly quota, so a search reads one page and
+ * is cached for six hours.
  */
 @Component
 public class JSearchSource implements JobSource {
 
-    static final String HOST = "jsearch.p.rapidapi.com";
+    static final String RAPIDAPI_HOST = "jsearch.p.rapidapi.com";
     private static final Duration QUERY_TTL = Duration.ofHours(6);
 
-    private final RestClient http;
+    private final RestClient openWebNinja;
+    private final RestClient rapidApi;
     private final TtlCache<PostingQuery, List<JobPosting>> cache;
 
     public JSearchSource(@Qualifier(PostingsConfig.LIVE_SEARCH) RestClient.Builder builder, Clock clock) {
-        this.http = builder.baseUrl("https://" + HOST).build();
+        this.openWebNinja = builder.clone().baseUrl("https://api.openwebninja.com/jsearch").build();
+        this.rapidApi = builder.clone().baseUrl("https://" + RAPIDAPI_HOST).build();
         this.cache = new TtlCache<>(QUERY_TTL, clock, 50);
     }
 
     @Override public String id() { return ProviderCatalog.JSEARCH; }
     @Override public String name() { return "JSearch"; }
     @Override public String coverage() { return "Google's job listings, parsed: LinkedIn, Indeed, Glassdoor, ZipRecruiter and more."; }
-    @Override public String attributionUrl() { return "https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch"; }
+    @Override public String attributionUrl() { return "https://www.openwebninja.com/api/jsearch"; }
 
     @Override
     public List<JobPosting> search(PostingQuery query, Map<String, String> credentials) {
@@ -54,28 +60,54 @@ public class JSearchSource implements JobSource {
     }
 
     private List<JobPosting> fetch(PostingQuery query, String apiKey) {
-        var body = Feeds.retryingDroppedConnections(() -> http.get()
-                .uri(uri -> {
-                    uri.path("/search")
-                            .queryParam("query", GoogleJobsSource.googleQuery(
-                                    new PostingQuery(query.keywords(), query.location(), false)))
-                            .queryParam("page", 1)
-                            .queryParam("num_pages", 1)
-                            .queryParam("country", "us")
-                            .queryParam("date_posted", "month");
-                    if (query.remoteOnly()) uri.queryParam("work_from_home", true);
-                    return uri.build();
-                })
-                .header("X-RapidAPI-Key", apiKey)
-                .header("X-RapidAPI-Host", HOST)
-                .retrieve()
-                .body(JsonNode.class));
+        try {
+            return toPostings(call(query, apiKey));
+        } catch (HttpClientErrorException ex) {
+            // A rejected key keeps its own message; anything else (a used-up quota) JSearch explains.
+            if (ex instanceof HttpClientErrorException.Unauthorized || ex instanceof HttpClientErrorException.Forbidden) throw ex;
+            var message = Feeds.text(Feeds.errorBody(ex), "message");
+            if (message == null) throw ex;
+            throw new JobSourceException(message);
+        }
+    }
 
+    private JsonNode call(PostingQuery query, String apiKey) {
+        try {
+            return Feeds.retryingDroppedConnections(() -> searchRequest(openWebNinja, query)
+                    .header("x-api-key", apiKey)
+                    .retrieve()
+                    .body(JsonNode.class));
+        } catch (HttpClientErrorException.Unauthorized | HttpClientErrorException.Forbidden notTheirKey) {
+            // Not an OpenWeb Ninja key; if RapidAPI rejects it too, the user is told to check it.
+            return Feeds.retryingDroppedConnections(() -> searchRequest(rapidApi, query)
+                    .header("X-RapidAPI-Key", apiKey)
+                    .header("X-RapidAPI-Host", RAPIDAPI_HOST)
+                    .retrieve()
+                    .body(JsonNode.class));
+        }
+    }
+
+    private List<JobPosting> toPostings(JsonNode body) {
         var postings = new ArrayList<JobPosting>();
         for (var job : body.path("data").values()) {
             postings.add(toPosting(job));
         }
         return postings;
+    }
+
+    /** The same search on either host. */
+    private static RestClient.RequestHeadersSpec<?> searchRequest(RestClient http, PostingQuery query) {
+        return http.get().uri(uri -> {
+            uri.path("/search")
+                    .queryParam("query", GoogleJobsSource.googleQuery(
+                            new PostingQuery(query.keywords(), query.location(), false)))
+                    .queryParam("page", 1)
+                    .queryParam("num_pages", 1)
+                    .queryParam("country", "us")
+                    .queryParam("date_posted", "month");
+            if (query.remoteOnly()) uri.queryParam("work_from_home", true);
+            return uri.build();
+        });
     }
 
     private JobPosting toPosting(JsonNode job) {

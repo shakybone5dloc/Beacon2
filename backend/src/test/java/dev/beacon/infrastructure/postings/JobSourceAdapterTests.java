@@ -477,12 +477,58 @@ class JobSourceAdapterTests {
     class JSearch {
 
         @Test
-        void sendsTheRapidApiHeadersAndReadsParsedFields() {
+        void fallsBackToRapidApiWhenOpenWebNinjaRejectsTheKey() {
             var builder = RestClient.builder();
             var server = MockRestServiceServer.bindTo(builder).build();
+            server.expect(requestTo(startsWith("https://api.openwebninja.com/jsearch/search")))
+                    .andExpect(header("x-api-key", "rapid1"))
+                    .andRespond(withStatus(HttpStatus.UNAUTHORIZED).contentType(MediaType.APPLICATION_JSON)
+                            .body("""
+                                    {"message": "Unauthorized"}
+                                    """));
             server.expect(requestTo(startsWith("https://jsearch.p.rapidapi.com/search")))
                     .andExpect(header("X-RapidAPI-Key", "rapid1"))
                     .andExpect(header("X-RapidAPI-Host", "jsearch.p.rapidapi.com"))
+                    .andExpect(queryParam("query", "java"))
+                    .andRespond(withSuccess("""
+                            {"status": "OK", "data": [{"job_id": "j1", "job_title": "Java Developer", "employer_name": "Initech"}]}
+                            """, MediaType.APPLICATION_JSON));
+
+            var results = new JSearchSource(builder, new MutableClock()).search(JAVA, Map.of("apiKey", "rapid1"));
+
+            assertThat(results).singleElement().satisfies(p -> assertThat(p.company()).isEqualTo("Initech"));
+            server.verify();
+        }
+
+        @Test
+        void aKeyBothRejectStaysARejectedKeyAndAUsedUpQuotaIsExplained() {
+            var builder = RestClient.builder();
+            var server = MockRestServiceServer.bindTo(builder).build();
+            server.expect(requestTo(startsWith("https://api.openwebninja.com/jsearch/search")))
+                    .andRespond(withStatus(HttpStatus.UNAUTHORIZED));
+            server.expect(requestTo(startsWith("https://jsearch.p.rapidapi.com/search")))
+                    .andRespond(withStatus(HttpStatus.FORBIDDEN));
+            server.expect(requestTo(startsWith("https://api.openwebninja.com/jsearch/search")))
+                    .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).contentType(MediaType.APPLICATION_JSON)
+                            .body("""
+                                    {"message": "You have exceeded the MONTHLY quota for requests on your current plan."}
+                                    """));
+            var source = new JSearchSource(builder, new MutableClock());
+
+            assertThatThrownBy(() -> source.search(JAVA, Map.of("apiKey", "wrong")))
+                    .isInstanceOf(HttpClientErrorException.Forbidden.class);
+            assertThatThrownBy(() -> source.search(new PostingQuery("kotlin", "", false), Map.of("apiKey", "k")))
+                    .isInstanceOf(JobSourceException.class)
+                    .hasMessageContaining("MONTHLY quota");
+            server.verify();
+        }
+
+        @Test
+        void sendsTheOpenWebNinjaKeyAndReadsParsedFields() {
+            var builder = RestClient.builder();
+            var server = MockRestServiceServer.bindTo(builder).build();
+            server.expect(requestTo(startsWith("https://api.openwebninja.com/jsearch/search")))
+                    .andExpect(header("x-api-key", "rapid1"))
                     .andExpect(queryParam("query", "java%20in%20Denver"))
                     .andExpect(queryParam("num_pages", "1"))
                     .andExpect(queryParam("work_from_home", "true"))

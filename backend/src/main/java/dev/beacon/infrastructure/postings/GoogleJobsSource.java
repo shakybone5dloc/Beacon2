@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.MissingNode;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -74,7 +73,7 @@ public class GoogleJobsSource implements JobSource {
         } catch (HttpClientErrorException ex) {
             // A rejected key keeps its own message; anything else SerpApi explains in "error".
             if (ex instanceof HttpClientErrorException.Unauthorized || ex instanceof HttpClientErrorException.Forbidden) throw ex;
-            body = errorBody(ex);
+            body = Feeds.errorBody(ex);
             if (Feeds.text(body, "error") == null) throw ex;
         }
 
@@ -90,15 +89,6 @@ public class GoogleJobsSource implements JobSource {
             postings.add(toPosting(job, now));
         }
         return postings;
-    }
-
-    private static JsonNode errorBody(HttpClientErrorException ex) {
-        try {
-            var body = ex.getResponseBodyAs(JsonNode.class);
-            return body != null ? body : MissingNode.getInstance();
-        } catch (RuntimeException unreadable) {
-            return MissingNode.getInstance();
-        }
     }
 
     /**

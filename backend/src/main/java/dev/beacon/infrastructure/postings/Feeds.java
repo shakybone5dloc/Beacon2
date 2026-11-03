@@ -1,7 +1,9 @@
 package dev.beacon.infrastructure.postings;
 
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientResponseException;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.MissingNode;
 
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
@@ -39,6 +41,16 @@ final class Feeds {
         } catch (ResourceAccessException ex) {
             if (isReadTimeout(ex)) throw ex;
             return call.get();
+        }
+    }
+
+    /** The JSON a source sent with an error status, or a missing node when there was none. */
+    static JsonNode errorBody(RestClientResponseException ex) {
+        try {
+            var body = ex.getResponseBodyAs(JsonNode.class);
+            return body != null ? body : MissingNode.getInstance();
+        } catch (RuntimeException unreadable) {
+            return MissingNode.getInstance();
         }
     }
 
