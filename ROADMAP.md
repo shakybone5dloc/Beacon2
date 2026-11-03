@@ -341,6 +341,18 @@ Still to do: pausing background jobs at 100% of the budget (none exist yet; J3 s
 
 Research items, not code yet. Each ends in a written decision; the answers change what gets built (X4, X6, J0, J3).
 
+**Direction (Nov 3, details still to work out):** two paid plans.
+
+| | All-included | Open |
+|---|---|---|
+| Who it's for | Job seekers who just want it to work | Tech-savvy users who already have, or don't mind making, their own API accounts |
+| Job sources | Beacon supplies the keys for chosen paid sources (likely Google Jobs/JSearch), plus every free source | The free sources, plus any keyed source the user adds a key for (what Beacon does today) |
+| AI | Beacon supplies it (fit scores, cover letters, later briefs and email sorting), within a monthly allowance | The user's own OpenAI or Anthropic key, billed to them; no allowance needed |
+| Setup | Nothing to sign up for elsewhere | Settings -> API keys, with the provider guide's steps |
+| Price | Higher: covers Beacon's API and AI costs plus a margin | Significantly less: Beacon only carries hosting and the app itself |
+
+P1 and P2 below now work out the details of this split instead of choosing between models.
+
 ### P1. Who pays for API keys
 Today every user brings their own keys (OpenAI or Anthropic for AI; Adzuna, USAJOBS and later JSearch or SerpApi for paid job sources). That's fine for developers, but most job seekers have never heard of an API key, and "go sign up at four other sites first" will turn many of them away before they see what Beacon does.
 - **Options to compare:**
@@ -351,19 +363,35 @@ Today every user brings their own keys (OpenAI or Anthropic for AI; Adzuna, USAJ
   - Each job source's terms: may a commercial app use one key for all its users, or resell access? (Adzuna, USAJOBS, JSearch, SerpApi, Jooble.) Some may need a business agreement or a different plan.
   - Real per-user cost with managed keys, from X6's measured usage rather than the Oct 30 estimate (about $15-30/month for a heavy AI user; about $5/month for job-search scoring alone).
   - Abuse: what stops one account running up a large bill (per-plan monthly caps, rate limits, background jobs paused first).
-- **Leaning (to confirm):** hybrid. Free job sources and managed AI within each plan's allowance, so a new user never needs a key; "Bring your own key" stays in Settings for developers and heavy users.
+  - **Anthropic or OpenAI for the All-included plan's AI.** At list price the two match at the tier Beacon uses: Claude Sonnet 5.5 and gpt-6-sol are both $2 per million input tokens and $10 per million output, $0.20 cached (OpenAI's figures come from third-party price sites; confirm on its own pricing page). So the provider alone barely moves the bill; these do:
+    - **A cheaper model for routine jobs:** Claude Haiku 5.5 is $0.10 / $0.50 per million (about 20 times less; it counts the same text as roughly 30% more tokens, so nearer 15 times in practice). Fit scoring of saved-search matches and email sorting are the high-volume jobs where that adds up, if J2's evaluation set shows the scores hold up. Cover letters and interview briefs stay on the stronger model.
+    - **Batch processing at half price** for work nobody waits on, like the scheduled saved-search runs (J3).
+    - **Prompt caching:** a run scores up to 20 postings against the same resume, so caching the resume makes every read after the first cost $0.20 per million instead of $2 (Sonnet).
+    - **One provider is simpler** for managed keys (one account, one bill, one set of limits); Beacon already speaks both, so it can switch or split by job.
+    - **Decide with data:** score the same postings on each candidate model, compare the scores against hand labels (J2's evaluation set) and the measured cost (X6).
+- **Settled (Nov 3):** both, as separate plans: managed keys in All-included, bring-your-own in Open. Still open: whether an All-included user may add their own key to go past the allowance or pick a model (the old "hybrid" idea), and whether Open users get any managed AI at all (for example a small trial allowance).
+- **What this means for the code:**
+  - A plan on each account (`ALL_INCLUDED`, `OPEN`, maybe a free or trial state), checked wherever credentials are looked up.
+  - Credentials resolve per plan: All-included uses Beacon's server-side keys for the supplied providers; Open uses the user's saved keys as now. Job sources and AI writers shouldn't care where the key came from.
+  - Settings -> API keys and the provider guide only matter to Open users; All-included users see their allowance instead.
+  - X6's usage metering becomes the allowance: count All-included usage against the plan, warn near the limit, pause background jobs first. Open users' usage is still shown, as it is their own bill.
+  - Paid job sources usually charge per request, so All-included needs per-user caps on those too (searches a day or a month), not just AI.
 
 ### P2. Plans and pricing
+- **Settled (Nov 3):** two paid plans, All-included and Open (see the table at the top of this section). The questions below now apply to those two.
 - **Questions:**
-  - Is there a free plan, and what's in it? (Likely: tracking, board, contacts, interviews, timeline, the free job sources; no AI, or a small taste of it.)
-  - How many paid tiers? One is simplest; two (for example "Job seeker" and "Power search" with the AI sweep and more scoring) only if usage shows two kinds of user.
+  - Is there also a free plan or a free trial, and what's in it? (Likely: tracking, board, contacts, interviews, timeline, the free job sources; no AI, or a small taste of it.) A trial of All-included may sell it better than a permanent free plan.
+  - What each plan costs: All-included from measured cost per user (AI, paid search requests, hosting) plus a margin; Open well below it, since its main cost is hosting.
+  - All-included's allowance: how many AI fit checks, cover letters and paid searches a month, and what happens at the limit (pause, buy more, or add your own key).
+  - Which features, if any, are All-included only (for example the AI web sweep J5, or email sorting E3), or whether the plans differ only in who supplies the keys. Differing only in keys is simplest and easiest to explain.
+  - Moving between plans: switching from Open to All-included keeps the user's data; switching back keeps their saved keys, if any.
   - Monthly, or a job-search pass (a few months at once)? People leave when they're hired, so monthly churn is built in; a pass may fit better.
   - Price point: what comparable job-search trackers charge, and what each paid plan costs Beacon to run (AI, search APIs, hosting) plus a margin.
 - **Research:**
   - Competitors' free and paid plans (Huntr, Teal, Simplify, Careerflow and others): what they give away free, what's paid, at what price.
   - Ask 5-10 job seekers what they'd pay, and for which features (the value test from Oct 30: "would you be upset if it was taken away?").
   - Cost per user per plan from X6 data, including hosting from X4.
-- **Decide:** free plan yes or no, number of tiers, what each includes, prices, and the AI allowance per tier.
+- **Decide:** free plan or trial, what each of the two plans includes, their prices, and All-included's allowance.
 
 ### P3. Payments and accounts
 - Payments through a provider (Stripe most likely): checkout, subscriptions, upgrades and downgrades, cancellations, receipts, failed payments.
