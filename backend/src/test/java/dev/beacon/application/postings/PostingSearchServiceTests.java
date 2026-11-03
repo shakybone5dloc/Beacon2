@@ -6,8 +6,12 @@ import dev.beacon.infrastructure.security.KeyCipher;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import dev.beacon.contracts.postings.SourceResultResponse;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -18,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -174,13 +179,35 @@ class PostingSearchServiceTests {
     void aFailingSourceIsReportedWithoutLosingTheOthers() {
         var service = service(List.of(
                 returning("a", posting("a", "Acme", "A", null)),
-                new FakeSource("broken", (q, c) -> { throw new IllegalStateException("boom"); })));
+                new FakeSource("broken", (q, c) -> { throw new ResourceAccessException("Read timed out"); })));
 
         var response = service.search(USER, QUERY, Set.of());
 
         assertThat(response.postings()).hasSize(1);
         assertThat(response.sources()).filteredOn(s -> s.id().equals("broken"))
                 .singleElement().satisfies(s -> assertThat(s.error()).isEqualTo("Could not reach BROKEN."));
+    }
+
+    @Test
+    void aFailureSaysWhatWentWrongWhenThatIsKnown() {
+        var service = service(List.of(
+                new FakeSource("explained", (q, c) -> { throw new JobSourceException("Your account has run out of searches."); }),
+                new FakeSource("erroring", (q, c) -> {
+                    throw HttpServerErrorException.create(HttpStatus.BAD_GATEWAY, "Bad Gateway", null, null, null);
+                }),
+                new FakeSource("slow", (q, c) -> {
+                    throw new ResourceAccessException("I/O error", new SocketTimeoutException("Read timed out"));
+                }),
+                new FakeSource("garbled", (q, c) -> { throw new IllegalStateException("boom"); })));
+
+        var errors = service.search(USER, QUERY, Set.of()).sources().stream()
+                .collect(Collectors.toMap(SourceResultResponse::id, SourceResultResponse::error));
+
+        assertThat(errors).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "explained", "EXPLAINED: Your account has run out of searches.",
+                "erroring", "ERRORING answered with an error (HTTP 502).",
+                "slow", "SLOW took too long to answer. Try again in a minute.",
+                "garbled", "GARBLED answered, but Beacon couldn't read the results."));
     }
 
     @Test

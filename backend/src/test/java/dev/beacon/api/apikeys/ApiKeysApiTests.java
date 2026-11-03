@@ -35,7 +35,7 @@ class ApiKeysApiTests extends SignedInApiTests {
 
         assertThat(result).hasStatus(HttpStatus.OK);
         assertThat(result).bodyJson().extractingPath("$[*].provider").asArray()
-                .containsExactly("himalayas", "usajobs", "adzuna", "openai", "anthropic");
+                .containsExactly("himalayas", "usajobs", "adzuna", "googlejobs", "jsearch", "openai", "anthropic");
         assertThat(result).bodyJson().extractingPath("$[*].saved").asArray().containsOnly(false);
     }
 

@@ -14,7 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientResponseException;
 
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,7 +45,8 @@ public class PostingSearchService {
 
     private static final Logger log = LoggerFactory.getLogger(PostingSearchService.class);
 
-    static final Duration SOURCE_TIMEOUT = Duration.ofSeconds(15);
+    /** Longer than any source's own read timeout (30 seconds for the live Google searches). */
+    static final Duration SOURCE_TIMEOUT = Duration.ofSeconds(35);
     static final int MAX_RESULTS = 300;
 
     private final List<JobSource> sources;
@@ -154,14 +158,26 @@ public class PostingSearchService {
         return new PostingSearchResponse(merged, results);
     }
 
-    /** A rejected key is the user's to fix, so it gets its own message. */
+    /**
+     * Says as much as is known: a rejected key is the user's to fix, a source's own
+     * explanation is shown as it gave it, and the rest says whether the source answered at all.
+     */
     private static String failureMessage(JobSource source, Throwable cause, Set<String> saved) {
         var rejected = cause instanceof HttpClientErrorException.Unauthorized
                 || cause instanceof HttpClientErrorException.Forbidden;
         if (rejected && saved.contains(source.id())) {
             return source.name() + " rejected your API key. Check it under Settings.";
         }
-        return "Could not reach " + source.name() + ".";
+        return switch (cause) {
+            case JobSourceException explained -> source.name() + ": " + explained.getMessage();
+            case RestClientResponseException answered ->
+                    source.name() + " answered with an error (HTTP " + answered.getStatusCode().value() + ").";
+            case ResourceAccessException slow when slow.getCause() instanceof SocketTimeoutException timeout
+                    && String.valueOf(timeout.getMessage()).toLowerCase(Locale.ROOT).contains("read timed out") ->
+                    source.name() + " took too long to answer. Try again in a minute.";
+            case ResourceAccessException unreachable -> "Could not reach " + source.name() + ".";
+            default -> source.name() + " answered, but Beacon couldn't read the results.";
+        };
     }
 
     /** The same ad often appears on several boards; keep the first copy of each company + title. */

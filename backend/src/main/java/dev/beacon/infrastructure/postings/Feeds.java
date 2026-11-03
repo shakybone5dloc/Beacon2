@@ -1,9 +1,13 @@
 package dev.beacon.infrastructure.postings;
 
+import org.springframework.web.client.ResourceAccessException;
 import tools.jackson.databind.JsonNode;
 
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,6 +27,27 @@ final class Feeds {
     private static final int DESCRIPTION_LENGTH = 20_000;
 
     private Feeds() {}
+
+    /**
+     * Calls once more when the connection itself failed: a kept-alive connection the other
+     * side had already closed, a reset, or a refused connect. A source that is just slow
+     * (the read timed out) is not asked again, so the search never waits twice.
+     */
+    static <T> T retryingDroppedConnections(Supplier<T> call) {
+        try {
+            return call.get();
+        } catch (ResourceAccessException ex) {
+            if (isReadTimeout(ex)) throw ex;
+            return call.get();
+        }
+    }
+
+    /** True when the source accepted the connection but didn't answer in time. */
+    static boolean isReadTimeout(ResourceAccessException ex) {
+        return ex.getCause() instanceof SocketTimeoutException timeout
+                && timeout.getMessage() != null
+                && timeout.getMessage().toLowerCase(Locale.ROOT).contains("read timed out");
+    }
 
     /** Text value of a field, or null when it is missing, null or blank. */
     static String text(JsonNode node, String field) {

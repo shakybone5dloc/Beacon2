@@ -1,15 +1,21 @@
 package dev.beacon.infrastructure.postings;
 
+import dev.beacon.application.postings.JobSourceException;
 import dev.beacon.application.postings.PostingQuery;
 import dev.beacon.config.PostingsProperties;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -19,12 +25,14 @@ import java.time.ZoneOffset;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.queryParam;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestToUriTemplate;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.hamcrest.Matchers.startsWith;
 
@@ -326,6 +334,185 @@ class JobSourceAdapterTests {
                 assertThat(p.salaryPeriod()).isEqualTo("year");
                 assertThat(p.remote()).isTrue();
                 assertThat(p.snippet()).isEqualTo("Maintain systems");
+            });
+            server.verify();
+        }
+    }
+
+    @Nested
+    class GoogleJobs {
+
+        @Test
+        void putsRemoteAndLocationIntoTheQueryAndPrefersTheDirectApplyLink() {
+            var builder = RestClient.builder();
+            var server = MockRestServiceServer.bindTo(builder).build();
+            server.expect(requestTo(startsWith("https://serpapi.com/search.json")))
+                    .andExpect(queryParam("engine", "google_jobs"))
+                    .andExpect(queryParam("q", "java%20remote%20in%20Denver"))
+                    .andExpect(queryParam("api_key", "serp1"))
+                    .andRespond(withSuccess("""
+                            {"jobs_results": [
+                              {"title": "Java Engineer", "company_name": "Initech", "location": "Anywhere",
+                               "via": "via LinkedIn", "share_link": "https://www.google.com/search?jobs=1",
+                               "description": "Build services with Java and Spring.",
+                               "detected_extensions": {"posted_at": "3 days ago", "salary": "$120K–$150K a year",
+                                                       "schedule_type": "Full-time"},
+                               "apply_options": [{"title": "LinkedIn", "link": "https://www.linkedin.com/jobs/view/1"}],
+                               "job_id": "g1"},
+                              {"title": "Java Developer", "company_name": "Globex", "location": "Denver, CO",
+                               "share_link": "https://www.google.com/search?jobs=2",
+                               "detected_extensions": {"posted_at": "30+ days ago", "salary": "45–55 an hour"},
+                               "job_id": "g2"}
+                            ]}
+                            """, MediaType.APPLICATION_JSON));
+            var clock = new MutableClock();
+
+            var results = new GoogleJobsSource(builder, clock)
+                    .search(new PostingQuery("java", "Denver", true), Map.of("apiKey", "serp1"));
+
+            assertThat(results).hasSize(2);
+            assertThat(results.get(0)).satisfies(p -> {
+                assertThat(p.source()).isEqualTo("googlejobs");
+                assertThat(p.id()).isEqualTo("g1");
+                assertThat(p.company()).isEqualTo("Initech");
+                assertThat(p.remote()).isTrue();
+                assertThat(p.url()).isEqualTo("https://www.linkedin.com/jobs/view/1");
+                assertThat(p.postedAt()).isEqualTo(clock.instant().minus(Duration.ofDays(3)));
+                assertThat(p.salaryMin()).isEqualTo(120_000);
+                assertThat(p.salaryMax()).isEqualTo(150_000);
+                assertThat(p.salaryCurrency()).isEqualTo("USD");
+                assertThat(p.salaryPeriod()).isEqualTo("year");
+                assertThat(p.tags()).containsExactly("LinkedIn", "Full-time");
+                assertThat(p.description()).isEqualTo("Build services with Java and Spring.");
+            });
+            assertThat(results.get(1)).satisfies(p -> {
+                assertThat(p.remote()).isFalse();
+                assertThat(p.url()).isEqualTo("https://www.google.com/search?jobs=2");
+                assertThat(p.postedAt()).isEqualTo(clock.instant().minus(Duration.ofDays(30)));
+                // No currency sign, so the pay stays as Google wrote it.
+                assertThat(p.salaryMin()).isNull();
+                assertThat(p.salaryText()).isEqualTo("45–55 an hour");
+            });
+            server.verify();
+        }
+
+        @Test
+        void treatsNoResultsAsEmptyButOtherErrorsAsFailures() {
+            var builder = RestClient.builder();
+            var server = MockRestServiceServer.bindTo(builder).build();
+            server.expect(requestTo(startsWith("https://serpapi.com/search.json")))
+                    .andRespond(withSuccess("""
+                            {"error": "Google hasn't returned any results for this query."}
+                            """, MediaType.APPLICATION_JSON));
+            server.expect(requestTo(startsWith("https://serpapi.com/search.json")))
+                    .andRespond(withSuccess("""
+                            {"error": "Your account has run out of searches."}
+                            """, MediaType.APPLICATION_JSON));
+            var source = new GoogleJobsSource(builder, new MutableClock());
+
+            assertThat(source.search(new PostingQuery("cobol wizard", "", false), Map.of("apiKey", "k"))).isEmpty();
+            assertThatThrownBy(() -> source.search(JAVA, Map.of("apiKey", "k")))
+                    .isInstanceOf(JobSourceException.class)
+                    .hasMessage("Your account has run out of searches.");
+            server.verify();
+        }
+
+        @Test
+        void passesOnSerpApisExplanationWhenItAnswersWithAnErrorStatus() {
+            var builder = RestClient.builder();
+            var server = MockRestServiceServer.bindTo(builder).build();
+            server.expect(requestTo(startsWith("https://serpapi.com/search.json")))
+                    .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).contentType(MediaType.APPLICATION_JSON)
+                            .body("""
+                                    {"error": "Your account has run out of searches."}
+                                    """));
+            server.expect(requestTo(startsWith("https://serpapi.com/search.json")))
+                    .andRespond(withStatus(HttpStatus.UNAUTHORIZED).contentType(MediaType.APPLICATION_JSON)
+                            .body("""
+                                    {"error": "Invalid API key."}
+                                    """));
+            var source = new GoogleJobsSource(builder, new MutableClock());
+
+            assertThatThrownBy(() -> source.search(JAVA, Map.of("apiKey", "k")))
+                    .isInstanceOf(JobSourceException.class)
+                    .hasMessage("Your account has run out of searches.");
+            // A rejected key stays an HTTP error, so the search says to check the key.
+            assertThatThrownBy(() -> source.search(new PostingQuery("kotlin", "", false), Map.of("apiKey", "k")))
+                    .isInstanceOf(HttpClientErrorException.Unauthorized.class);
+            server.verify();
+        }
+
+        @Test
+        void triesOnceMoreWhenTheConnectionDropsButNotWhenItIsSlow() {
+            var builder = RestClient.builder();
+            var server = MockRestServiceServer.bindTo(builder).build();
+            server.expect(requestTo(startsWith("https://serpapi.com/search.json")))
+                    .andRespond(request -> { throw new SocketException("Connection reset"); });
+            server.expect(requestTo(startsWith("https://serpapi.com/search.json")))
+                    .andRespond(withSuccess("""
+                            {"jobs_results": [{"title": "Java Engineer", "company_name": "Initech", "job_id": "g1"}]}
+                            """, MediaType.APPLICATION_JSON));
+            server.expect(once(), requestTo(startsWith("https://serpapi.com/search.json")))
+                    .andRespond(request -> { throw new SocketTimeoutException("Read timed out"); });
+            var source = new GoogleJobsSource(builder, new MutableClock());
+
+            assertThat(source.search(JAVA, Map.of("apiKey", "k"))).hasSize(1);
+            assertThatThrownBy(() -> source.search(new PostingQuery("kotlin", "", false), Map.of("apiKey", "k")))
+                    .isInstanceOf(ResourceAccessException.class);
+            server.verify();
+        }
+
+        @Test
+        void readsGooglesSalaryLines() {
+            assertThat(GoogleJobsSource.Salary.parse("$25 an hour"))
+                    .isEqualTo(new GoogleJobsSource.Salary(25, 25, "USD", "hour", null));
+            assertThat(GoogleJobsSource.Salary.parse("$95,000–$110,000 a year"))
+                    .isEqualTo(new GoogleJobsSource.Salary(95_000, 110_000, "USD", "year", null));
+            assertThat(GoogleJobsSource.Salary.parse("€60K a year").text()).isEqualTo("€60K a year");
+            assertThat(GoogleJobsSource.Salary.parse(null).text()).isNull();
+        }
+    }
+
+    @Nested
+    class JSearch {
+
+        @Test
+        void sendsTheRapidApiHeadersAndReadsParsedFields() {
+            var builder = RestClient.builder();
+            var server = MockRestServiceServer.bindTo(builder).build();
+            server.expect(requestTo(startsWith("https://jsearch.p.rapidapi.com/search")))
+                    .andExpect(header("X-RapidAPI-Key", "rapid1"))
+                    .andExpect(header("X-RapidAPI-Host", "jsearch.p.rapidapi.com"))
+                    .andExpect(queryParam("query", "java%20in%20Denver"))
+                    .andExpect(queryParam("num_pages", "1"))
+                    .andExpect(queryParam("work_from_home", "true"))
+                    .andRespond(withSuccess("""
+                            {"status": "OK", "data": [
+                              {"job_id": "j1", "job_title": "Java Developer", "employer_name": "Initech",
+                               "job_publisher": "Indeed", "job_employment_type": "FULLTIME",
+                               "job_apply_link": "https://www.indeed.com/viewjob?jk=1",
+                               "job_description": "Java, Spring, Postgres.", "job_is_remote": true,
+                               "job_posted_at_timestamp": 1792000000, "job_offer_expiration_timestamp": 1794700800,
+                               "job_city": "Denver", "job_state": "CO", "job_country": "US",
+                               "job_min_salary": 110000, "job_max_salary": 140000, "job_salary_period": "YEAR"}
+                            ]}
+                            """, MediaType.APPLICATION_JSON));
+
+            var results = new JSearchSource(builder, new MutableClock())
+                    .search(new PostingQuery("java", "Denver", true), Map.of("apiKey", "rapid1"));
+
+            assertThat(results).singleElement().satisfies(p -> {
+                assertThat(p.source()).isEqualTo("jsearch");
+                assertThat(p.company()).isEqualTo("Initech");
+                assertThat(p.location()).isEqualTo("Denver, CO, US");
+                assertThat(p.remote()).isTrue();
+                assertThat(p.url()).isEqualTo("https://www.indeed.com/viewjob?jk=1");
+                assertThat(p.postedAt()).isEqualTo(Instant.ofEpochSecond(1792000000));
+                assertThat(p.closesOn()).isEqualTo(LocalDate.parse("2026-11-15"));
+                assertThat(p.salaryMin()).isEqualTo(110_000);
+                assertThat(p.salaryCurrency()).isEqualTo("USD");
+                assertThat(p.salaryPeriod()).isEqualTo("year");
+                assertThat(p.tags()).containsExactly("Indeed", "Full-time");
             });
             server.verify();
         }

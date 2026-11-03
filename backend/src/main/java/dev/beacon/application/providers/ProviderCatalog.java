@@ -15,6 +15,8 @@ public class ProviderCatalog {
     public static final String ADZUNA = "adzuna";
     public static final String USAJOBS = "usajobs";
     public static final String HIMALAYAS = "himalayas";
+    public static final String GOOGLE_JOBS = "googlejobs";
+    public static final String JSEARCH = "jsearch";
     public static final String OPENAI = "openai";
     public static final String ANTHROPIC = "anthropic";
 
@@ -58,6 +60,26 @@ public class ProviderCatalog {
                     List.of(
                             new Field("appId", "App ID", false, true),
                             new Field("appKey", "App key", true, true))),
+            new Provider(GOOGLE_JOBS, "Google Jobs (SerpApi)", Kind.JOB_SOURCE, Cost.PAID,
+                    "Google's job listings, which include LinkedIn, Indeed, ZipRecruiter and company careers sites.",
+                    "https://serpapi.com/users/sign_up",
+                    "Free plan: 250 searches a month. Paid plans start at $25 a month for 1,000. "
+                            + "Each Beacon search uses one, and the same search is reused for six hours.",
+                    List.of(
+                            "Sign up at serpapi.com; the free plan needs no card.",
+                            "Open Your Account, then API Key, and copy the private key.",
+                            "Paste it here. A saved search that runs every weekday uses about 22 searches a month."),
+                    List.of(new Field("apiKey", "API key", true, true))),
+            new Provider(JSEARCH, "JSearch", Kind.JOB_SOURCE, Cost.PAID,
+                    "Google's job listings, already parsed into pay, location and closing date.",
+                    "https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch/pricing",
+                    "Free plan: 200 requests a month. Paid plans start at about $25 a month. "
+                            + "Each Beacon search uses one request, and the same search is reused for six hours.",
+                    List.of(
+                            "Sign up at rapidapi.com and open the JSearch API.",
+                            "Subscribe to a plan under Pricing; Basic is free.",
+                            "Copy the X-RapidAPI-Key shown on the API's Playground page and paste it here."),
+                    List.of(new Field("apiKey", "RapidAPI key", true, true))),
             new Provider(OPENAI, "OpenAI", Kind.AI, Cost.PAID,
                     "Drafts cover letters from a job description and your resume.",
                     "https://platform.openai.com/api-keys",

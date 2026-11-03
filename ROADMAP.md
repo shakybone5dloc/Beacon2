@@ -30,7 +30,8 @@ Rebuilt from the .NET Beacon, then extended.
 | J1 | Resume profiles: labels, a default, saved text, and a short summary per library resume | f80a798 |
 | J2 | Fit scoring: AI score, matches, gaps and dealbreakers on applications and Find jobs results; free skill match | after dd177fe |
 | X6 | AI usage tracking: tokens and cost per call, this month by feature and model in Settings, optional monthly budget | after d3d5fb7 |
-| J3 | Saved searches on a schedule, a Matches page, fit checks for the newest 20 per run within the AI budget | after 02e5e8d |
+| J3 | Saved searches on a schedule, a Matches page, fit checks for the newest 20 per run within the AI budget | a6b2f37 |
+| J0 | Google Jobs (SerpApi) and JSearch as keyed sources, reaching LinkedIn, Indeed and careers sites | after a6b2f37 |
 
 ## Next: Companies and people
 
@@ -125,7 +126,11 @@ Rebuilt from the .NET Beacon, then extended.
 
 Reuses the inbox queue from E4: matches land there to accept or dismiss, same as email postings.
 
-### J0. More job sources (per-user keys)
+### J0. More job sources (per-user keys) (done, except Jooble)
+- Built as two keyed sources: **Google Jobs** through SerpApi (`googlejobs`; free plan 250 searches a month) and **JSearch** on RapidAPI (`jsearch`; free plan 200 requests a month). Both read Google's job listings, so LinkedIn, Indeed, ZipRecruiter and company careers sites now reach Find jobs and saved searches.
+- Each search reads one page (Google's 10 most relevant results, one credit) and is cached for six hours, so a weekday saved search uses about 22 a month. Remote and location go into the query as words, since Google's own filters don't work reliably through either API. Google Jobs gives relative dates ("3 days ago") and a salary line, which Beacon turns into a date and numbers when it's in dollars with a period; JSearch returns them parsed, plus an expiry date that becomes apply-by. The board each result came from (LinkedIn, Indeed...) shows as a tag.
+- Both wait up to 30 seconds (other sources get 10) and retry once when the connection drops, but not when the source is just slow. A failed source now says why: its own message, the HTTP status, "took too long", or "Could not reach" when the connection failed.
+- Google Jobs checked live with a real SerpApi key. Still to do: Jooble; more than one page per search (a setting, since each page costs a credit); a live check of JSearch.
 - Each new source is a `ProviderCatalog` entry plus a `JobSource` adapter; users add their own key under Settings, and the source then shows up in Find jobs.
 - In order: **JSearch** (best paid pick), **SerpApi Google Jobs** (has a free tier), **Jooble** (free key on request).
 - Not possible: LinkedIn and Indeed have no job-search API.
