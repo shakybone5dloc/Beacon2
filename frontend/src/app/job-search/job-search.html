@@ -64,14 +64,14 @@
 
 @if (searching()) {
   <div class="searching" role="status">
-    <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="loading-dots" aria-hidden="true"><span></span><span></span><span></span></span>
     <p class="what">
       Searching {{ selectedSources().length }}
       {{ selectedSources().length === 1 ? 'source' : 'sources' }}...
     </p>
     <p class="note">
-      This can take a minute or two. Google Jobs, JSearch and big company careers sites run a
-      live search each time.
+      This can take a minute or two. Google Jobs, JSearch and big company careers sites run a live
+      search each time.
     </p>
   </div>
 } @else if (state.results(); as results) {

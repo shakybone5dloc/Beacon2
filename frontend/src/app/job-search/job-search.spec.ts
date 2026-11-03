@@ -110,7 +110,7 @@ describe('JobSearch', () => {
 
     const searching = el.querySelector('.searching');
     expect(searching?.getAttribute('role')).toBe('status');
-    expect(searching?.querySelectorAll('.dots span').length).toBe(3);
+    expect(searching?.querySelectorAll('.loading-dots span').length).toBe(3);
     expect(searching?.textContent).toContain('Searching 2 sources...');
     expect(searching?.textContent).toContain('a minute or two');
 
@@ -125,9 +125,13 @@ describe('JobSearch', () => {
 
   describe('remembered options', () => {
     function signIn(id: string) {
-      TestBed.inject(AuthState).login({ email: `${id}@example.com`, password: 'x' }).subscribe();
+      TestBed.inject(AuthState)
+        .login({ email: `${id}@example.com`, password: 'x' })
+        .subscribe();
       http.expectOne('/api/auth/csrf').flush(null);
-      http.expectOne('/api/auth/login').flush({ id, email: `${id}@example.com`, displayName: null });
+      http
+        .expectOne('/api/auth/login')
+        .flush({ id, email: `${id}@example.com`, displayName: null });
     }
 
     afterEach(() => localStorage.clear());
@@ -173,9 +177,9 @@ describe('JobSearch', () => {
       expect(el.querySelector<HTMLInputElement>('input[formControlName=location]')!.value).toBe(
         'USA',
       );
-      expect(
-        el.querySelector<HTMLInputElement>('input[formControlName=remoteOnly]')!.checked,
-      ).toBe(true);
+      expect(el.querySelector<HTMLInputElement>('input[formControlName=remoteOnly]')!.checked).toBe(
+        true,
+      );
       expect(sourceBox(el, 'Remotive').checked).toBe(true);
       expect(sourceBox(el, 'Jobicy').checked).toBe(false);
     });

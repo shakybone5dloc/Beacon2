@@ -331,6 +331,54 @@ body {
   border-radius: 6px;
 }
 
+/* Three bouncing dots for work that takes a while: <span class="loading-dots"><span></span>x3</span>. */
+.loading-dots {
+  display: flex;
+  gap: 0.45rem;
+  height: 1.5rem;
+  align-items: flex-end;
+}
+.loading-dots span {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--color-primary-container);
+  animation: loading-bounce 1.2s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes loading-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-0.7rem);
+    opacity: 1;
+  }
+}
+@keyframes loading-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+/* Without motion, the dots pulse in place instead of bouncing. */
+@media (prefers-reduced-motion: reduce) {
+  .loading-dots span {
+    animation-name: loading-pulse;
+  }
+}
+
 /* Printing a page (the printable posting, mainly) leaves out the app chrome. */
 @media print {
   header.top,

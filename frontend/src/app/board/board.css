@@ -1,0 +1,42 @@
+/* Drag and drop between columns (Angular CDK). */
+
+.card.cdk-drag:not(.cdk-drag-disabled) {
+  cursor: grab;
+}
+
+/*
+ * The copy that follows the pointer. The CDK resets the preview's background, border and
+ * padding in a stylesheet outside any layer, which beats the card's layered Tailwind
+ * classes, so they're set again here.
+ */
+.card.cdk-drag-preview {
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-space-md);
+  cursor: grabbing;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+  transform: rotate(1.5deg);
+}
+
+/* Where the card will land: the column it's over, or back where it came from. */
+.card.cdk-drag-placeholder {
+  opacity: 0.35;
+}
+
+/* Columns the dragged card can move to (the CDK counts the one it came from too). */
+.column.cdk-drop-list-receiving {
+  outline: 2px dashed var(--color-primary-container);
+  outline-offset: -2px;
+}
+
+/* The column it's over. */
+.column.cdk-drop-list-dragging {
+  background: var(--color-surface-container);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card.cdk-drag-preview {
+    transform: none;
+  }
+}

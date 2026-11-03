@@ -19,7 +19,7 @@
             <a
               [routerLink]="link.path"
               routerLinkActive="!bg-surface-container !font-semibold !text-on-surface"
-              [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+              [routerLinkActiveOptions]="activeOptions(link.path)"
               class="rounded-sm px-space-md py-1.5 text-body-md whitespace-nowrap text-on-surface-variant no-underline transition-colors hover:bg-surface-container-low hover:text-on-surface"
               >{{ link.label }}
               @if (link.path === '/matches' && matches.newCount() > 0) {
@@ -95,7 +95,7 @@
         <a
           [routerLink]="link.path"
           routerLinkActive="!bg-surface-container !font-semibold !text-on-surface"
-          [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+          [routerLinkActiveOptions]="activeOptions(link.path)"
           class="rounded-sm px-space-sm py-1 text-body-sm text-on-surface-variant no-underline hover:bg-surface-container-low hover:text-on-surface"
           >{{ link.label }}
           @if (link.path === '/matches' && matches.newCount() > 0) {

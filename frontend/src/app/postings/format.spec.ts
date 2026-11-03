@@ -1,4 +1,4 @@
-import { formatLocation, formatPosted, formatSalary } from './format';
+import { formatLocation, formatPosted, formatSalary, withoutRemoteNote } from './format';
 import { aPosting } from './testing';
 
 describe('formatSalary', () => {
@@ -17,6 +17,19 @@ describe('formatSalary', () => {
     [{}, null],
   ])('%o reads %s', (overrides, expected) => {
     expect(formatSalary(aPosting(overrides))).toBe(expected);
+  });
+});
+
+describe('withoutRemoteNote', () => {
+  it('drops a note that only says the job is remote', () => {
+    expect(withoutRemoteNote('Anywhere in the U.S. (remote job)')).toBe('Anywhere in the U.S.');
+    expect(withoutRemoteNote('Denver, CO (Telework eligible)')).toBe('Denver, CO');
+  });
+
+  it('keeps other notes, and a location that is nothing but the note', () => {
+    expect(withoutRemoteNote('Austin, TX (HQ)')).toBe('Austin, TX (HQ)');
+    expect(withoutRemoteNote('(Remote)')).toBe('(Remote)');
+    expect(withoutRemoteNote(null)).toBeNull();
   });
 });
 

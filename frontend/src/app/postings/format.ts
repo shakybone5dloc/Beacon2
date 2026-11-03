@@ -39,6 +39,18 @@ export function formatLocation(location: string | null, shown = 3): string | nul
     : `${parts.slice(0, shown).join(', ')} +${parts.length - shown} more`;
 }
 
+/**
+ * The location without a note that only says it's remote, for places that show a Remote
+ * tag beside it: "Anywhere in the U.S. (remote job)" becomes "Anywhere in the U.S.".
+ */
+export function withoutRemoteNote(location: string | null): string | null {
+  if (!location) return null;
+  const trimmed = location
+    .replace(/\s*\((?:[^()]*\b(?:remote|telework|work from home)\b[^()]*)\)/gi, '')
+    .trim();
+  return trimmed || location;
+}
+
 /** e.g. "3d ago"; null when the source gave no date. */
 export function formatPosted(p: JobPosting, now: Date): string | null {
   return p.postedAt ? `${shortDurationBetween(p.postedAt, now)} ago` : null;

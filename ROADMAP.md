@@ -31,7 +31,8 @@ Rebuilt from the .NET Beacon, then extended.
 | J2 | Fit scoring: AI score, matches, gaps and dealbreakers on applications and Find jobs results; free skill match | after dd177fe |
 | X6 | AI usage tracking: tokens and cost per call, this month by feature and model in Settings, optional monthly budget | after d3d5fb7 |
 | J3 | Saved searches on a schedule, a Matches page, fit checks for the newest 20 per run within the AI budget | a6b2f37 |
-| J0 | Google Jobs (SerpApi) and JSearch as keyed sources, reaching LinkedIn, Indeed and careers sites | after a6b2f37 |
+| J0 | Google Jobs (SerpApi) and JSearch as keyed sources, reaching LinkedIn, Indeed and careers sites | ce3b972, 2672b04 |
+| B1 | Board search and filters kept in the address, drag-and-drop between columns (Angular CDK) | after ff19ff9 |
 
 ## Next: Companies and people
 
@@ -295,7 +296,10 @@ A page each user builds in Beacon from their resume and extra details, and share
 
 ## Board (any time)
 
-### B1. Search, filter and drag-and-drop
+### B1. Search, filter and drag-and-drop (done)
+- Built as a filter bar above the board: a search box (every word must appear in the employer, role, location, source or notes, ignoring case and accents), a source picker listing the sources on the board, Remote and Needs action. Filters run in the browser over the loaded board, show "Showing N of M" with a Clear button, and live in the address (`?q=&source=&remote=&action=`), so a refresh keeps them and the Board link clears them. The Needs attention strip follows the filters.
+- Drag and drop with Angular CDK (`@angular/cdk`): a column only accepts a card if one of its allowed moves lands there, and those columns are outlined while dragging. A card dropped on Closed with more than one way to close (rejected, withdrawn...) asks which. Moves go through the same call and 409 handling as the buttons, which stay for keyboard users. Touch drags start after a short hold so the board still scrolls.
+- Still to do: a "has follow-up due" filter separate from Needs action; filtering by company type or employment type.
 - Search box and filters on the board (company, role, source, remote, has follow-up due).
 - Drag cards between columns with Angular CDK; only allowed transitions accept a drop, with the same 409 conflict handling as the move buttons.
 

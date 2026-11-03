@@ -3,7 +3,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Board } from './board';
 import { anApplication } from '../applications/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 
 describe('Board', () => {
   let http: HttpTestingController;
@@ -320,5 +322,234 @@ describe('Board', () => {
     const columns = el.querySelectorAll('section.column');
     expect(columns[0].textContent).not.toContain('Acme');
     expect(columns[1].textContent).toContain('Acme');
+  });
+
+  it('keeps long tags inside the card, with the full text on hover', async () => {
+    const fixture = TestBed.createComponent(Board);
+    await fixture.whenStable();
+    http.expectOne('/api/applications').flush([
+      anApplication({
+        status: 'WITHDRAWN',
+        location: 'Anywhere in the U.S. (remote job)',
+        remote: true,
+        salaryMin: 122000,
+        salaryMax: 158000,
+        salaryCurrency: 'USD',
+        salaryPeriod: 'year',
+      }),
+    ]);
+    await fixture.whenStable();
+
+    const tags = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('.card .tag'));
+    expect(tags.map((t) => t.textContent?.trim())).toEqual([
+      'Anywhere in the U.S.',
+      'Remote',
+      '$122k–$158k/yr',
+    ]);
+    expect(tags[0].getAttribute('title')).toBe('Anywhere in the U.S. (remote job)');
+    expect(tags[0].classList).toContain('max-w-full');
+    expect(tags[0].querySelector('.truncate')).not.toBeNull();
+  });
+
+  describe('search and filters', () => {
+    // Only Initech needs action (an overdue follow-up); the others just changed status.
+    const fresh = new Date().toISOString();
+    const apps = [
+      anApplication({
+        id: 'a1',
+        company: 'Acme',
+        role: 'Senior Java Engineer',
+        source: 'LinkedIn',
+        statusChangedAt: fresh,
+      }),
+      anApplication({
+        id: 'a2',
+        statusChangedAt: fresh,
+        company: 'Globex',
+        role: 'Kotlin Developer',
+        location: 'Montréal, QC',
+        source: 'Himalayas',
+        remote: true,
+      }),
+      anApplication({
+        id: 'a3',
+        company: 'Initech',
+        role: 'Java Developer',
+        notes: 'Referred by Sam',
+        status: 'APPLIED',
+        followUpOn: new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10),
+      }),
+    ];
+
+    async function open(queryParams: Record<string, string> = {}) {
+      const router = TestBed.inject(Router);
+      await router.navigate([], { queryParams });
+      const fixture = TestBed.createComponent(Board);
+      await fixture.whenStable();
+      http.expectOne('/api/applications').flush(apps);
+      await fixture.whenStable();
+      return { fixture, el: fixture.nativeElement as HTMLElement, router };
+    }
+
+    function companies(el: HTMLElement): string[] {
+      return Array.from(el.querySelectorAll('.board .card a.company')).map(
+        (a) => a.textContent?.trim() ?? '',
+      );
+    }
+
+    it('finds cards by every word typed, in company, role, location or notes', async () => {
+      const { fixture, el } = await open();
+      const box = el.querySelector<HTMLInputElement>('input.search')!;
+
+      box.value = 'java sam';
+      box.dispatchEvent(new Event('input'));
+      await fixture.whenStable();
+      expect(companies(el)).toEqual(['Initech']);
+
+      box.value = 'montreal';
+      box.dispatchEvent(new Event('input'));
+      await fixture.whenStable();
+      expect(companies(el)).toEqual(['Globex']);
+      expect(el.querySelector('.shown')?.textContent).toContain('Showing 1 of 3');
+    });
+
+    it('filters by source, remote and needs action, and clears them all', async () => {
+      const { fixture, el } = await open();
+
+      const source = el.querySelector<HTMLSelectElement>('select.source')!;
+      expect(Array.from(source.options).map((o) => o.value)).toEqual(['', 'Himalayas', 'LinkedIn']);
+      source.value = 'LinkedIn';
+      source.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+      expect(companies(el)).toEqual(['Acme']);
+
+      el.querySelector<HTMLButtonElement>('button.clear')!.click();
+      await fixture.whenStable();
+      el.querySelector<HTMLInputElement>('input.remote')!.click();
+      await fixture.whenStable();
+      expect(companies(el)).toEqual(['Globex']);
+
+      el.querySelector<HTMLButtonElement>('button.clear')!.click();
+      await fixture.whenStable();
+      el.querySelector<HTMLInputElement>('input.needs-action')!.click();
+      await fixture.whenStable();
+      expect(companies(el)).toEqual(['Initech']);
+
+      el.querySelector<HTMLButtonElement>('button.clear')!.click();
+      await fixture.whenStable();
+      expect(companies(el)).toHaveLength(3);
+      expect(el.querySelector('.shown')).toBeNull();
+    });
+
+    it('keeps the filters in the address', async () => {
+      const { fixture, el, router } = await open({ q: 'kotlin', remote: 'true' });
+
+      expect(el.querySelector<HTMLInputElement>('input.search')!.value).toBe('kotlin');
+      expect(el.querySelector<HTMLInputElement>('input.remote')!.checked).toBe(true);
+      expect(companies(el)).toEqual(['Globex']);
+
+      el.querySelector<HTMLInputElement>('input.needs-action')!.click();
+      await fixture.whenStable();
+      expect(router.url).toBe('/?q=kotlin&remote=true&action=true');
+    });
+  });
+
+  describe('drag and drop', () => {
+    async function open(apps: ReturnType<typeof anApplication>[]) {
+      const fixture = TestBed.createComponent(Board);
+      await fixture.whenStable();
+      http.expectOne('/api/applications').flush(apps);
+      await fixture.whenStable();
+      const lists = fixture.debugElement
+        .queryAll(By.directive(CdkDropList))
+        .map((d) => d.injector.get(CdkDropList));
+      return { fixture, el: fixture.nativeElement as HTMLElement, lists };
+    }
+
+    /** What the CDK reports when a card from one column is let go over another. */
+    function drop(lists: CdkDropList[], from: number, to: number, app: unknown) {
+      lists[to].dropped.emit({
+        previousContainer: lists[from],
+        container: lists[to],
+        item: { data: app },
+      } as unknown as CdkDragDrop<unknown>);
+    }
+
+    it('only lets a card into columns its allowed moves reach', async () => {
+      const acme = anApplication({ status: 'SAVED', allowedTransitions: ['APPLIED', 'WITHDRAWN'] });
+      const { lists } = await open([acme]);
+      const drag = { data: acme } as CdkDrag<typeof acme>;
+
+      const allowed = lists.map((list) => list.enterPredicate(drag, list));
+
+      // Saved, Applied, Interviewing, Offer, Closed
+      expect(allowed).toEqual([false, true, false, false, true]);
+    });
+
+    it('moves a card dropped on a column it can reach one way', async () => {
+      const acme = anApplication({
+        id: 'a1',
+        company: 'Acme',
+        status: 'SAVED',
+        version: 3,
+        allowedTransitions: ['APPLIED', 'WITHDRAWN'],
+      });
+      const { fixture, el, lists } = await open([acme]);
+
+      drop(lists, 0, 1, acme);
+      const req = http.expectOne('/api/applications/a1/status');
+      expect(req.request.body).toEqual({ status: 'APPLIED', version: 3 });
+      req.flush({ ...acme, status: 'APPLIED', version: 4, allowedTransitions: [] });
+      await fixture.whenStable();
+
+      expect(el.querySelectorAll('section.column')[1].textContent).toContain('Acme');
+    });
+
+    it('asks how to close a card dropped on Closed when there is more than one way', async () => {
+      const acme = anApplication({
+        id: 'a1',
+        company: 'Acme',
+        status: 'APPLIED',
+        allowedTransitions: ['INTERVIEWING', 'REJECTED', 'WITHDRAWN'],
+      });
+      const { fixture, el, lists } = await open([acme]);
+
+      drop(lists, 1, 4, acme);
+      await fixture.whenStable();
+      http.expectNone('/api/applications/a1/status');
+      const choice = el.querySelector('.close-choice')!;
+      expect(choice.textContent).toContain('Move Acme to Closed as:');
+      const buttons = Array.from(choice.querySelectorAll('button')).map((b) =>
+        b.textContent?.trim(),
+      );
+      expect(buttons).toEqual(['Rejected', 'Withdrawn', 'Cancel']);
+
+      Array.from(choice.querySelectorAll('button'))
+        .find((b) => b.textContent?.trim() === 'Rejected')!
+        .click();
+      const req = http.expectOne('/api/applications/a1/status');
+      expect(req.request.body.status).toBe('REJECTED');
+      req.flush({ ...acme, status: 'REJECTED', allowedTransitions: [] });
+      await fixture.whenStable();
+      expect(el.querySelector('.close-choice')).toBeNull();
+    });
+
+    it('does nothing when a card is let go over its own column, or the choice is cancelled', async () => {
+      const acme = anApplication({
+        id: 'a1',
+        status: 'APPLIED',
+        allowedTransitions: ['REJECTED', 'WITHDRAWN'],
+      });
+      const { fixture, el, lists } = await open([acme]);
+
+      drop(lists, 1, 1, acme);
+      drop(lists, 1, 4, acme);
+      await fixture.whenStable();
+      el.querySelector<HTMLButtonElement>('.close-choice button.cancel')!.click();
+      await fixture.whenStable();
+
+      http.expectNone('/api/applications/a1/status');
+      expect(el.querySelector('.close-choice')).toBeNull();
+    });
   });
 });
