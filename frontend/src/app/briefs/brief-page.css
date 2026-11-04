@@ -1,0 +1,67 @@
+.brief .section {
+  padding: var(--spacing-space-lg) 0;
+  border-top: 1px solid var(--color-hairline);
+}
+.brief .section h2 {
+  margin: 0 0 var(--spacing-space-sm);
+}
+.brief .glance .next {
+  font-weight: 600;
+}
+
+/*
+ * The AI's Markdown, read like a document. It arrives through [innerHTML], which Angular's
+ * style scoping can't reach, so this page turns scoping off and prefixes every rule with .brief.
+ */
+.brief .markdown {
+  line-height: 1.6;
+}
+.brief .markdown :is(p, ul, ol, table) {
+  margin: 0 0 var(--spacing-space-md);
+}
+.brief .markdown :is(ul, ol) {
+  padding-left: var(--spacing-space-lg);
+}
+.brief .markdown li + li {
+  margin-top: 0.2rem;
+}
+.brief .markdown h3 {
+  margin: var(--spacing-space-lg) 0 var(--spacing-space-xs);
+  font-size: 1rem;
+}
+.brief .markdown h3:first-child {
+  margin-top: 0;
+}
+.brief .markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.brief .markdown :is(th, td) {
+  border: 1px solid var(--color-hairline);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+.brief .markdown th {
+  background: var(--color-surface-container);
+}
+.brief .markdown code {
+  font-size: 0.85em;
+  padding: 0 0.25em;
+  border-radius: 3px;
+  background: var(--color-surface-container);
+}
+
+@media print {
+  .brief {
+    max-width: none;
+  }
+  /* A heading never ends a page; long sections still flow across pages. */
+  .brief :is(h2, h3) {
+    break-after: avoid;
+  }
+  .brief .markdown table {
+    break-inside: avoid;
+  }
+}

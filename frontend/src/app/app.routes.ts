@@ -52,6 +52,12 @@ export const routes: Routes = [
         component: ApplicationForm,
         title: 'Beacon · Edit application',
       },
+      {
+        // Loaded when opened, so its Markdown renderer stays out of the startup bundle.
+        path: 'applications/:id/brief',
+        loadComponent: () => import('./briefs/brief-page').then((m) => m.BriefPage),
+        title: 'Beacon · Interview brief',
+      },
     ],
   },
   { path: '**', redirectTo: '' },

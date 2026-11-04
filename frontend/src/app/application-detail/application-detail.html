@@ -25,6 +25,12 @@
               {{ app.status | titlecase }}
               <span class="for">for {{ timeInStatus() }}</span>
             </span>
+            <a class="brief-link btn btn-sm" [routerLink]="['/applications', app.id, 'brief']">
+              <span class="material-symbols-outlined !text-base" aria-hidden="true"
+                >description</span
+              >
+              Interview brief
+            </a>
             <button
               type="button"
               class="panel-toggle"

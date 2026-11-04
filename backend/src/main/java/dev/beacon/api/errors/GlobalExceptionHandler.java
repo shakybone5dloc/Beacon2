@@ -1,5 +1,6 @@
 package dev.beacon.api.errors;
 
+import dev.beacon.application.briefs.BriefException;
 import dev.beacon.application.coverletters.CoverLetterException;
 import dev.beacon.application.documents.PostingCaptureException;
 import dev.beacon.application.fit.FitScoreException;
@@ -75,6 +76,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
         var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
         problem.setTitle("Could not prepare the cover letter");
+        return problem;
+    }
+
+    @ExceptionHandler(BriefException.class)
+    public ProblemDetail handleBrief(BriefException ex) {
+        var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
+        var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        problem.setTitle("Could not write the brief");
+        return problem;
+    }
+
+    @ExceptionHandler(BriefException.EditedException.class)
+    public ProblemDetail handleBriefEdited(BriefException.EditedException ex) {
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Section has your edits");
         return problem;
     }
 

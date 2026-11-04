@@ -1,11 +1,16 @@
 <div class="flex flex-wrap items-center justify-between gap-space-sm">
   <h2 class="m-0">Interviews</h2>
-  @if (!editing()) {
-    <button type="button" class="btn btn-sm" (click)="start()">
-      <span class="material-symbols-outlined !text-base" aria-hidden="true">event</span>
-      Schedule interview
-    </button>
-  }
+  <span class="flex flex-wrap items-center gap-space-sm">
+    <a class="brief-link text-body-sm" [routerLink]="['/applications', applicationId(), 'brief']"
+      >Interview brief →</a
+    >
+    @if (!editing()) {
+      <button type="button" class="btn btn-sm" (click)="start()">
+        <span class="material-symbols-outlined !text-base" aria-hidden="true">event</span>
+        Schedule interview
+      </button>
+    }
+  </span>
 </div>
 
 @if (error(); as message) {

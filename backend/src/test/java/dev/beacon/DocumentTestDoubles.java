@@ -1,5 +1,7 @@
 package dev.beacon;
 
+import dev.beacon.application.briefs.BriefException;
+import dev.beacon.application.briefs.BriefWriter;
 import dev.beacon.application.coverletters.CoverLetterWriter;
 import dev.beacon.application.documents.PdfPrinter;
 import dev.beacon.application.documents.PostingCaptureException;
@@ -25,7 +27,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Stand-ins for the headless browser and the AI writer and scorer, so tests never call them. */
+/** Stand-ins for the headless browser and the AI writers and scorer, so tests never call them. */
 @TestConfiguration(proxyBeanMethods = false)
 public class DocumentTestDoubles {
 
@@ -43,6 +45,11 @@ public class DocumentTestDoubles {
     @Bean
     FakeFitScorer fakeFitScorer() {
         return new FakeFitScorer();
+    }
+
+    @Bean
+    FakeBriefWriter fakeBriefWriter() {
+        return new FakeBriefWriter();
     }
 
     /** Builds a one-page PDF containing the given lines, the way a printed posting would. */
@@ -169,6 +176,43 @@ public class DocumentTestDoubles {
             inputs.clear();
             lastApiKey = null;
             applyBy = null;
+        }
+    }
+
+    /** Stands in for OpenAI's brief writer; keeps every input so tests can see what it was given. */
+    public static class FakeBriefWriter implements BriefWriter, Ordered {
+        /** What each section reports using. */
+        public static final AiUsage USAGE = new AiUsage(ProviderCatalog.OPENAI, "gpt-6-sol", 3000, 0, 1200);
+
+        public final List<BriefInput> inputs = new ArrayList<>();
+        public String failWith;
+
+        @Override
+        public String provider() {
+            return ProviderCatalog.OPENAI;
+        }
+
+        @Override
+        public String model() {
+            return "fake-model";
+        }
+
+        @Override
+        public int getOrder() {
+            return Ordered.HIGHEST_PRECEDENCE;
+        }
+
+        @Override
+        public String write(BriefInput input, String apiKey, AiUsageMeter meter) {
+            meter.record(USAGE);
+            inputs.add(input);
+            if (failWith != null) throw new BriefException(failWith, true);
+            return "Draft of " + input.section().title() + " for " + input.role() + ".";
+        }
+
+        public void reset() {
+            inputs.clear();
+            failWith = null;
         }
     }
 }

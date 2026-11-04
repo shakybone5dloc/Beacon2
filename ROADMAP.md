@@ -32,7 +32,8 @@ Rebuilt from the .NET Beacon, then extended.
 | X6 | AI usage tracking: tokens and cost per call, this month by feature and model in Settings, optional monthly budget | after d3d5fb7 |
 | J3 | Saved searches on a schedule, a Matches page, fit checks for the newest 20 per run within the AI budget | a6b2f37 |
 | J0 | Google Jobs (SerpApi) and JSearch as keyed sources, reaching LinkedIn, Indeed and careers sites | ce3b972, 2672b04 |
-| B1 | Board search and filters kept in the address, drag-and-drop between columns (Angular CDK) | after ff19ff9 |
+| B1 | Board search and filters kept in the address, drag-and-drop between columns (Angular CDK) | ad661f5 |
+| A1 | Interview brief: its own page, AI-written sections from the posting, resume, fit and rounds, editable, Markdown and print (company research next) | after 8651a8a |
 
 ## Next: Companies and people
 
@@ -214,7 +215,12 @@ The interview helpers split three ways, by what each one is for:
 | Lifetime | Grows round by round until the application closes | Kept and refined for the whole search | Studied until the interview, then archived |
 | Example | "Elevance Staff IAM Interview Prep" (Oct 22-29) | "PropKnot multi-tenant authorization" | "OAuth vs OIDC vs SAML?" |
 
-### A1. Interview brief
+### A1. Interview brief (first step done; company research next)
+- Built as its own page, `/applications/:id/brief`, linked from the application's header and its Interviews section. **At a glance** comes from Beacon's own data (role, place, pay, every round with the next in bold, the people on the application). Sections, in order: the role and your pitch, a day-of checklist (a template to edit), about the company (yours to fill in for now), your honest gap (a They want / You have / Frame it as table, using the fit check), stories to tell (STAR outlines from the resume, until A7), likely questions, technical refresher, system design practice, an update after each round that has happened (written from its debrief notes), and questions to ask with a closing.
+- Stored as `interview_briefs` (one per application, with the resume it's written from: chosen, else the fit's, else the default) and `brief_sections` (Markdown, when the AI wrote it and with which model, and whether the user has edited it since). Only written or edited sections are stored.
+- **Write the brief** drafts every empty section, three at a time, each its own AI call (same provider choice as cover letters, metered as "Interview briefs"); each also has Write/Rewrite and Edit. A section with the user's edits is never rewritten without a confirmation, checked again on the server after the AI answers. A failure no section can get past (no key, resume or job description) shows once and stops the rest.
+- Download Markdown, and Print / PDF through the browser's own print dialog (app chrome and buttons hidden). The page and its Markdown renderer (`marked`) load only when opened.
+- Still to do: **company research with web search and source links** (the next step); "Make study cards" (A6); the story bank (A7) in place of stories from the resume; flagging sections whose inputs changed since they were written. Checked live only up to the AI call (no real key in the throwaway stack).
 One living prep document per application that moves to interviews, modeled on the hand-made "Elevance Staff IAM Interview Prep" doc. Opened from the application page, it starts when the first interview is scheduled and gains a section after each round.
 - **Sections**, in this order. Each says where its content comes from:
   - **At a glance** (filled from Beacon's own data, not AI): role, req number, location and hybrid days, every round from I1 with the next one in bold, format, interviewers from R1, pay from the posting or what the recruiter said.

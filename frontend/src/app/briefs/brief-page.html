@@ -1,0 +1,177 @@
+<p class="no-print"><a [routerLink]="['/applications', id()]" class="back">← Application</a></p>
+
+@if (error(); as message) {
+  <p class="notice">{{ message }}</p>
+} @else if (application() && brief()) {
+  @let app = application()!;
+  @let b = brief()!;
+  <article class="brief mx-auto max-w-3xl">
+    <header class="mb-space-lg">
+      <p class="eyebrow m-0 text-label-caps text-on-surface-variant uppercase">Interview brief</p>
+      <h1 class="m-0">{{ employerLabel(app) }}</h1>
+      <p class="m-0 text-body-lg text-on-surface-variant">{{ app.role }}</p>
+    </header>
+
+    <div
+      class="toolbar no-print mb-space-lg flex flex-wrap items-center gap-space-sm rounded-md border border-hairline bg-surface-container-low p-space-sm"
+    >
+      @if (resumes().length > 0) {
+        <label class="flex items-center gap-space-xs text-body-sm text-on-surface-variant">
+          Written from
+          <select
+            class="resume input w-auto"
+            [value]="b.resumeDocumentId ?? ''"
+            (change)="chooseResume($any($event.target).value)"
+          >
+            @if (!b.resumeDocumentId) {
+              <option value="" disabled>Pick a resume…</option>
+            }
+            @for (r of resumes(); track r.documentId) {
+              <option [value]="r.documentId" [selected]="r.documentId === b.resumeDocumentId">
+                {{ r.label }}
+              </option>
+            }
+          </select>
+        </label>
+      }
+      <button
+        type="button"
+        class="write-all btn btn-sm btn-primary"
+        [disabled]="!b.configured || unwritten().length === 0 || writing().size > 0"
+        (click)="writeAll()"
+      >
+        {{
+          writing().size > 0
+            ? 'Writing…'
+            : unwritten().length > 0
+              ? 'Write the brief'
+              : 'Every section is written'
+        }}
+      </button>
+      <span class="ml-auto flex gap-space-xs">
+        <button type="button" class="download btn btn-sm" (click)="download()">
+          Download Markdown
+        </button>
+        <button type="button" class="print btn btn-sm" (click)="print()">Print / PDF</button>
+      </span>
+    </div>
+
+    @if (!b.configured) {
+      <p class="notice no-print">
+        Add an OpenAI or Anthropic API key under <a routerLink="/settings/api-keys">Settings</a> to
+        write the brief. You can still fill in sections yourself.
+      </p>
+    } @else if (!app.jobDescription) {
+      <p class="notice no-print">
+        The brief is written from the job description. Paste it into
+        <a [routerLink]="['/applications', app.id]">the application</a> first.
+      </p>
+    } @else if (resumes().length === 0) {
+      <p class="notice no-print">
+        Add a resume under <a routerLink="/documents">Documents</a> to write the brief from it.
+      </p>
+    }
+    @if (notice(); as text) {
+      <p class="notice no-print">{{ text }}</p>
+    }
+
+    <section class="glance section">
+      <h2>At a glance</h2>
+      <ul class="m-0 grid gap-space-xs pl-space-lg">
+        @for (line of glance(); track $index) {
+          <li [class.next]="line.endsWith('(next)')">{{ line }}</li>
+        }
+      </ul>
+    </section>
+
+    @for (section of b.sections; track key(section)) {
+      @let k = key(section);
+      <section class="section" [attr.data-kind]="section.kind">
+        <div class="flex flex-wrap items-baseline justify-between gap-space-sm">
+          <h2>{{ title(section) }}</h2>
+          @if (editing() !== k) {
+            <span class="actions no-print flex gap-space-xs">
+              @if (
+                section.writable && (section.kind !== 'ROUND' || hasDebrief(section.interviewId))
+              ) {
+                <button
+                  type="button"
+                  class="write btn btn-sm"
+                  [disabled]="!b.configured || isWriting(section)"
+                  (click)="write(section)"
+                >
+                  {{ section.content ? 'Rewrite' : 'Write' }}
+                </button>
+              }
+              <button
+                type="button"
+                class="edit btn btn-sm"
+                [disabled]="isWriting(section)"
+                (click)="edit(section)"
+              >
+                Edit
+              </button>
+            </span>
+          }
+        </div>
+
+        @if (section.generatedAt || section.edited) {
+          <p class="meta no-print m-0 mb-space-sm text-label-code text-on-surface-variant">
+            @if (section.generatedAt) {
+              Written {{ section.generatedAt | date: 'MMM d, h:mm a' }}
+            }
+            @if (section.edited) {
+              {{ section.generatedAt ? '· edited by you' : 'Written by you' }}
+            }
+          </p>
+        }
+
+        @if (sectionErrors().get(k); as message) {
+          <p class="notice no-print">{{ message }}</p>
+        }
+
+        @if (editing() === k) {
+          <textarea
+            class="draft input min-h-64 w-full font-mono text-body-sm"
+            [value]="draft()"
+            (input)="draft.set($any($event.target).value)"
+            aria-label="Section text, in Markdown"
+          ></textarea>
+          <div class="mt-space-sm flex gap-space-sm">
+            <button
+              type="button"
+              class="save btn btn-sm btn-primary"
+              [disabled]="saving()"
+              (click)="saveEdit(section)"
+            >
+              {{ saving() ? 'Saving…' : 'Save' }}
+            </button>
+            <button type="button" class="cancel btn btn-sm" (click)="cancelEdit()">Cancel</button>
+          </div>
+        } @else if (isWriting(section)) {
+          <div class="writing flex items-center gap-space-sm text-on-surface-variant" role="status">
+            <span class="loading-dots" aria-hidden="true"
+              ><span></span><span></span><span></span
+            ></span>
+            Writing…
+          </div>
+        } @else if (section.content) {
+          <div class="markdown" [innerHTML]="html(section)"></div>
+        } @else if (section.kind === 'ROUND' && !hasDebrief(section.interviewId)) {
+          <p class="empty m-0 text-body-sm text-on-surface-variant">
+            Add your debrief notes to this interview on
+            <a [routerLink]="['/applications', app.id]">the application</a> to write its update.
+          </p>
+        } @else if (!section.writable) {
+          <p class="empty m-0 text-body-sm text-on-surface-variant">
+            {{ ownHints[section.kind] ?? 'Yours to fill in.' }} Use Edit to add it.
+          </p>
+        } @else {
+          <p class="empty m-0 text-body-sm text-on-surface-variant">Not written yet.</p>
+        }
+      </section>
+    }
+  </article>
+} @else {
+  <p class="text-on-surface-variant">Loading…</p>
+}

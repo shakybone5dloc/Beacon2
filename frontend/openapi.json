@@ -56,6 +56,174 @@
         "tags" : [ "Applications" ]
       }
     },
+    "/api/applications/{applicationId}/brief" : {
+      "get" : {
+        "operationId" : "getBrief",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BriefResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Interview briefs" ]
+      }
+    },
+    "/api/applications/{applicationId}/brief/resume" : {
+      "put" : {
+        "operationId" : "chooseBriefResume",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChooseBriefResumeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BriefResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Interview briefs" ]
+      }
+    },
+    "/api/applications/{applicationId}/brief/sections/{kind}" : {
+      "put" : {
+        "operationId" : "saveBriefSection",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "path",
+          "name" : "kind",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "PITCH", "CHECKLIST", "COMPANY", "GAP", "STORIES", "QUESTIONS", "REFRESHER", "PRACTICE", "ROUND", "QUESTIONS_TO_ASK" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "interviewId",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveBriefSectionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BriefSectionResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Interview briefs" ]
+      }
+    },
+    "/api/applications/{applicationId}/brief/sections/{kind}/write" : {
+      "post" : {
+        "operationId" : "writeBriefSection",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "path",
+          "name" : "kind",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "PITCH", "CHECKLIST", "COMPANY", "GAP", "STORIES", "QUESTIONS", "REFRESHER", "PRACTICE", "ROUND", "QUESTIONS_TO_ASK" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "interviewId",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "query",
+          "name" : "replaceEdits",
+          "required" : false,
+          "schema" : {
+            "type" : "boolean",
+            "default" : false
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BriefSectionResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Interview briefs" ]
+      }
+    },
     "/api/applications/{applicationId}/contacts" : {
       "get" : {
         "operationId" : "listApplicationContacts",
@@ -2604,6 +2772,65 @@
         },
         "required" : [ "allowedTransitions", "appliedAt", "applyBy", "company", "companyId", "createdAt", "employmentType", "fitScore", "followUpOn", "id", "jobDescription", "jobUrl", "lastInterviewAt", "location", "nextInterviewAt", "notes", "postedOn", "remote", "role", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "source", "status", "statusChangedAt", "updatedAt", "version", "viaAgency" ]
       },
+      "BriefResponse" : {
+        "type" : "object",
+        "properties" : {
+          "configured" : {
+            "type" : "boolean"
+          },
+          "resumeDocumentId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "resumeLabel" : {
+            "type" : [ "string", "null" ]
+          },
+          "sections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BriefSectionResponse"
+            }
+          }
+        },
+        "required" : [ "configured", "resumeDocumentId", "resumeLabel", "sections" ]
+      },
+      "BriefSectionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "content" : {
+            "type" : [ "string", "null" ]
+          },
+          "edited" : {
+            "type" : "boolean"
+          },
+          "generatedAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "interviewId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "kind" : {
+            "type" : "string",
+            "enum" : [ "PITCH", "CHECKLIST", "COMPANY", "GAP", "STORIES", "QUESTIONS", "REFRESHER", "PRACTICE", "ROUND", "QUESTIONS_TO_ASK" ]
+          },
+          "model" : {
+            "type" : [ "string", "null" ]
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64"
+          },
+          "writable" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "content", "edited", "generatedAt", "interviewId", "kind", "model", "title", "version", "writable" ]
+      },
       "CaptureResponse" : {
         "type" : "object",
         "properties" : {
@@ -2630,6 +2857,16 @@
           }
         },
         "required" : [ "status", "version" ]
+      },
+      "ChooseBriefResumeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "resumeDocumentId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "resumeDocumentId" ]
       },
       "CompanyResponse" : {
         "type" : "object",
@@ -3700,6 +3937,21 @@
           }
         },
         "required" : [ "values" ]
+      },
+      "SaveBriefSectionRequest" : {
+        "type" : "object",
+        "properties" : {
+          "content" : {
+            "type" : "string",
+            "maxLength" : 50000,
+            "minLength" : 0
+          },
+          "version" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64"
+          }
+        },
+        "required" : [ "content" ]
       },
       "SaveCoverLetterRequest" : {
         "type" : "object",
