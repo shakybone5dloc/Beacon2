@@ -81,6 +81,8 @@ export class ApplicationDetail {
   protected readonly documents = viewChild(ApplicationDocuments);
   protected readonly people = viewChild(ApplicationPeople);
   protected readonly timeline = viewChild(ApplicationTimeline);
+  protected readonly interviews = viewChild(ApplicationInterviews);
+  protected readonly contactLog = viewChild(ContactLog);
   protected readonly documentList = signal<DocumentResponse[]>([]);
   private documentsLoaded = false;
   protected readonly panelOpen = signal(initialPanelOpen());
@@ -198,10 +200,15 @@ export class ApplicationDetail {
       });
   }
 
-  /** People changed: a recruiter's agency may now show for an undisclosed employer. */
+  /**
+   * People changed: a recruiter's agency may now show for an undisclosed employer, and an
+   * open interview or contact form picks from the application's people.
+   */
   protected peopleChanged(): void {
     this.reloadApplication();
     this.timeline()?.reload();
+    this.interviews()?.refreshPeople();
+    this.contactLog()?.refreshChoices();
   }
 
   /** Documents changed: the posting PDF may be new, and the timeline lists documents. */

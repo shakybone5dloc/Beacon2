@@ -2,6 +2,7 @@ import * as api from '../api/models';
 
 /** Generated from the API; the names here are the ones the app uses. */
 export type Interview = api.InterviewResponse;
+export type Interviewer = api.InterviewerResponse;
 export type ScheduleInterviewRequest = api.ScheduleInterviewRequest;
 export type UpdateInterviewRequest = api.UpdateInterviewRequest;
 

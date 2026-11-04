@@ -187,7 +187,14 @@ export class ContactLog implements OnInit {
   private open(target: Contact | 'new'): void {
     this.formError.set(null);
     this.editing.set(target);
-    this.loadChoices().subscribe({
+    this.refreshChoices();
+  }
+
+  /** Reloads what the open form picks from, for when people join or leave the application. */
+  refreshChoices(): void {
+    const target = this.editing();
+    if (!target) return;
+    this.loadChoices(target).subscribe({
       next: (choices) => this.choices.set(choices),
       error: () => this.formError.set('Could not load the list to pick from.'),
     });
@@ -200,8 +207,12 @@ export class ContactLog implements OnInit {
       : this.api.aboutApplication(this.applicationId()!);
   }
 
-  /** Loaded each time the form opens, so people or applications added since show up. */
-  private loadChoices(): Observable<Choice[]> {
+  /**
+   * Loaded each time the form opens, so people or applications added since show up. On an
+   * application's page that's the people on the application, plus whoever an edited contact
+   * was with if they've since been taken off it.
+   */
+  private loadChoices(target: Contact | 'new'): Observable<Choice[]> {
     return this.forPerson()
       ? this.applications
           .list()
@@ -210,13 +221,17 @@ export class ContactLog implements OnInit {
               apps.map((a) => ({ id: a.id, label: `${employerLabel(a)} – ${a.role}` })),
             ),
           )
-      : this.people.list().pipe(
-          map((people) =>
-            people.map((p) => ({
+      : this.people.onApplication(this.applicationId()!).pipe(
+          map((linked) => {
+            const choices = linked.map(({ person: p }) => ({
               id: p.id,
               label: p.company ? `${p.name} (${p.company})` : p.name,
-            })),
-          ),
+            }));
+            if (target !== 'new' && !choices.some((c) => c.id === target.personId)) {
+              choices.push({ id: target.personId, label: target.personName });
+            }
+            return choices.sort((a, b) => a.label.localeCompare(b.label));
+          }),
         );
   }
 }

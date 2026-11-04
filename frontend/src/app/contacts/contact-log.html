@@ -40,11 +40,18 @@
         <label class="grid gap-space-xs">
           With
           <select formControlName="other">
-            <option value="" disabled>Pick someone you've added…</option>
+            <option value="" disabled>
+              {{ choices().length ? 'Pick someone on this application…' : 'No one on it yet' }}
+            </option>
             @for (c of choices(); track c.id) {
               <option [value]="c.id">{{ c.label }}</option>
             }
           </select>
+          @if (choices().length === 0) {
+            <span class="no-people text-body-sm font-normal text-on-surface-variant">
+              Add them to this application under People first.
+            </span>
+          }
         </label>
       }
       <label class="grid gap-space-xs">
@@ -81,11 +88,6 @@
     </label>
     @if (formError(); as message) {
       <p class="m-0 text-body-sm text-error">{{ message }}</p>
-    }
-    @if (!forPerson()) {
-      <p class="m-0 text-body-sm text-on-surface-variant">
-        Someone not on this application yet is added to it. New people are added under People.
-      </p>
     }
     <div class="flex gap-space-sm">
       <button type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>

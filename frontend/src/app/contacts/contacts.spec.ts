@@ -6,6 +6,7 @@ import { anApplication } from '../applications/testing';
 import { ContactLog } from './contact-log';
 import { Contact, PossibleDuplicate } from './contact.model';
 import { PossibleDuplicates } from './possible-duplicates';
+import { onIt } from '../people/testing';
 
 function aContact(overrides: Partial<Contact> = {}): Contact {
   return {
@@ -83,14 +84,18 @@ describe('contacts', () => {
       expect(el.querySelector('.empty')?.textContent).toContain('Nothing logged yet');
 
       button(el, 'Log contact').click();
-      http.expectOne('/api/people').flush([
-        {
-          id: 'p1',
-          name: 'Pat Lee',
-          company: 'Robert Half',
-        },
-      ]);
+      http
+        .expectOne('/api/applications/a1/people')
+        .flush([onIt('p2', 'Sam Ortiz', null), onIt('p1', 'Pat Lee', 'Robert Half')]);
       await fixture.whenStable();
+      const options = Array.from(
+        el.querySelectorAll<HTMLOptionElement>('select[formControlName=other] option'),
+      ).map((o) => o.textContent?.trim());
+      expect(options).toEqual([
+        'Pick someone on this application…',
+        'Pat Lee (Robert Half)',
+        'Sam Ortiz',
+      ]);
 
       const form = el.querySelector<HTMLFormElement>('form')!;
       set(form.querySelector('select[formControlName=other]')!, 'p1');
@@ -120,8 +125,9 @@ describe('contacts', () => {
     it('asks who it was with before saving', async () => {
       const { fixture, el } = await open([]);
       button(el, 'Log contact').click();
-      http.expectOne('/api/people').flush([]);
+      http.expectOne('/api/applications/a1/people').flush([]);
       await fixture.whenStable();
+      expect(el.querySelector('.no-people')?.textContent).toContain('under People first');
 
       el.querySelector('form')!.dispatchEvent(new Event('submit'));
       await fixture.whenStable();

@@ -7,26 +7,7 @@ import { PeopleList } from './people-list';
 import { PersonDetail } from './person-detail';
 import { PersonForm } from './person-form';
 import { ApplicationPerson, Person } from './person.model';
-
-function aPerson(overrides: Partial<Person> = {}): Person {
-  return {
-    id: 'p1',
-    name: 'Pat Lee',
-    companyId: 'c1',
-    company: 'Robert Half',
-    title: 'Senior Recruiter',
-    role: 'RECRUITER',
-    recruiterType: 'AGENCY',
-    email: 'pat@roberthalf.example',
-    phone: null,
-    linkedinUrl: null,
-    notes: null,
-    version: 0,
-    createdAt: '2026-10-23T12:00:00Z',
-    updatedAt: '2026-10-23T12:00:00Z',
-    ...overrides,
-  };
-}
+import { aPerson } from './testing';
 
 function onApp(person: Person, role = person.role): ApplicationPerson {
   return { person, role, addedAt: '2026-10-24T12:00:00Z' };

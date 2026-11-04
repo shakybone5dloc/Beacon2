@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideRouter } from '@angular/router';
 import { ApplicationInterviews } from './application-interviews';
 import { durationLabel, formatInZone, Interview, toInputValue } from './interview.model';
+import { onIt } from '../people/testing';
 
 function anInterview(overrides: Partial<Interview> = {}): Interview {
   return {
@@ -112,18 +113,23 @@ describe('interviews', () => {
       expect(el.querySelector('.empty')?.textContent).toContain('None scheduled');
 
       button(el, 'Schedule interview').click();
-      http.expectOne('/api/people').flush([
-        { id: 'p1', name: 'Sam Ortiz', company: 'Acme' },
-        { id: 'p2', name: 'Pat Lee', company: null },
-      ]);
+      http
+        .expectOne('/api/applications/a1/people')
+        .flush([onIt('p1', 'Sam Ortiz', 'Acme'), onIt('p2', 'Pat Lee', null)]);
       await fixture.whenStable();
 
       const form = el.querySelector<HTMLFormElement>('form')!;
+      const boxes = Array.from(form.querySelectorAll<HTMLLabelElement>('.interviewers label'));
+      // Only the people on this application, by name.
+      expect(boxes.map((l) => l.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+        'Pat Lee',
+        'Sam Ortiz (Acme)',
+      ]);
       set(form.querySelector('select[formControlName=type]')!, 'PANEL');
       set(form.querySelector('input[formControlName=localStart]')!, '2099-03-10T14:00');
       set(form.querySelector('select[formControlName=timeZone]')!, 'America/Chicago');
       set(form.querySelector('input[formControlName=location]')!, ' https://meet.example/abc ');
-      form.querySelectorAll<HTMLInputElement>('.interviewers input[type=checkbox]')[0].click();
+      boxes[1].querySelector('input')!.click();
       form.dispatchEvent(new Event('submit'));
 
       const req = http.expectOne(
@@ -152,8 +158,11 @@ describe('interviews', () => {
     it('asks for the date before saving', async () => {
       const { fixture, el } = await open([]);
       button(el, 'Schedule interview').click();
-      http.expectOne('/api/people').flush([]);
+      http.expectOne('/api/applications/a1/people').flush([]);
       await fixture.whenStable();
+      expect(el.querySelector('.no-people')?.textContent).toContain(
+        'Add the interviewers to this application under People first',
+      );
 
       el.querySelector('form')!.dispatchEvent(new Event('submit'));
       await fixture.whenStable();
@@ -165,7 +174,8 @@ describe('interviews', () => {
       const { fixture, el } = await open([anInterview({ version: 2 })]);
 
       button(el, 'Edit').click();
-      http.expectOne('/api/people').flush([{ id: 'p1', name: 'Sam Ortiz', company: 'Acme' }]);
+      // Sam has since been taken off the application, but stays on their interview.
+      http.expectOne('/api/applications/a1/people').flush([]);
       await fixture.whenStable();
       const form = el.querySelector<HTMLFormElement>('form')!;
       expect(form.querySelector<HTMLInputElement>('input[formControlName=localStart]')!.value).toBe(

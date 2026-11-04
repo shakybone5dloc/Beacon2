@@ -4,7 +4,6 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { PeopleApi } from '../people/people-api';
-import { Person } from '../people/person.model';
 import { InterviewsApi } from './interviews-api';
 import {
   browserTimeZone,
@@ -12,6 +11,7 @@ import {
   durationLabel,
   formatInZone,
   Interview,
+  Interviewer,
   INTERVIEW_TYPE_LABELS,
   INTERVIEW_TYPES,
   InterviewOutcome,
@@ -42,7 +42,8 @@ export class ApplicationInterviews implements OnInit {
   protected readonly error = signal<string | null>(null);
   /** The interview being edited, 'new' while scheduling one, or null when the form is closed. */
   protected readonly editing = signal<Interview | 'new' | null>(null);
-  protected readonly people = signal<Person[]>([]);
+  /** Who can be picked: the people on this application, plus anyone already on the interview. */
+  protected readonly people = signal<Interviewer[]>([]);
   protected readonly zones = signal<string[]>([]);
   protected readonly saving = signal(false);
   protected readonly formError = signal<string | null>(null);
@@ -199,14 +200,36 @@ export class ApplicationInterviews implements OnInit {
     return /^https?:\/\/\S+$/i.test(location);
   }
 
-  /** Loaded each time the form opens, so people added since show up. */
+  /**
+   * Loaded each time the form opens, so people added to the application since show up.
+   * An interviewer since taken off the application stays listed on their interview.
+   */
   private open(target: Interview | 'new'): void {
     this.formError.set(null);
     this.editing.set(target);
     this.zones.set(timeZones(this.form.controls.timeZone.value));
-    this.peopleApi.list().subscribe({
-      next: (people) => this.people.set(people),
-      error: () => this.formError.set('Could not load your people to pick interviewers from.'),
+    this.loadPeople(target);
+  }
+
+  /** People were added to or taken off the application while the form may be open. */
+  refreshPeople(): void {
+    const target = this.editing();
+    if (target) this.loadPeople(target);
+  }
+
+  private loadPeople(target: Interview | 'new'): void {
+    this.peopleApi.onApplication(this.applicationId()).subscribe({
+      next: (linked) => {
+        const people: Interviewer[] = linked.map(({ person }) => ({
+          id: person.id,
+          name: person.name,
+          company: person.company,
+        }));
+        const already = target === 'new' ? [] : target.interviewers;
+        const missing = already.filter((i) => !people.some((p) => p.id === i.id));
+        this.people.set([...people, ...missing].sort((a, b) => a.name.localeCompare(b.name)));
+      },
+      error: () => this.formError.set('Could not load the people to pick interviewers from.'),
     });
   }
 }

@@ -61,8 +61,8 @@
     <fieldset class="m-0 grid gap-space-xs border-0 p-0">
       <legend class="mb-space-xs text-headline-sm">Interviewers</legend>
       @if (people().length === 0) {
-        <p class="m-0 text-body-sm text-on-surface-variant">
-          Add interviewers under <a routerLink="/people">People</a> to pick them here.
+        <p class="no-people m-0 text-body-sm text-on-surface-variant">
+          Add the interviewers to this application under People first, then pick them here.
         </p>
       } @else {
         <div
@@ -112,9 +112,6 @@
         </select>
       </label>
     </div>
-    <p class="m-0 text-body-sm text-on-surface-variant">
-      Interviewers not on this application yet are added to it.
-    </p>
     @if (formError(); as message) {
       <p class="m-0 text-body-sm text-error">{{ message }}</p>
     }
