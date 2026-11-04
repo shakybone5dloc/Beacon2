@@ -19,6 +19,9 @@ import { Resume } from '../resumes/resume.model';
 import { ResumesApi } from '../resumes/resumes-api';
 
 const MAX_FIELD = 200;
+const SOURCES_OPEN_KEY = 'beacon.jobs.sourcesOpen';
+/** Names listed in the collapsed Sources header before it says "+N more". */
+const NAMED_SOURCES = 3;
 
 @Component({
   selector: 'app-job-search',
@@ -62,6 +65,31 @@ export class JobSearch implements OnInit {
       .filter((s) => !this.state.excludedSources().has(s.id))
       .map((s) => s.id),
   );
+
+  /** The Sources list starts collapsed; whether the user left it open is remembered in this browser. */
+  protected readonly sourcesOpen = signal(readSourcesOpen());
+
+  /** What the collapsed Sources header says is picked: "All 6", names, or "None selected". */
+  protected readonly sourcesSummary = computed(() => {
+    const all = this.sources();
+    const picked = all.filter((s) => !this.state.excludedSources().has(s.id)).map((s) => s.name);
+    if (picked.length === 0) return 'None selected';
+    if (picked.length === all.length) return `All ${all.length}`;
+    const named =
+      picked.length > NAMED_SOURCES
+        ? `${picked.slice(0, NAMED_SOURCES).join(', ')} +${picked.length - NAMED_SOURCES} more`
+        : picked.join(', ');
+    return `${named} · ${picked.length} of ${all.length}`;
+  });
+
+  protected setSourcesOpen(open: boolean): void {
+    this.sourcesOpen.set(open);
+    try {
+      localStorage.setItem(SOURCES_OPEN_KEY, open ? 'open' : 'closed');
+    } catch {
+      // Storage can be unavailable (private windows); it still opens and closes for this visit.
+    }
+  }
 
   protected readonly failures = computed(
     () => this.state.results()?.sources.filter((s) => s.error != null) ?? [],
@@ -298,4 +326,12 @@ function withoutKey<K, V>(map: ReadonlyMap<K, V>, key: K): ReadonlyMap<K, V> {
   const next = new Map(map);
   next.delete(key);
   return next;
+}
+
+function readSourcesOpen(): boolean {
+  try {
+    return localStorage.getItem(SOURCES_OPEN_KEY) === 'open';
+  } catch {
+    return false;
+  }
 }

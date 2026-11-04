@@ -3,6 +3,7 @@ import { TitleCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
+import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import { finalize, Observable } from 'rxjs';
 import { ApplicationsApi } from '../applications/applications-api';
 import {
@@ -64,7 +65,16 @@ const OUTCOME_CLASSES: Partial<Record<ApplicationStatus, string>> = {
 
 @Component({
   selector: 'app-board',
-  imports: [TitleCasePipe, RouterLink, CdkDropListGroup, CdkDropList, CdkDrag],
+  imports: [
+    TitleCasePipe,
+    RouterLink,
+    CdkDropListGroup,
+    CdkDropList,
+    CdkDrag,
+    CdkMenuTrigger,
+    CdkMenu,
+    CdkMenuItem,
+  ],
   templateUrl: './board.html',
   styleUrl: './board.css',
 })
@@ -73,8 +83,6 @@ export class Board implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   protected readonly employerLabel = employerLabel;
-  /** A forward move is the primary button, with an arrow after its label. */
-  protected readonly forwardClasses = "btn-primary after:content-['_→']";
   protected readonly verdict = verdict;
   /** The fit bar's fill, in the verdict's colour. */
   protected readonly fitFill: Record<Verdict['pill'], string> = {

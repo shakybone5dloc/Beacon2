@@ -20,6 +20,27 @@ describe('Board', () => {
 
   afterEach(() => http.verify());
 
+  /** A menu item's words, without the arrow icon a forward move carries. */
+  function itemLabel(item: HTMLElement): string {
+    return (item.querySelector('.label') ?? item).textContent?.trim() ?? '';
+  }
+
+  /** Opens a card's menu and finds one of its items; the menu opens in an overlay outside the board. */
+  async function menuItem(
+    fixture: { nativeElement: HTMLElement; whenStable(): Promise<unknown> },
+    company: string,
+    label: string,
+  ): Promise<HTMLElement> {
+    const card = Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLElement>('.board .card'),
+    ).find((c) => c.querySelector('a.company')?.textContent?.trim() === company)!;
+    card.querySelector<HTMLButtonElement>('button.card-menu')!.click();
+    await fixture.whenStable();
+    return Array.from(document.querySelectorAll<HTMLElement>('.menu .menu-item')).find(
+      (item) => itemLabel(item) === label,
+    )!;
+  }
+
   it('puts each application in its status column', async () => {
     const fixture = TestBed.createComponent(Board);
     await fixture.whenStable();
@@ -255,7 +276,7 @@ describe('Board', () => {
     expect(fixture.nativeElement.querySelector('.board')).toBeNull();
   });
 
-  it('moves a card when a transition button is clicked', async () => {
+  it('moves a card from its menu', async () => {
     const fixture = TestBed.createComponent(Board);
     await fixture.whenStable();
 
@@ -269,10 +290,7 @@ describe('Board', () => {
     await fixture.whenStable();
 
     const el: HTMLElement = fixture.nativeElement;
-    const applied = Array.from(el.querySelectorAll('button')).find(
-      (b) => b.textContent?.trim() === 'Applied',
-    )!;
-    applied.click();
+    (await menuItem(fixture, 'Acme', 'Applied')).click();
 
     const req = http.expectOne('/api/applications/a1/status');
     expect(req.request.body).toEqual({ status: 'APPLIED', version: 0 });
@@ -303,10 +321,7 @@ describe('Board', () => {
     await fixture.whenStable();
 
     const el: HTMLElement = fixture.nativeElement;
-    const applied = Array.from(el.querySelectorAll('button')).find(
-      (b) => b.textContent?.trim() === 'Applied',
-    )!;
-    applied.click();
+    (await menuItem(fixture, 'Acme', 'Applied')).click();
 
     http
       .expectOne('/api/applications/a1/status')
@@ -322,6 +337,47 @@ describe('Board', () => {
     const columns = el.querySelectorAll('section.column');
     expect(columns[0].textContent).not.toContain('Acme');
     expect(columns[1].textContent).toContain('Acme');
+  });
+
+  it('keeps the moves and other actions in a menu instead of buttons on the card', async () => {
+    const fixture = TestBed.createComponent(Board);
+    await fixture.whenStable();
+    http.expectOne('/api/applications').flush([
+      anApplication({
+        id: 'a1',
+        company: 'Acme',
+        status: 'APPLIED',
+        followUpOn: '2099-01-01',
+        version: 4,
+        allowedTransitions: ['INTERVIEWING', 'REJECTED', 'WITHDRAWN'],
+      }),
+    ]);
+    await fixture.whenStable();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelectorAll('.board .card button:not(.card-menu)').length).toBe(0);
+
+    await menuItem(fixture, 'Acme', 'Open');
+    const items = Array.from(document.querySelectorAll<HTMLElement>('.menu .menu-item'));
+    expect(items.map(itemLabel)).toEqual([
+      'Rejected',
+      'Withdrawn',
+      'Interviewing',
+      'Open',
+      'Interview brief',
+      'Edit',
+      'Follow-up done',
+    ]);
+    expect(items[2].querySelector('.material-symbols-outlined')?.textContent).toContain(
+      'arrow_forward',
+    );
+    expect(items[4].getAttribute('href')).toBe('/applications/a1/brief');
+
+    items[6].click();
+    const req = http.expectOne('/api/applications/a1/follow-up');
+    expect(req.request.body).toEqual({ followUpOn: null, version: 4 });
+    req.flush(anApplication({ id: 'a1', company: 'Acme', status: 'APPLIED', version: 5 }));
+    await fixture.whenStable();
+    expect(document.querySelector('.menu')).toBeNull();
   });
 
   it('keeps long tags inside the card, with the full text on hover', async () => {

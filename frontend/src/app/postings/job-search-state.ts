@@ -44,8 +44,12 @@ export class JobSearchState {
     effect(() => {
       const options = this.options();
       const excluded = this.excludedSources();
-      if (this.userId && options) {
-        write(storageKey(this.userId), { ...options, excludedSources: [...excluded] });
+      // Saved even before anything is typed, so ticking and unticking sources is kept on its own.
+      if (this.userId) {
+        write(storageKey(this.userId), {
+          ...(options ?? { keywords: '', location: '', remoteOnly: false }),
+          excludedSources: [...excluded],
+        });
       }
     });
   }

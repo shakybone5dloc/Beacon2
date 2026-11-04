@@ -8,6 +8,8 @@
  * components' own CSS and utility classes refine it.
  */
 @import 'tailwindcss';
+/* Positions the board cards' dropdown menus (Angular CDK). */
+@import '@angular/cdk/overlay-prebuilt.css';
 
 @import '@fontsource-variable/inter';
 @import '@fontsource-variable/jetbrains-mono';

@@ -195,7 +195,7 @@
                 @if (app.fitScore != null) {
                   @let v = verdict(app.fitScore);
                   <span
-                    class="fit flex shrink-0 items-center gap-1.5 font-mono text-label-code text-on-surface-variant"
+                    class="fit ml-auto flex shrink-0 items-center gap-1.5 font-mono text-label-code text-on-surface-variant"
                     [title]="'Fit ' + app.fitScore + '% · ' + v.label"
                     [attr.aria-label]="'Fit ' + app.fitScore + ' percent, ' + v.label"
                   >
@@ -213,6 +213,17 @@
                     <span class="fit-score text-on-surface">{{ app.fitScore }}</span>
                   </span>
                 }
+                <button
+                  type="button"
+                  class="card-menu -my-1 -mr-2 flex min-h-0 shrink-0 items-center rounded-sm border-0 bg-transparent p-0.5 text-on-surface-variant hover:bg-hover hover:text-on-surface"
+                  [cdkMenuTriggerFor]="cardMenu"
+                  [cdkMenuTriggerData]="{ $implicit: app }"
+                  [attr.aria-label]="'Actions for ' + employerLabel(app)"
+                >
+                  <span class="material-symbols-outlined !text-[18px]" aria-hidden="true"
+                    >more_vert</span
+                  >
+                </button>
               </div>
               <span class="block text-body-sm text-on-surface-variant">{{ app.role }}</span>
             </div>
@@ -263,33 +274,16 @@
               }
             }
 
-            @if (a || app.allowedTransitions.length > 0) {
-              <div class="flex items-center justify-between gap-space-sm pt-space-xs">
-                @if (a) {
-                  <span
-                    class="age shrink-0 font-mono text-label-code text-on-surface-variant"
-                    [class.text-attention]="a.needsAttention"
-                    [class.font-semibold]="a.needsAttention"
-                    [title]="a.ageDescription"
-                    [attr.aria-label]="a.ageDescription"
-                  >
-                    {{ a.age }}
-                  </span>
-                }
-                <div class="actions ml-auto flex flex-wrap justify-end gap-space-xs">
-                  @for (target of moves(app); track target) {
-                    <button
-                      type="button"
-                      class="btn btn-sm"
-                      [class]="isForward(target) ? forwardClasses : ''"
-                      [disabled]="busy()"
-                      (click)="move(app, target)"
-                    >
-                      {{ target | titlecase }}
-                    </button>
-                  }
-                </div>
-              </div>
+            @if (a) {
+              <span
+                class="age shrink-0 font-mono text-label-code text-on-surface-variant"
+                [class.text-attention]="a.needsAttention"
+                [class.font-semibold]="a.needsAttention"
+                [title]="a.ageDescription"
+                [attr.aria-label]="a.ageDescription"
+              >
+                {{ a.age }}
+              </span>
             }
           </article>
         } @empty {
@@ -301,3 +295,45 @@
     }
   </div>
 }
+
+<!-- A card's actions: where it can move, and the other things to do with it. -->
+<ng-template #cardMenu let-app>
+  <div cdkMenu class="menu">
+    @if (app.allowedTransitions.length > 0) {
+      <p class="menu-label">Move to</p>
+      @for (target of moves(app); track target) {
+        <button
+          cdkMenuItem
+          type="button"
+          class="menu-item move"
+          [disabled]="busy()"
+          (cdkMenuItemTriggered)="move(app, target)"
+        >
+          <span class="label">{{ target | titlecase }}</span>
+          @if (isForward(target)) {
+            <span class="material-symbols-outlined !text-[16px]" aria-hidden="true"
+              >arrow_forward</span
+            >
+          }
+        </button>
+      }
+      <hr class="menu-rule" />
+    }
+    <a cdkMenuItem class="menu-item" [routerLink]="['/applications', app.id]">Open</a>
+    <a cdkMenuItem class="menu-item" [routerLink]="['/applications', app.id, 'brief']"
+      >Interview brief</a
+    >
+    <a cdkMenuItem class="menu-item" [routerLink]="['/applications', app.id, 'edit']">Edit</a>
+    @if (app.followUpOn) {
+      <button
+        cdkMenuItem
+        type="button"
+        class="menu-item follow-up-done"
+        [disabled]="busy()"
+        (cdkMenuItemTriggered)="completeFollowUp(app)"
+      >
+        Follow-up done
+      </button>
+    }
+  </div>
+</ng-template>

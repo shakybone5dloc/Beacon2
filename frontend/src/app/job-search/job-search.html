@@ -31,27 +31,36 @@
 </form>
 
 @if (sources().length > 0) {
-  <fieldset class="sources">
-    <legend>Sources</legend>
-    @for (source of sources(); track source.id) {
-      <label class="source">
-        <input
-          type="checkbox"
-          [checked]="isSelected(source.id)"
-          (change)="toggleSource(source.id)"
-        />
-        <span class="name">{{ source.name }}</span>
-        <span class="coverage">{{ source.coverage }}</span>
-        @if (source.usesYourKey) {
-          <span class="your-key">your key</span>
-        }
-      </label>
-    }
-    <p class="more">
-      <a routerLink="/providers">Add API keys</a> or
-      <a routerLink="/companies">watch companies</a> to search more sources →
-    </p>
-  </fieldset>
+  <details
+    class="sources"
+    [open]="sourcesOpen()"
+    (toggle)="setSourcesOpen($any($event.target).open)"
+  >
+    <summary>
+      <span class="label font-semibold">Sources</span>
+      <span class="picked">{{ sourcesSummary() }}</span>
+    </summary>
+    <div class="source-list" role="group" aria-label="Sources">
+      @for (source of sources(); track source.id) {
+        <label class="source">
+          <input
+            type="checkbox"
+            [checked]="isSelected(source.id)"
+            (change)="toggleSource(source.id)"
+          />
+          <span class="name">{{ source.name }}</span>
+          <span class="coverage">{{ source.coverage }}</span>
+          @if (source.usesYourKey) {
+            <span class="your-key">your key</span>
+          }
+        </label>
+      }
+      <p class="more">
+        <a routerLink="/providers">Add API keys</a> or
+        <a routerLink="/companies">watch companies</a> to search more sources →
+      </p>
+    </div>
+  </details>
 }
 
 @if (error(); as message) {

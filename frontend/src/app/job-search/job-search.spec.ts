@@ -123,6 +123,38 @@ describe('JobSearch', () => {
     expect(el.querySelector('.results')).not.toBeNull();
   });
 
+  describe('Sources section', () => {
+    afterEach(() => localStorage.clear());
+
+    it('starts collapsed and says which sources are picked', async () => {
+      const { fixture, el } = await render();
+      const details = el.querySelector<HTMLDetailsElement>('details.sources')!;
+      const picked = () => details.querySelector('summary .picked')?.textContent?.trim();
+
+      expect(details.open).toBe(false);
+      expect(picked()).toBe('All 2');
+
+      sourceBox(el, 'Jobicy').click();
+      await fixture.whenStable();
+      expect(picked()).toBe('Remotive · 1 of 2');
+
+      sourceBox(el, 'Remotive').click();
+      await fixture.whenStable();
+      expect(picked()).toBe('None selected');
+    });
+
+    it('remembers being left open', async () => {
+      const { fixture, el } = await render();
+      const details = el.querySelector<HTMLDetailsElement>('details.sources')!;
+
+      details.open = true;
+      details.dispatchEvent(new Event('toggle'));
+      await fixture.whenStable();
+
+      expect(localStorage.getItem('beacon.jobs.sourcesOpen')).toBe('open');
+    });
+  });
+
   describe('remembered options', () => {
     function signIn(id: string) {
       TestBed.inject(AuthState)
@@ -152,6 +184,22 @@ describe('JobSearch', () => {
         remoteOnly: true,
         excludedSources: ['jobicy'],
       });
+    });
+
+    it('keeps unticked sources even when nothing has been typed', async () => {
+      signIn('u1');
+      const { fixture, el } = await render();
+
+      sourceBox(el, 'Jobicy').click();
+      await fixture.whenStable();
+      expect(JSON.parse(localStorage.getItem('beacon.jobSearch.u1')!).excludedSources).toEqual([
+        'jobicy',
+      ]);
+
+      // Ticking it again is kept too, so the old choice doesn't come back.
+      sourceBox(el, 'Jobicy').click();
+      await fixture.whenStable();
+      expect(JSON.parse(localStorage.getItem('beacon.jobSearch.u1')!).excludedSources).toEqual([]);
     });
 
     it('fills the form from what this user had last time', async () => {
