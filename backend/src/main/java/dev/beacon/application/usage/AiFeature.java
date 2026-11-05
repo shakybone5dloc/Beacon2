@@ -4,5 +4,6 @@ package dev.beacon.application.usage;
 public enum AiFeature {
     COVER_LETTER,
     FIT_SCORE,
-    INTERVIEW_BRIEF
+    INTERVIEW_BRIEF,
+    STORY_BANK
 }

@@ -4,6 +4,7 @@ import dev.beacon.application.briefs.BriefWriter.BriefInput;
 import dev.beacon.application.briefs.BriefWriter.Fit;
 import dev.beacon.application.briefs.BriefWriter.PersonLine;
 import dev.beacon.application.briefs.BriefWriter.Round;
+import dev.beacon.application.briefs.BriefWriter.StoryLine;
 import dev.beacon.domain.briefs.SectionKind;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +28,21 @@ class BriefPromptTests {
                                 null, "Asked about Kafka.", "Passed"),
                         new Round(PANEL, "Panel", "Thu Oct 8, 2026 3:00 PM (UTC)", List.of(), "Review design.",
                                 null, null)),
+                List.of(new StoryLine("Multi-tenant authorization at PropKnot", List.of("auth you've built"),
+                        "Landlords shared one app.", "Keep tenants apart.", "Built row-level policies.",
+                        "No cross-tenant leaks.", "[how many tenants?]")),
                 LocalDate.parse("2026-11-04"));
+    }
+
+    @Test
+    void onlyTheSectionsThatUseStoriesGetTheStoryBank() {
+        var stories = BriefPrompt.userMessage(input(SectionKind.STORIES, null, null));
+
+        assertThat(stories).contains("=== STORY BANK (their own stories) ===\n"
+                + "### Multi-tenant authorization at PropKnot  (auth you've built)\n"
+                + "Situation: Landlords shared one app.\n", "Numbers: [how many tenants?]");
+        assertThat(BriefPrompt.userMessage(input(SectionKind.QUESTIONS, null, null))).contains("STORY BANK");
+        assertThat(BriefPrompt.userMessage(input(SectionKind.REFRESHER, null, null))).doesNotContain("STORY BANK");
     }
 
     @Test

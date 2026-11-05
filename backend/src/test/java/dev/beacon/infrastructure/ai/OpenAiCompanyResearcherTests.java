@@ -25,7 +25,7 @@ class OpenAiCompanyResearcherTests {
 
     private static final BriefInput INPUT = new BriefInput(SectionKind.COMPANY, null, "GHX", "Senior Java Engineer",
             null, true, null, null, "Build supply chain services.", null, "Jordan Smith", null, List.of(), List.of(),
-            LocalDate.of(2026, 11, 5));
+            List.of(), LocalDate.of(2026, 11, 5));
 
     private record Setup(OpenAiCompanyResearcher researcher, MockRestServiceServer server) {}
 

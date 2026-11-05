@@ -2521,6 +2521,164 @@
         },
         "tags" : [ "Saved Searches" ]
       }
+    },
+    "/api/stories" : {
+      "get" : {
+        "operationId" : "listStories",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/StoryResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Stories" ]
+      },
+      "post" : {
+        "operationId" : "createStory",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveStoryRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StoryResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Stories" ]
+      }
+    },
+    "/api/stories/drafts" : {
+      "post" : {
+        "operationId" : "draftStories",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DraftStoriesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/StoryDraftResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Stories" ]
+      }
+    },
+    "/api/stories/{id}" : {
+      "delete" : {
+        "operationId" : "deleteStory",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "Stories" ]
+      },
+      "get" : {
+        "operationId" : "getStory",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StoryResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Stories" ]
+      },
+      "put" : {
+        "operationId" : "updateStory",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveStoryRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StoryResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Stories" ]
+      }
     }
   },
   "components" : {
@@ -3244,6 +3402,20 @@
           }
         },
         "required" : [ "applicationId", "contentType", "createdAt", "filename", "id", "kind", "sizeBytes" ]
+      },
+      "DraftStoriesRequest" : {
+        "type" : "object",
+        "properties" : {
+          "notes" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 10000,
+            "minLength" : 0
+          },
+          "resumeDocumentId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          }
+        }
       },
       "FitResponse" : {
         "type" : "object",
@@ -4054,6 +4226,56 @@
         },
         "required" : [ "keywords", "name", "runDays", "runHour", "timeZone" ]
       },
+      "SaveStoryRequest" : {
+        "type" : "object",
+        "properties" : {
+          "action" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 10000,
+            "minLength" : 0
+          },
+          "metrics" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 2000,
+            "minLength" : 0
+          },
+          "result" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 5000,
+            "minLength" : 0
+          },
+          "situation" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 5000,
+            "minLength" : 0
+          },
+          "tags" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "type" : "string",
+              "maxLength" : 40,
+              "minLength" : 0
+            },
+            "maxItems" : 12,
+            "minItems" : 0
+          },
+          "task" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 5000,
+            "minLength" : 0
+          },
+          "title" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "version" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64"
+          }
+        },
+        "required" : [ "title" ]
+      },
       "SavedSearchResponse" : {
         "type" : "object",
         "properties" : {
@@ -4302,6 +4524,94 @@
           }
         },
         "required" : [ "changedAt", "fromStatus", "toStatus" ]
+      },
+      "StoryDraftResponse" : {
+        "type" : "object",
+        "properties" : {
+          "action" : {
+            "type" : "string"
+          },
+          "gaps" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "metrics" : {
+            "type" : "string"
+          },
+          "result" : {
+            "type" : "string"
+          },
+          "situation" : {
+            "type" : "string"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "task" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "action", "gaps", "metrics", "result", "situation", "tags", "task", "title" ]
+      },
+      "StoryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "action" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "gaps" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "metrics" : {
+            "type" : "string"
+          },
+          "result" : {
+            "type" : "string"
+          },
+          "situation" : {
+            "type" : "string"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "task" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "action", "createdAt", "gaps", "id", "metrics", "result", "situation", "tags", "task", "title", "updatedAt", "version" ]
       },
       "TimelineEntryResponse" : {
         "type" : "object",

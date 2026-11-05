@@ -69,6 +69,11 @@ export const routes: Routes = [
         title: 'Beacon · Person',
       },
       {
+        path: 'stories',
+        loadComponent: () => import('./stories/stories-page').then((m) => m.StoriesPage),
+        title: 'Beacon · Stories',
+      },
+      {
         path: 'providers',
         loadComponent: () => import('./providers/provider-guide').then((m) => m.ProviderGuide),
         title: 'Beacon · Getting API keys',

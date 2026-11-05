@@ -1,0 +1,253 @@
+<header class="mb-space-lg flex flex-wrap items-start justify-between gap-space-md">
+  <div>
+    <h1 class="m-0 mb-space-xs">Stories</h1>
+    <p class="m-0 max-w-2xl text-body-md text-on-surface-variant">
+      Your STAR stories, kept once and reused in every interview brief. Put a number you still need
+      to look up in square brackets, like <code>[how many users?]</code>, and it's flagged until you
+      fill it in.
+    </p>
+  </div>
+  @if (!editing()) {
+    <div class="flex flex-wrap gap-space-xs">
+      <button type="button" class="new btn" (click)="startNew()">
+        <span class="material-symbols-outlined !text-base" aria-hidden="true">add</span>
+        New story
+      </button>
+      <button type="button" class="from-notes btn" (click)="notesOpen.set(!notesOpen())">
+        Draft from notes
+      </button>
+      <button type="button" class="suggest btn" [disabled]="suggesting()" (click)="suggest()">
+        {{ suggesting() ? 'Reading your resume…' : 'Suggest from my resume' }}
+      </button>
+    </div>
+  }
+</header>
+
+@if (error(); as message) {
+  <p class="notice">{{ message }}</p>
+}
+@if (draftError(); as message) {
+  <p class="draft-error notice">{{ message }}</p>
+}
+
+@if (notesOpen() && !editing()) {
+  <section class="notes card mb-space-lg grid gap-space-sm p-space-md">
+    <label class="grid gap-space-xs">
+      <span class="text-headline-sm">Rough notes on one story</span>
+      <textarea
+        class="input min-h-32"
+        placeholder="What happened, what you did, how it turned out. Bullet points are fine."
+        [value]="notes()"
+        (input)="notes.set($any($event.target).value)"
+      ></textarea>
+    </label>
+    <div class="flex gap-space-sm">
+      <button
+        type="button"
+        class="draft btn btn-primary"
+        [disabled]="drafting() || !notes().trim()"
+        (click)="draftFromNotes()"
+      >
+        {{ drafting() ? 'Drafting…' : 'Draft the story' }}
+      </button>
+      <button type="button" class="btn" (click)="notesOpen.set(false)">Cancel</button>
+    </div>
+  </section>
+}
+
+@if (editing(); as target) {
+  <form
+    class="story-form card mb-space-lg grid gap-space-md p-space-md"
+    [formGroup]="form"
+    (ngSubmit)="save()"
+  >
+    <h2 class="m-0">{{ target === 'new' ? 'New story' : 'Edit story' }}</h2>
+    <label class="grid gap-space-xs">
+      Title
+      <input
+        class="input"
+        formControlName="title"
+        placeholder="Multi-tenant authorization at PropKnot"
+      />
+      @if (form.controls.title.touched && form.controls.title.invalid) {
+        <span class="error text-body-sm text-error">Give the story a short title.</span>
+      }
+    </label>
+    @for (part of parts; track part.key) {
+      <label class="grid gap-space-xs">
+        <span>
+          {{ part.label }}
+          <span class="text-body-sm font-normal text-on-surface-variant">{{ part.hint }}</span>
+        </span>
+        <textarea
+          class="input min-h-20"
+          [formControlName]="part.key"
+          [attr.name]="part.key"
+          [rows]="part.key === 'action' ? 5 : 3"
+        ></textarea>
+      </label>
+    }
+    <label class="grid gap-space-xs">
+      <span>
+        Numbers
+        <span class="text-body-sm font-normal text-on-surface-variant"
+          >That back it up, one per line: users, latency, money, team size.</span
+        >
+      </span>
+      <textarea class="input min-h-16" formControlName="metrics" rows="2"></textarea>
+    </label>
+    <label class="grid gap-space-xs">
+      <span>
+        Tags
+        <span class="text-body-sm font-normal text-on-surface-variant"
+          >What it answers, separated by commas: leadership, hardest problem, conflict.</span
+        >
+      </span>
+      <input class="input" formControlName="tags" />
+    </label>
+    @if (formError(); as message) {
+      <p class="notice m-0">{{ message }}</p>
+    }
+    <div class="flex gap-space-sm">
+      <button type="submit" class="save" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Save' }}
+      </button>
+      <button type="button" class="cancel btn" (click)="cancel()">Cancel</button>
+    </div>
+  </form>
+}
+
+@if (suggestions(); as drafts) {
+  <section class="suggestions mb-space-lg">
+    <h2 class="mb-space-sm">Suggested from your resume</h2>
+    <p class="m-0 mb-space-md text-body-sm text-on-surface-variant">
+      Keep the ones worth telling; each opens for you to check and fill in before it's saved.
+    </p>
+    <ul class="m-0 grid list-none gap-space-sm p-0">
+      @for (draft of drafts; track draft) {
+        <li
+          class="suggestion card flex flex-wrap items-start justify-between gap-space-sm p-space-md"
+        >
+          <div class="min-w-0 flex-1">
+            <p class="title m-0 text-headline-sm">{{ draft.title }}</p>
+            <p class="m-0 text-body-sm text-on-surface-variant">
+              {{ draft.result || draft.action }}
+            </p>
+          </div>
+          <span class="flex gap-space-xs">
+            <button
+              type="button"
+              class="keep btn btn-sm btn-primary"
+              [disabled]="!!editing()"
+              (click)="keep(draft)"
+            >
+              Keep
+            </button>
+            <button type="button" class="discard btn btn-sm" (click)="dropSuggestion(draft)">
+              Discard
+            </button>
+          </span>
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+@if (stories(); as list) {
+  @if (allTags().length > 0) {
+    <div
+      class="tags mb-space-md flex flex-wrap items-center gap-space-xs"
+      aria-label="Filter by tag"
+    >
+      @for (tag of allTags(); track tag) {
+        <button
+          type="button"
+          class="tag pill cursor-pointer"
+          [class.pill-blue]="tagFilter() === tag"
+          [attr.aria-pressed]="tagFilter() === tag"
+          (click)="filterBy(tag)"
+        >
+          {{ tag }}
+        </button>
+      }
+    </div>
+  }
+
+  @if (list.length === 0) {
+    <p class="empty text-on-surface-variant">
+      No stories yet. Write one, draft one from your notes, or let the AI suggest a few from your
+      resume.
+    </p>
+  } @else {
+    <ul class="story-list m-0 grid list-none gap-space-md p-0">
+      @for (story of shown(); track story.id) {
+        <li class="story card p-space-md">
+          <div class="flex flex-wrap items-start justify-between gap-space-sm">
+            <button
+              type="button"
+              class="title m-0 min-h-0 border-0 bg-transparent p-0 text-left text-headline-sm text-on-surface hover:text-primary-container"
+              [attr.aria-expanded]="isExpanded(story)"
+              (click)="toggle(story)"
+            >
+              {{ story.title }}
+            </button>
+            <span class="flex gap-space-xs">
+              <button type="button" class="edit btn btn-sm" (click)="edit(story)">Edit</button>
+              <button type="button" class="delete btn btn-sm" (click)="remove(story)">
+                Delete
+              </button>
+            </span>
+          </div>
+          @if (story.tags.length > 0) {
+            <div class="mt-space-xs flex flex-wrap gap-space-xs">
+              @for (tag of story.tags; track tag) {
+                <span class="pill">{{ tag }}</span>
+              }
+            </div>
+          }
+          @if (story.gaps.length > 0) {
+            <p class="gaps m-0 mt-space-sm text-body-sm text-attention">
+              <span class="material-symbols-outlined !text-[14px] align-middle" aria-hidden="true"
+                >edit_note</span
+              >
+              Still to fill in: {{ story.gaps.join(' · ') }}
+            </p>
+          }
+          @if (isExpanded(story)) {
+            <dl class="star m-0 mt-space-md grid gap-space-sm">
+              @for (part of parts; track part.key) {
+                @if (story[part.key]) {
+                  <div>
+                    <dt class="text-label-caps text-on-surface-variant uppercase">
+                      {{ part.label }}
+                    </dt>
+                    <dd class="m-0 whitespace-pre-line">{{ story[part.key] }}</dd>
+                  </div>
+                }
+              }
+              @if (story.metrics) {
+                <div>
+                  <dt class="text-label-caps text-on-surface-variant uppercase">Numbers</dt>
+                  <dd class="m-0 whitespace-pre-line">{{ story.metrics }}</dd>
+                </div>
+              }
+            </dl>
+          } @else if (story.result || story.situation) {
+            <p class="preview m-0 mt-space-sm line-clamp-2 text-body-sm text-on-surface-variant">
+              {{ story.result || story.situation }}
+            </p>
+          }
+        </li>
+      } @empty {
+        <li class="text-on-surface-variant">No stories with that tag.</li>
+      }
+    </ul>
+  }
+} @else if (!error()) {
+  <p class="text-on-surface-variant">Loading…</p>
+}
+
+<p class="mt-space-xl text-body-sm text-on-surface-variant">
+  Interview briefs pick from these stories for each application;
+  <a routerLink="/">open an application</a> and its brief to see them used.
+</p>

@@ -58,16 +58,22 @@ final class BriefPrompt {
                     without overclaiming. After the table, one line on the gap to raise yourself before they do, \
                     if any.""",
             SectionKind.STORIES, """
-                    Pick two to four stories from the resume to have ready, the ones that best answer what this \
-                    posting cares about. For each: a ### title, then **Situation**, **Task**, **Action**, \
-                    **Result** as one or two lines each, drawn only from the resume (placeholders for missing \
-                    numbers), then **Tie to the role:** one line on why it matters for this job. Note which \
-                    common questions each story answers ("biggest challenge", "conflict", "leadership"...).""",
+                    Pick the two to four stories to have ready, the ones that best answer what this posting \
+                    cares about.
+                    When there is a STORY BANK, pick only from it and keep each story as they wrote it: a ### \
+                    with its title exactly as given, a one-line summary, its key numbers, then **Tie to the \
+                    role:** one or two lines connecting it to this job and company, and which questions it \
+                    answers here. If none of their stories fits something the posting stresses, say so in one \
+                    line at the end and name the kind of story worth adding.
+                    With no story bank, draw them from the resume: a ### title, then **Situation**, **Task**, \
+                    **Action**, **Result** as one or two lines each (placeholders for missing numbers), then \
+                    **Tie to the role:**, and end with one line suggesting they save these in their story bank.""",
             SectionKind.QUESTIONS, """
                     List the questions they're most likely to be asked in this process, in three ### groups: \
                     **Background and fit**, **Technical**, **Behavioral**. Four to six per group, specific to \
                     this posting and seniority. Under each question, an answer outline of two to four bullets \
-                    from the resume (point to a story by its theme where one fits). Use the interview rounds' \
+                    from the resume (point to a story where one fits, by its title when it's in the story \
+                    bank). Use the interview rounds' \
                     types and any debrief notes to weight what's coming next.""",
             SectionKind.REFRESHER, """
                     A technical refresher for the concepts and vocabulary this role leans on, based on the \
@@ -145,6 +151,23 @@ final class BriefPrompt {
                 line(text, "  Outcome", r.outcome());
                 block(text, "  Prep notes", r.prepNotes());
                 block(text, "  Debrief notes", r.debriefNotes());
+            }
+            text.append('\n');
+        }
+
+        // Only the sections that pick or point to stories get the bank; the rest don't need the tokens.
+        var usesStories = input.section() == SectionKind.STORIES || input.section() == SectionKind.QUESTIONS;
+        if (usesStories && !input.stories().isEmpty()) {
+            text.append("=== STORY BANK (their own stories) ===\n");
+            for (var story : input.stories()) {
+                text.append("### ").append(story.title());
+                if (!story.tags().isEmpty()) text.append("  (").append(String.join(", ", story.tags())).append(')');
+                text.append('\n');
+                line(text, "Situation", story.situation());
+                line(text, "Task", story.task());
+                line(text, "Action", story.action());
+                line(text, "Result", story.result());
+                line(text, "Numbers", story.metrics());
             }
             text.append('\n');
         }

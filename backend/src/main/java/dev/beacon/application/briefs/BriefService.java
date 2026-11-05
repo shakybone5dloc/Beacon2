@@ -6,6 +6,7 @@ import dev.beacon.application.documents.DocumentService;
 import dev.beacon.application.fit.FitService;
 import dev.beacon.application.providers.ProviderCatalog;
 import dev.beacon.application.resumes.ResumeService;
+import dev.beacon.application.stories.StoryService;
 import dev.beacon.application.usage.AiFeature;
 import dev.beacon.application.usage.AiUsageMeter;
 import dev.beacon.application.usage.AiUsageService;
@@ -75,6 +76,7 @@ public class BriefService {
     private final DocumentService documents;
     private final ResumeService resumes;
     private final FitService fit;
+    private final StoryService stories;
     private final List<BriefWriter> writers;
     private final List<CompanyResearcher> researchers;
     private final UserCredentials credentials;
@@ -85,8 +87,8 @@ public class BriefService {
     public BriefService(JobApplicationRepository applications, InterviewBriefRepository briefs,
                         BriefSectionRepository sections, InterviewRepository interviews,
                         ApplicationPersonRepository people, DocumentService documents, ResumeService resumes,
-                        FitService fit, List<BriefWriter> writers, List<CompanyResearcher> researchers,
-                        UserCredentials credentials,
+                        FitService fit, StoryService stories, List<BriefWriter> writers,
+                        List<CompanyResearcher> researchers, UserCredentials credentials,
                         AiUsageService usage, PlatformTransactionManager transactions, Clock clock) {
         this.applications = applications;
         this.briefs = briefs;
@@ -96,6 +98,7 @@ public class BriefService {
         this.documents = documents;
         this.resumes = resumes;
         this.fit = fit;
+        this.stories = stories;
         this.writers = writers;
         this.researchers = researchers;
         this.credentials = credentials;
@@ -250,7 +253,8 @@ public class BriefService {
                 details.location(), details.remote(),
                 application.getEmploymentType() == null ? null : label(application.getEmploymentType().name()),
                 pay(application), application.getJobDescription(), application.getNotes(), resumeText, latestFit,
-                peopleOn(applicationId), rounds.stream().map(BriefService::round).toList(), LocalDate.now(clock));
+                peopleOn(applicationId), rounds.stream().map(BriefService::round).toList(), storyBank(ownerId),
+                LocalDate.now(clock));
         return Optional.of(new Prepared(input, provider, apiKey));
     }
 
@@ -321,6 +325,13 @@ public class BriefService {
             briefs.insertIfMissing(UUID.randomUUID(), ownerId, applicationId, Instant.now(clock));
             return briefs.findByApplicationIdAndOwnerId(applicationId, ownerId).orElseThrow();
         });
+    }
+
+    private List<BriefWriter.StoryLine> storyBank(UUID ownerId) {
+        return stories.all(ownerId).stream()
+                .map(s -> new BriefWriter.StoryLine(s.getTitle(), s.getTags(), s.getSituation(), s.getTask(),
+                        s.getAction(), s.getResult(), s.getMetrics()))
+                .toList();
     }
 
     private List<BriefWriter.PersonLine> peopleOn(UUID applicationId) {

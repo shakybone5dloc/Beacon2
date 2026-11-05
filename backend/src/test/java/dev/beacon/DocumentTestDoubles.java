@@ -4,6 +4,7 @@ import dev.beacon.application.briefs.BriefException;
 import dev.beacon.application.briefs.BriefWriter;
 import dev.beacon.application.briefs.CompanyResearcher;
 import dev.beacon.application.coverletters.CoverLetterWriter;
+import dev.beacon.application.stories.StoryWriter;
 import dev.beacon.application.documents.PdfPrinter;
 import dev.beacon.application.documents.PostingCaptureException;
 import dev.beacon.application.fit.FitScorer;
@@ -56,6 +57,42 @@ public class DocumentTestDoubles {
     @Bean
     FakeCompanyResearcher fakeCompanyResearcher() {
         return new FakeCompanyResearcher();
+    }
+
+    @Bean
+    FakeStoryWriter fakeStoryWriter() {
+        return new FakeStoryWriter();
+    }
+
+    /** Stands in for OpenAI's story drafts; one story from notes, two from a resume. */
+    public static class FakeStoryWriter implements StoryWriter, Ordered {
+        public final List<DraftInput> inputs = new ArrayList<>();
+
+        @Override
+        public String provider() {
+            return ProviderCatalog.OPENAI;
+        }
+
+        @Override
+        public int getOrder() {
+            return Ordered.HIGHEST_PRECEDENCE;
+        }
+
+        @Override
+        public List<Draft> draft(DraftInput input, String apiKey, AiUsageMeter meter) {
+            meter.record(FakeCoverLetterWriter.USAGE);
+            inputs.add(input);
+            var fromNotes = new Draft("Cut checkout latency", "Checkout was slow.", "Make it fast.",
+                    "Profiled and cached the price lookups.", "Checkout got faster.", "[how much faster?]",
+                    List.of("Performance ", "performance", "hardest problem"));
+            return input.notes() != null ? List.of(fromNotes)
+                    : List.of(fromNotes, new Draft("Mentored two juniors", "", "", "Paired weekly.",
+                            "Both promoted.", "", List.of("mentoring")));
+        }
+
+        public void reset() {
+            inputs.clear();
+        }
     }
 
     /** Builds a one-page PDF containing the given lines, the way a printed posting would. */

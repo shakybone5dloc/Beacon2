@@ -33,7 +33,8 @@ Rebuilt from the .NET Beacon, then extended.
 | J3 | Saved searches on a schedule, a Matches page, fit checks for the newest 20 per run within the AI budget | a6b2f37 |
 | J0 | Google Jobs (SerpApi) and JSearch as keyed sources, reaching LinkedIn, Indeed and careers sites | ce3b972, 2672b04 |
 | B1 | Board search and filters kept in the address, drag-and-drop between columns (Angular CDK) | ad661f5 |
-| A1 | Interview brief: its own page, AI-written sections from the posting, resume, fit and rounds, company research with sources, editable, Markdown and print | 1e09f34, after c8e703f |
+| A1 | Interview brief: its own page, AI-written sections from the posting, resume, fit and rounds, company research with sources, editable, Markdown and print | 1e09f34, 65b2106 |
+| A7 | Story bank: STAR stories with tags and flagged gaps, AI drafts from notes or the resume, used by the brief's Stories section | after 65b2106 |
 
 ## Next: Companies and people
 
@@ -267,7 +268,11 @@ One living prep document per application that moves to interviews, modeled on th
 - Keyboard shortcuts (Space reveal, 1-4 grade) and a cheat-sheet view listing every answer.
 - Learning focus: modeling a scheduling algorithm as a pure, unit-tested Java service (dates in, next due date out), a "due today" query with an index on `(owner_id, due_at)`, and an Angular study screen with signals and keyboard handling.
 
-### A7. Story bank
+### A7. Story bank (done, except the items below)
+- Built as a Stories page (`/stories`, in the nav): each story has a title, situation, task, action, result, the numbers behind it and tags (lower-cased, so "Leadership" and "leadership" are one), with a tag filter. Anything in square brackets that isn't a link, like `[how many tenants?]`, is listed under the story as "Still to fill in" until it's replaced.
+- AI drafting (one structured-output call, both providers): **Draft from notes** turns rough notes into one story and opens it in the form; **Suggest from my resume** proposes up to five from the default resume, each kept (opened in the form to check) or discarded. Nothing is saved until the user saves it. Drafts never invent numbers; they leave placeholders. Metered as "Story drafts".
+- The brief's Stories section now picks two to four stories from the bank, as written, and adds a "Tie to the role" line for this company; Likely questions point to them by title. With an empty bank it still drafts from the resume and suggests saving them.
+- Still to do: suggesting which stories fit a posting outside the brief (on the application page); drilling stories as study cards (A6).
 - Your STAR stories, kept once and reused across applications: title, situation, task, action, result, the numbers that back it up, and tags for what each answers ("auth you've built", "leadership", "hardest problem", "legacy to cloud").
 - A brief (A1) picks stories by tag for each application and adds a "Tie to <company>" line; the story itself stays shared, so improving it improves every brief that uses it.
 - Gaps get flagged: the Elevance doc's "[how many tenants/roles]" placeholders become a "needs a number" warning on the story until you fill it in.

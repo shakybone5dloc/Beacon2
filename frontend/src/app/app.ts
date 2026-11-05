@@ -33,6 +33,7 @@ const LINKS: NavLink[] = [
   { path: '/matches', label: 'Matches' },
   { path: '/companies', label: 'Companies' },
   { path: '/people', label: 'People' },
+  { path: '/stories', label: 'Stories' },
   { path: '/documents', label: 'Documents' },
 ];
 

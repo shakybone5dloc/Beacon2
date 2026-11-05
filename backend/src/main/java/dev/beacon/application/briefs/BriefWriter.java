@@ -27,11 +27,17 @@ public interface BriefWriter {
      *
      * @param company      null when the employer isn't disclosed
      * @param fit          the latest fit check, when there is one
+     * @param stories      the user's story bank; empty when they haven't saved any
      * @param roundId      for {@link SectionKind#ROUND}: the interview the update is about
      */
     record BriefInput(SectionKind section, UUID roundId, String company, String role, String location,
                       Boolean remote, String employmentType, String pay, String jobDescription, String notes,
-                      String resume, Fit fit, List<PersonLine> people, List<Round> rounds, LocalDate today) {}
+                      String resume, Fit fit, List<PersonLine> people, List<Round> rounds, List<StoryLine> stories,
+                      LocalDate today) {}
+
+    /** A story from the user's story bank (A7), as they wrote it. */
+    record StoryLine(String title, List<String> tags, String situation, String task, String action, String result,
+                     String metrics) {}
 
     record Fit(int score, List<String> matchedSkills, List<String> gaps, List<String> dealbreakers, String rationale) {}
 
