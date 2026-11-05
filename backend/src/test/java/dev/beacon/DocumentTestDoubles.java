@@ -2,6 +2,7 @@ package dev.beacon;
 
 import dev.beacon.application.briefs.BriefException;
 import dev.beacon.application.briefs.BriefWriter;
+import dev.beacon.application.briefs.CompanyResearcher;
 import dev.beacon.application.coverletters.CoverLetterWriter;
 import dev.beacon.application.documents.PdfPrinter;
 import dev.beacon.application.documents.PostingCaptureException;
@@ -50,6 +51,11 @@ public class DocumentTestDoubles {
     @Bean
     FakeBriefWriter fakeBriefWriter() {
         return new FakeBriefWriter();
+    }
+
+    @Bean
+    FakeCompanyResearcher fakeCompanyResearcher() {
+        return new FakeCompanyResearcher();
     }
 
     /** Builds a one-page PDF containing the given lines, the way a printed posting would. */
@@ -213,6 +219,46 @@ public class DocumentTestDoubles {
         public void reset() {
             inputs.clear();
             failWith = null;
+        }
+    }
+
+    /** Stands in for OpenAI's web research; reports a call that ran four searches. */
+    public static class FakeCompanyResearcher implements CompanyResearcher, Ordered {
+        public static final AiUsage USAGE = new AiUsage(ProviderCatalog.OPENAI, "gpt-6-sol", 20000, 0, 900, 4);
+
+        public final List<BriefWriter.BriefInput> inputs = new ArrayList<>();
+
+        @Override
+        public String provider() {
+            return ProviderCatalog.OPENAI;
+        }
+
+        @Override
+        public String model() {
+            return "fake-research-model";
+        }
+
+        @Override
+        public int getOrder() {
+            return Ordered.HIGHEST_PRECEDENCE;
+        }
+
+        @Override
+        public String research(BriefWriter.BriefInput input, String apiKey, AiUsageMeter meter) {
+            meter.record(USAGE);
+            inputs.add(input);
+            return """
+                    ### Snapshot
+
+                    %s runs a supply chain network. [[1]](https://example.com/about)
+
+                    ### Sources
+
+                    1. [About](https://example.com/about)""".formatted(input.company());
+        }
+
+        public void reset() {
+            inputs.clear();
         }
     }
 }

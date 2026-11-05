@@ -31,6 +31,18 @@ final class BriefPrompt {
 
     /** What each section is for, its shape and length. */
     static final Map<SectionKind, String> TASKS = Map.of(
+            SectionKind.COMPANY, """
+                    Research the company with web search, then write what they should know walking in, \
+                    in these ### parts: **Snapshot** (what the company does, size, headquarters, who owns it, \
+                    revenue if public), **Products and customers**, **Leadership** (the CEO, and leaders this \
+                    role likely reports into, only when a source names them), **Recent news** (the last \
+                    12 months, each item dated), **Strategy and where this role fits** (connect the company's \
+                    direction to the job description), **Why it matters to you** (one or two lines tying it \
+                    to their background).
+                    Only state facts you found in your search results; leave out anything you can't source, \
+                    and write "Nothing found." under a part with no sourced facts. Prefer the company's own \
+                    site, filings and established news outlets over forums. Don't put URLs or links in your \
+                    text; the sources are attached to it automatically.""",
             SectionKind.PITCH, """
                     Write two short parts.
                     **The role in one line:** what this job really is, in one sentence, past the title.

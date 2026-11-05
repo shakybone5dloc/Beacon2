@@ -7,7 +7,8 @@ package dev.beacon.domain.briefs;
 public enum SectionKind {
     PITCH("The role and your pitch", true),
     CHECKLIST("Day-of checklist", false),
-    COMPANY("About the company and team", false),
+    /** Researched on the web, every fact with its source. */
+    COMPANY("About the company and team", true),
     GAP("Your honest gap, and how to frame it", true),
     STORIES("Stories to tell", true),
     QUESTIONS("Likely questions", true),

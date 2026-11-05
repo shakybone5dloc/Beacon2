@@ -49,7 +49,7 @@ public class AiUsageService {
         var now = Instant.now(clock);
         var cost = prices.cost(call, now.atZone(clock.getZone()).toLocalDate()).orElse(null);
         usage.save(AiUsageEntry.create(ownerId, feature.name(), call.provider(), call.model(), call.inputTokens(),
-                call.cachedInputTokens(), call.outputTokens(), cost, now));
+                call.cachedInputTokens(), call.outputTokens(), call.webSearches(), cost, now));
     }
 
     /** This month's spending in the user's time zone, by feature and by model, with the months before it. */

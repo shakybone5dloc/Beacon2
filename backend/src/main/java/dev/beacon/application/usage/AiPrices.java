@@ -12,15 +12,18 @@ import java.util.Optional;
 /**
  * What each model costs, in US dollars per million tokens, from {@code beacon.ai.prices}.
  * Each price has a start date, so adding a new row when a provider changes its prices
- * keeps older calls priced as they were.
+ * keeps older calls priced as they were. Web searches cost the same per call at both
+ * providers, so they have one price, per thousand.
  */
 @ConfigurationProperties("beacon.ai")
-public record AiPrices(List<Price> prices) {
+public record AiPrices(List<Price> prices, BigDecimal webSearchesPerThousand) {
 
     private static final BigDecimal MILLION = BigDecimal.valueOf(1_000_000);
+    private static final BigDecimal THOUSAND = BigDecimal.valueOf(1_000);
 
     public AiPrices {
         prices = prices == null ? List.of() : List.copyOf(prices);
+        webSearchesPerThousand = webSearchesPerThousand == null ? BigDecimal.ZERO : webSearchesPerThousand;
     }
 
     /** @param since the first day this price applies */
@@ -43,7 +46,9 @@ public record AiPrices(List<Price> prices) {
             var uncached = BigDecimal.valueOf(usage.inputTokens() - usage.cachedInputTokens()).multiply(price.input());
             var cached = BigDecimal.valueOf(usage.cachedInputTokens()).multiply(price.cachedInput());
             var output = BigDecimal.valueOf(usage.outputTokens()).multiply(price.output());
-            return uncached.add(cached).add(output).divide(MILLION, 6, RoundingMode.HALF_UP);
+            var searches = BigDecimal.valueOf(usage.webSearches()).multiply(webSearchesPerThousand)
+                    .divide(THOUSAND, 6, RoundingMode.HALF_UP);
+            return uncached.add(cached).add(output).divide(MILLION, 6, RoundingMode.HALF_UP).add(searches);
         });
     }
 }

@@ -3,6 +3,7 @@ package dev.beacon.api.briefs;
 import com.jayway.jsonpath.JsonPath;
 import dev.beacon.DocumentTestDoubles;
 import dev.beacon.DocumentTestDoubles.FakeBriefWriter;
+import dev.beacon.DocumentTestDoubles.FakeCompanyResearcher;
 import dev.beacon.SignedInApiTests;
 import dev.beacon.TestcontainersConfiguration;
 import dev.beacon.application.apikeys.ApiKeyService;
@@ -39,11 +40,13 @@ class BriefApiTests extends SignedInApiTests {
             """;
 
     @Autowired FakeBriefWriter writer;
+    @Autowired FakeCompanyResearcher researcher;
     @Autowired ApiKeyService keys;
 
     @BeforeEach
     void setUp() {
         writer.reset();
+        researcher.reset();
         keys.save(signedIn.id(), "openai", Map.of("apiKey", "sk-test-users-own"));
     }
 
@@ -60,7 +63,8 @@ class BriefApiTests extends SignedInApiTests {
         assertThat(brief).bodyJson().extractingPath("$.sections[1].content").asString().contains("Reread this brief");
         assertThat(brief).bodyJson().extractingPath("$.sections[0].content").isNull();
         assertThat(brief).bodyJson().extractingPath("$.sections[0].writable").isEqualTo(true);
-        assertThat(brief).bodyJson().extractingPath("$.sections[2].writable").isEqualTo(false);
+        assertThat(brief).bodyJson().extractingPath("$.sections[1].writable").isEqualTo(false);
+        assertThat(brief).bodyJson().extractingPath("$.sections[2].writable").isEqualTo(true);
         assertThat(brief).bodyJson().extractingPath("$.configured").isEqualTo(true);
         assertThat(brief).bodyJson().extractingPath("$.resumeDocumentId").isNull();
     }
@@ -147,12 +151,45 @@ class BriefApiTests extends SignedInApiTests {
         var appId = createApplication(APPLICATION);
         uploadResume("backend.txt", "Jordan Smith\nJava");
 
-        assertThat(write(appId, "COMPANY", null, false)).hasStatus(HttpStatus.valueOf(422));
-        var saved = edit(appId, "COMPANY", "Hospital supply chain network, 2,000+ employees.", null);
+        assertThat(write(appId, "CHECKLIST", null, false)).hasStatus(HttpStatus.valueOf(422));
+        var saved = edit(appId, "CHECKLIST", "- [ ] Charge the laptop", null);
         assertThat(saved).hasStatus(HttpStatus.OK);
-        assertThat(get(appId)).bodyJson().extractingPath("$.sections[2].content")
-                .isEqualTo("Hospital supply chain network, 2,000+ employees.");
+        assertThat(get(appId)).bodyJson().extractingPath("$.sections[1].content").isEqualTo("- [ ] Charge the laptop");
         assertThat(writer.inputs).isEmpty();
+    }
+
+    @Test
+    void theCompanySectionIsResearchedOnTheWebWithItsSearchesCounted() {
+        var appId = createApplication(APPLICATION);
+        uploadResume("backend.txt", "Jordan Smith\nJava");
+
+        var written = write(appId, "COMPANY", null, false);
+
+        assertThat(written).hasStatus(HttpStatus.OK);
+        assertThat(written).bodyJson().extractingPath("$.content").asString()
+                .startsWith("### Snapshot\n\nGHX runs a supply chain network. [[1]](https://example.com/about)")
+                .contains("### Sources");
+        assertThat(written).bodyJson().extractingPath("$.model").isEqualTo("fake-research-model");
+        assertThat(researcher.inputs).singleElement().satisfies(input -> {
+            assertThat(input.section()).isEqualTo(SectionKind.COMPANY);
+            assertThat(input.jobDescription()).contains("supply chain");
+        });
+        assertThat(writer.inputs).isEmpty();
+        // 20,000 input and 900 output tokens at gpt-6-sol prices ($0.049), plus 4 searches at $10 per thousand.
+        assertThat(mvc.get().uri("/api/me/ai-usage?zone=UTC").exchange())
+                .bodyJson().extractingPath("$.byFeature[0].costUsd").isEqualTo(0.089);
+    }
+
+    @Test
+    void anUndisclosedEmployerHasNoCompanyToResearch() {
+        var appId = createApplication("""
+                {"role": "Senior Java Engineer", "jobDescription": "Java for a hospital network."}
+                """);
+        uploadResume("backend.txt", "Jordan Smith\nJava");
+
+        assertThat(write(appId, "COMPANY", null, false)).hasStatus(HttpStatus.valueOf(422))
+                .bodyJson().extractingPath("$.detail").asString().contains("isn't disclosed");
+        assertThat(researcher.inputs).isEmpty();
     }
 
     @Test

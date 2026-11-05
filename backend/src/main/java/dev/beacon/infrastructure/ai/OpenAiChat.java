@@ -20,8 +20,9 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * One call to OpenAI's Chat Completions API over plain HTTP, with its failures
- * turned into messages a user can act on. Shared by every OpenAI-backed feature.
+ * One call to OpenAI over plain HTTP, with its failures turned into messages a user can
+ * act on. Shared by every OpenAI-backed feature: Chat Completions for most, the Responses
+ * API for the ones that search the web (Chat Completions can't with current models).
  */
 final class OpenAiChat {
 
@@ -60,15 +61,45 @@ final class OpenAiChat {
                 Map.of("role", "user", "content", userMessage)));
         body.putAll(extra);
 
+        var response = post("/v1/chat/completions", apiKey, body, errors);
+        return new Reply(response.path("choices").path(0).path("message"), usage(response.path("usage")));
+    }
+
+    /** The whole Responses API reply, and what it used, searches included. */
+    record Response(JsonNode body, AiUsage usage) {}
+
+    /**
+     * Sends a request to the Responses API. {@code extra} adds fields such as {@code tools}.
+     * Each {@code web_search_call} in the output is one search, charged on top of the tokens.
+     */
+    Response respond(String apiKey, String instructions, String input, Map<String, Object> extra, AiErrors errors) {
+        var body = new LinkedHashMap<String, Object>();
+        body.put("model", model);
+        body.put("instructions", instructions);
+        body.put("input", input);
+        body.putAll(extra);
+
+        var response = post("/v1/responses", apiKey, body, errors);
+        var usage = response.path("usage");
+        long searches = 0;
+        for (var item : response.path("output").values()) {
+            if ("web_search_call".equals(item.path("type").asString(""))) searches++;
+        }
+        return new Response(response, new AiUsage(ProviderCatalog.OPENAI, model,
+                usage.path("input_tokens").asLong(0),
+                usage.path("input_tokens_details").path("cached_tokens").asLong(0),
+                usage.path("output_tokens").asLong(0), searches));
+    }
+
+    private JsonNode post(String path, String apiKey, Map<String, Object> body, AiErrors errors) {
         try {
-            var response = http.post()
-                    .uri("/v1/chat/completions")
+            return http.post()
+                    .uri(path)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(body)
                     .retrieve()
                     .body(JsonNode.class);
-            return new Reply(response.path("choices").path(0).path("message"), usage(response.path("usage")));
         } catch (HttpClientErrorException ex) {
             throw clientError(ex, errors);
         } catch (HttpServerErrorException ex) {

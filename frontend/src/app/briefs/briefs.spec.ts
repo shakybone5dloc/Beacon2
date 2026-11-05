@@ -47,6 +47,14 @@ describe('Markdown', () => {
     expect(html).not.toContain('<input');
   });
 
+  it('opens source links in a new tab', () => {
+    const html = renderMarkdown('GHX is in Colorado. [[1]](https://www.ghx.com/about)');
+
+    expect(html).toContain(
+      '<a target="_blank" rel="noopener" href="https://www.ghx.com/about">[1]</a>',
+    );
+  });
+
   it('builds the download from the glance and the written sections only', () => {
     const markdown = briefMarkdown(
       'Interview brief: GHX – Java Engineer',
@@ -295,7 +303,9 @@ describe('BriefPage', () => {
     await fixture.whenStable();
 
     expect(el.querySelector('textarea.draft')).toBeNull();
-    expect(el.querySelector('[data-kind=COMPANY] .meta')?.textContent?.trim()).toBe('Written by you');
+    expect(el.querySelector('[data-kind=COMPANY] .meta')?.textContent?.trim()).toBe(
+      'Written by you',
+    );
   });
 
   it('points to Settings without an AI key, and still lets you edit', async () => {

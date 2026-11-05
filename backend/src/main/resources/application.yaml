@@ -53,6 +53,8 @@ beacon:
     # Each user drafts with their own OpenAI or Anthropic key (OpenAI when they have both).
     openai-model: ${OPENAI_MODEL:gpt-6-sol}
     anthropic-model: ${ANTHROPIC_MODEL:claude-opus-5-5}
+    # US dollars per thousand web searches; both providers charge the same, on top of the tokens the results add.
+    web-searches-per-thousand: 10.00
     # US dollars per million tokens, for the AI usage page. When a provider changes a price,
     # add a row with the day it starts instead of editing the old one, so past months keep
     # their cost. A model with no row is still counted, just not priced.

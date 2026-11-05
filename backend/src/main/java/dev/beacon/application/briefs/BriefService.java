@@ -7,6 +7,7 @@ import dev.beacon.application.fit.FitService;
 import dev.beacon.application.providers.ProviderCatalog;
 import dev.beacon.application.resumes.ResumeService;
 import dev.beacon.application.usage.AiFeature;
+import dev.beacon.application.usage.AiUsageMeter;
 import dev.beacon.application.usage.AiUsageService;
 import dev.beacon.contracts.briefs.BriefResponse;
 import dev.beacon.contracts.briefs.BriefSectionResponse;
@@ -75,6 +76,7 @@ public class BriefService {
     private final ResumeService resumes;
     private final FitService fit;
     private final List<BriefWriter> writers;
+    private final List<CompanyResearcher> researchers;
     private final UserCredentials credentials;
     private final AiUsageService usage;
     private final TransactionTemplate tx;
@@ -83,7 +85,8 @@ public class BriefService {
     public BriefService(JobApplicationRepository applications, InterviewBriefRepository briefs,
                         BriefSectionRepository sections, InterviewRepository interviews,
                         ApplicationPersonRepository people, DocumentService documents, ResumeService resumes,
-                        FitService fit, List<BriefWriter> writers, UserCredentials credentials,
+                        FitService fit, List<BriefWriter> writers, List<CompanyResearcher> researchers,
+                        UserCredentials credentials,
                         AiUsageService usage, PlatformTransactionManager transactions, Clock clock) {
         this.applications = applications;
         this.briefs = briefs;
@@ -94,6 +97,7 @@ public class BriefService {
         this.resumes = resumes;
         this.fit = fit;
         this.writers = writers;
+        this.researchers = researchers;
         this.credentials = credentials;
         this.usage = usage;
         this.tx = new TransactionTemplate(transactions);
@@ -132,9 +136,19 @@ public class BriefService {
         if (request.isEmpty()) return Optional.empty();
         var prepared = request.get();
 
-        var writer = writer(prepared.provider());
-        var markdown = writer.write(prepared.input(), prepared.apiKey(),
-                call -> usage.record(ownerId, AiFeature.INTERVIEW_BRIEF, call));
+        // The company section is researched on the web; the rest are written from what Beacon has.
+        AiUsageMeter meter = call -> usage.record(ownerId, AiFeature.INTERVIEW_BRIEF, call);
+        String markdown;
+        String model;
+        if (kind == SectionKind.COMPANY) {
+            var researcher = researcher(prepared.provider());
+            markdown = researcher.research(prepared.input(), prepared.apiKey(), meter);
+            model = researcher.model();
+        } else {
+            var writer = writer(prepared.provider());
+            markdown = writer.write(prepared.input(), prepared.apiKey(), meter);
+            model = writer.model();
+        }
 
         return Optional.of(tx.execute(status -> {
             var brief = findOrCreate(ownerId, applicationId);
@@ -142,7 +156,7 @@ public class BriefService {
                     .orElseGet(() -> BriefSection.start(brief.getId(), kind, interviewId, Instant.now(clock)));
             // The user may have edited it while the AI was writing.
             if (section.isEdited() && !replaceEdits) throw new BriefException.EditedException();
-            section.written(markdown, writer.model(), Instant.now(clock));
+            section.written(markdown, model, Instant.now(clock));
             brief.touch(Instant.now(clock));
             return toResponse(sections.saveAndFlush(section), kind, interviewId);
         }));
@@ -200,6 +214,9 @@ public class BriefService {
 
         if (application.getJobDescription() == null) {
             throw new BriefException("Save the posting as a PDF or paste the job description into this application first.", false);
+        }
+        if (kind == SectionKind.COMPANY && application.getCompanyName() == null) {
+            throw new BriefException("The employer isn't disclosed, so there's no company to research yet.", false);
         }
         var rounds = interviews.findAllByApplicationIdOrderByStartsAtAsc(applicationId);
         if (interviewId != null) {
@@ -360,5 +377,10 @@ public class BriefService {
 
     private BriefWriter writer(String provider) {
         return writers.stream().filter(w -> w.provider().equals(provider)).findFirst().orElseThrow();
+    }
+
+    private CompanyResearcher researcher(String provider) {
+        return researchers.stream().filter(r -> r.provider().equals(provider)).findFirst()
+                .orElseThrow(() -> new BriefException("Company research isn't available with this AI provider.", false));
     }
 }

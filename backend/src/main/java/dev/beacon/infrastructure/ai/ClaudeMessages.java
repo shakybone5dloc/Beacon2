@@ -64,13 +64,15 @@ final class ClaudeMessages {
      * back in so the input count covers everything sent. Cache writes are priced as plain
      * input, which is close enough while Beacon doesn't ask Claude to cache anything.
      * The model is the one that answered, which differs from the one asked for after a fallback.
+     * Web searches are counted apart, since each is charged on top of the tokens.
      */
     static AiUsage usage(BetaMessage response) {
         var usage = response.usage();
         long cacheRead = usage.cacheReadInputTokens().orElse(0L);
         long cacheWrite = usage.cacheCreationInputTokens().orElse(0L);
+        long searches = usage.serverToolUse().map(tools -> tools.webSearchRequests()).orElse(0L);
         return new AiUsage(ProviderCatalog.ANTHROPIC, response.model().asString(),
-                usage.inputTokens() + cacheRead + cacheWrite, cacheRead, usage.outputTokens());
+                usage.inputTokens() + cacheRead + cacheWrite, cacheRead, usage.outputTokens(), searches);
     }
 
     static boolean refused(BetaMessage response) {

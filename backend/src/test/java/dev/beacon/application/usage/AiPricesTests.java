@@ -15,7 +15,9 @@ class AiPricesTests {
                     new BigDecimal("2.00"), new BigDecimal("0.20"), new BigDecimal("10.00")),
             // A price cut from December 1.
             new AiPrices.Price("gpt-6-sol", LocalDate.of(2026, 12, 1),
-                    new BigDecimal("1.00"), null, new BigDecimal("5.00"))));
+                    new BigDecimal("1.00"), null, new BigDecimal("5.00"))),
+            // No price for web searches here; see the test that sets one.
+            null);
 
     private static final AiUsage CALL = new AiUsage("openai", "gpt-6-sol", 1_000_000, 500_000, 100_000);
 
@@ -31,6 +33,16 @@ class AiPricesTests {
     void aModelWithNoPriceOrACallBeforeAnyPriceIsLeftUnpriced() {
         assertThat(PRICES.cost(new AiUsage("openai", "gpt-7", 10, 0, 10), LocalDate.of(2026, 11, 1))).isEmpty();
         assertThat(PRICES.cost(CALL, LocalDate.of(2025, 12, 31))).isEmpty();
+    }
+
+    @Test
+    void webSearchesAreChargedOnTopOfTheTokens() {
+        var prices = new AiPrices(PRICES.prices(), new BigDecimal("10.00"));
+        var research = new AiUsage("anthropic", "gpt-6-sol", 1_000_000, 500_000, 100_000, 6);
+
+        // $2.10 for the tokens, plus 6 searches at $10 per thousand.
+        assertThat(prices.cost(research, LocalDate.of(2026, 11, 30))).contains(new BigDecimal("2.160000"));
+        assertThat(PRICES.cost(research, LocalDate.of(2026, 11, 30))).contains(new BigDecimal("2.100000"));
     }
 
     @Test

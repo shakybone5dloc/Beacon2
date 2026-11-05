@@ -35,6 +35,9 @@ public class AiUsageEntry {
     @Column(nullable = false)
     private long outputTokens;
 
+    @Column(nullable = false)
+    private long webSearches;
+
     /** Null when the model had no price on file. */
     @Column(name = "cost_usd", precision = 12, scale = 6)
     private BigDecimal costUsd;
@@ -45,7 +48,8 @@ public class AiUsageEntry {
     protected AiUsageEntry() { }
 
     public static AiUsageEntry create(UUID ownerId, String feature, String provider, String model, long inputTokens,
-                                      long cachedInputTokens, long outputTokens, BigDecimal costUsd, Instant now) {
+                                      long cachedInputTokens, long outputTokens, long webSearches,
+                                      BigDecimal costUsd, Instant now) {
         var entry = new AiUsageEntry();
         entry.id = UUID.randomUUID();
         entry.ownerId = ownerId;
@@ -55,6 +59,7 @@ public class AiUsageEntry {
         entry.inputTokens = inputTokens;
         entry.cachedInputTokens = cachedInputTokens;
         entry.outputTokens = outputTokens;
+        entry.webSearches = webSearches;
         entry.costUsd = costUsd;
         entry.createdAt = now;
         return entry;
@@ -68,6 +73,7 @@ public class AiUsageEntry {
     public long getInputTokens() { return inputTokens; }
     public long getCachedInputTokens() { return cachedInputTokens; }
     public long getOutputTokens() { return outputTokens; }
+    public long getWebSearches() { return webSearches; }
     public BigDecimal getCostUsd() { return costUsd; }
     public Instant getCreatedAt() { return createdAt; }
 }

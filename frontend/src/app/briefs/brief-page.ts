@@ -38,12 +38,6 @@ import { BriefsApi } from './briefs-api';
 /** Sections written at once by "Write the brief", so the AI provider isn't flooded. */
 const PARALLEL_WRITES = 3;
 
-/** Shown in an empty section the user fills in themselves. */
-const OWN_SECTION_HINTS: Partial<Record<BriefSection['kind'], string>> = {
-  COMPANY:
-    'What you know about the company and team: size, products, leadership, strategy, where this role fits, and why it matters to you.',
-};
-
 /**
  * The interview brief (A1): one prep document per application, read before each round.
  * "Write the brief" drafts every empty section; each section can be rewritten or edited.
@@ -85,7 +79,6 @@ export class BriefPage implements OnInit {
 
   protected readonly employerLabel = employerLabel;
   protected readonly key = sectionKey;
-  protected readonly ownHints = OWN_SECTION_HINTS;
   private readonly rendered = new Map<string, { markdown: string; html: string }>();
 
   protected readonly heading = computed(() => {

@@ -14,12 +14,14 @@ export function sectionKey(section: { kind: SectionKind; interviewId: string | n
 /**
  * The section's Markdown as HTML. Checkboxes become ☐ and ☑ first, since inputs don't
  * survive Angular's sanitizing of [innerHTML], which every rendered section goes through.
+ * Links to other sites (the company research's sources) open in a new tab, so the brief stays put.
  */
 export function renderMarkdown(markdown: string): string {
   const boxes = markdown
     .replace(/^(\s*[-*+]) \[ \]/gm, '$1 ☐')
     .replace(/^(\s*[-*+]) \[[xX]\]/gm, '$1 ☑');
-  return marked.parse(boxes, { async: false, gfm: true }) as string;
+  const html = marked.parse(boxes, { async: false, gfm: true }) as string;
+  return html.replace(/<a href="(https?:)/g, '<a target="_blank" rel="noopener" href="$1');
 }
 
 /** The whole brief as one Markdown file, for downloading. */

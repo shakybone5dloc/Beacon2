@@ -33,7 +33,7 @@ Rebuilt from the .NET Beacon, then extended.
 | J3 | Saved searches on a schedule, a Matches page, fit checks for the newest 20 per run within the AI budget | a6b2f37 |
 | J0 | Google Jobs (SerpApi) and JSearch as keyed sources, reaching LinkedIn, Indeed and careers sites | ce3b972, 2672b04 |
 | B1 | Board search and filters kept in the address, drag-and-drop between columns (Angular CDK) | ad661f5 |
-| A1 | Interview brief: its own page, AI-written sections from the posting, resume, fit and rounds, editable, Markdown and print (company research next) | after 8651a8a |
+| A1 | Interview brief: its own page, AI-written sections from the posting, resume, fit and rounds, company research with sources, editable, Markdown and print | 1e09f34, after c8e703f |
 
 ## Next: Companies and people
 
@@ -215,12 +215,13 @@ The interview helpers split three ways, by what each one is for:
 | Lifetime | Grows round by round until the application closes | Kept and refined for the whole search | Studied until the interview, then archived |
 | Example | "Elevance Staff IAM Interview Prep" (Oct 22-29) | "PropKnot multi-tenant authorization" | "OAuth vs OIDC vs SAML?" |
 
-### A1. Interview brief (first step done; company research next)
+### A1. Interview brief (done, except the items below)
 - Built as its own page, `/applications/:id/brief`, linked from the application's header and its Interviews section. **At a glance** comes from Beacon's own data (role, place, pay, every round with the next in bold, the people on the application). Sections, in order: the role and your pitch, a day-of checklist (a template to edit), about the company (yours to fill in for now), your honest gap (a They want / You have / Frame it as table, using the fit check), stories to tell (STAR outlines from the resume, until A7), likely questions, technical refresher, system design practice, an update after each round that has happened (written from its debrief notes), and questions to ask with a closing.
 - Stored as `interview_briefs` (one per application, with the resume it's written from: chosen, else the fit's, else the default) and `brief_sections` (Markdown, when the AI wrote it and with which model, and whether the user has edited it since). Only written or edited sections are stored.
 - **Write the brief** drafts every empty section, three at a time, each its own AI call (same provider choice as cover letters, metered as "Interview briefs"); each also has Write/Rewrite and Edit. A section with the user's edits is never rewritten without a confirmation, checked again on the server after the AI answers. A failure no section can get past (no key, resume or job description) shows once and stops the rest.
 - Download Markdown, and Print / PDF through the browser's own print dialog (app chrome and buttons hidden). The page and its Markdown renderer (`marked`) load only when opened.
-- Still to do: **company research with web search and source links** (the next step); "Make study cards" (A6); the story bank (A7) in place of stories from the resume; flagging sections whose inputs changed since they were written. Checked live only up to the AI call (no real key in the throwaway stack).
+- **Company research** (second step): the company section is researched on the web, with Claude's server-side web search (`web_search_20260209`, up to 6 searches, continuing after a pause) or OpenAI's Responses API `web_search` tool (Chat Completions can't search with current models). Each provider returns its text with citations (Claude: citations on text blocks; OpenAI: `url_citation` ranges), which become numbered links after the sourced passage and a Sources list at the end; research that cites nothing is refused, so unsourced claims never land in the brief. Searches are counted in AI usage at $10 per 1,000 on top of the tokens (`ai_usage.web_searches`, V17). An undisclosed employer has nothing to research. Source links open in a new tab.
+- Still to do: "Make study cards" (A6); the story bank (A7) in place of stories from the resume; flagging sections whose inputs changed since they were written. Checked live only up to the AI call (no real key in the throwaway stack); company research's citation handling is tested against canned replies only.
 One living prep document per application that moves to interviews, modeled on the hand-made "Elevance Staff IAM Interview Prep" doc. Opened from the application page, it starts when the first interview is scheduled and gains a section after each round.
 - **Sections**, in this order. Each says where its content comes from:
   - **At a glance** (filled from Beacon's own data, not AI): role, req number, location and hybrid days, every round from I1 with the next one in bold, format, interviewers from R1, pay from the posting or what the recruiter said.
@@ -337,7 +338,7 @@ A page each user builds in Beacon from their resume and extra details, and share
 
 ### X6. AI usage tracking (done, except the items below)
 Built as: every AI call reports the tokens the provider returned to an `AiUsageMeter` as soon as the response arrives (so refused and unreadable replies are counted too), and `ai_usage` keeps one row per call in its own transaction, priced on the day from `beacon.ai.prices`. A fit score reused from its cache records nothing. Settings shows the month in the browser's time zone, by feature and by model, the last six months, and the budget meter (amber from 80%, red at 100%). `ai_usage.owner_id` has no foreign key (see V14), so X5 must delete its rows.
-Still to do: pausing background jobs at 100% of the budget (none exist yet; J3 should check it before scoring), counting web searches once a feature uses them, and pricing Claude cache writes at their real rate if Beacon starts caching prompts.
+Still to do: pausing background jobs at 100% of the budget (none exist yet; J3 should check it before scoring), and pricing Claude cache writes at their real rate if Beacon starts caching prompts.
 
 - Record the token counts the provider returns with every AI response (input, cached input, output including reasoning, web searches) in an `ai_usage` table: user, feature (cover letter, fit score, brief section, email sorting...), provider, model, timestamp.
 - Price it with a small, dated price table per model, kept in config, so a price change doesn't rewrite past months.
