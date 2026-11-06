@@ -2549,6 +2549,41 @@
         "tags" : [ "Saved Searches" ]
       }
     },
+    "/api/stats" : {
+      "get" : {
+        "operationId" : "getStats",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "days",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "in" : "query",
+          "name" : "zone",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "UTC"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StatsResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Stats" ]
+      }
+    },
     "/api/stories" : {
       "get" : {
         "operationId" : "listStories",
@@ -5064,6 +5099,105 @@
         },
         "required" : [ "count", "error", "id" ]
       },
+      "StageTimeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "averageDays" : {
+            "type" : [ "number", "null" ],
+            "format" : "double"
+          },
+          "current" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "medianDays" : {
+            "type" : [ "number", "null" ],
+            "format" : "double"
+          },
+          "moved" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "stage" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "averageDays", "current", "medianDays", "moved", "stage" ]
+      },
+      "StatsGroupResponse" : {
+        "type" : "object",
+        "properties" : {
+          "applied" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "ghosted" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "interviewed" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "medianDaysToResponse" : {
+            "type" : [ "number", "null" ],
+            "format" : "double"
+          },
+          "name" : {
+            "type" : [ "string", "null" ]
+          },
+          "offered" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "responded" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "applied", "ghosted", "interviewed", "medianDaysToResponse", "name", "offered", "responded", "total" ]
+      },
+      "StatsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "byResume" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/StatsGroupResponse"
+            }
+          },
+          "bySource" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/StatsGroupResponse"
+            }
+          },
+          "overall" : {
+            "$ref" : "#/components/schemas/StatsGroupResponse"
+          },
+          "since" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "stages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/StageTimeResponse"
+            }
+          },
+          "weeks" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/WeekCountResponse"
+            }
+          }
+        },
+        "required" : [ "byResume", "bySource", "overall", "since", "stages", "weeks" ]
+      },
       "StatusChangeResponse" : {
         "type" : "null",
         "properties" : {
@@ -5545,6 +5679,20 @@
           }
         },
         "required" : [ "url" ]
+      },
+      "WeekCountResponse" : {
+        "type" : "object",
+        "properties" : {
+          "applied" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "weekStart" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        },
+        "required" : [ "applied", "weekStart" ]
       }
     }
   }

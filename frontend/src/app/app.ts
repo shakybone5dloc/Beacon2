@@ -35,6 +35,7 @@ const LINKS: NavLink[] = [
   { path: '/people', label: 'People' },
   { path: '/stories', label: 'Stories' },
   { path: '/study', label: 'Study' },
+  { path: '/stats', label: 'Stats' },
   { path: '/documents', label: 'Documents' },
 ];
 

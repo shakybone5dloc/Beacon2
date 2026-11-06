@@ -1,0 +1,266 @@
+<header class="mb-space-lg flex flex-wrap items-start justify-between gap-space-md">
+  <div>
+    <h1 class="m-0 mb-space-xs">Stats</h1>
+    <p class="m-0 max-w-2xl text-body-md text-on-surface-variant">
+      How far your applications get, where the good ones come from, and how long each stage takes.
+      Counted from each application's history, so one that was interviewed and later rejected still
+      counts as interviewed.
+    </p>
+  </div>
+  <label class="flex items-center gap-space-xs text-body-sm text-on-surface-variant">
+    Applications
+    <select class="range input w-auto" (change)="setRange($any($event.target).value)">
+      @for (r of ranges; track r.label) {
+        <option [value]="r.days ?? ''" [selected]="r.days === range()">{{ r.label }}</option>
+      }
+    </select>
+  </label>
+</header>
+
+@if (error(); as message) {
+  <p class="notice">{{ message }}</p>
+} @else if (stats(); as s) {
+  @let o = s.overall;
+  @if (o.total === 0) {
+    <p class="empty text-on-surface-variant">
+      No applications in this range yet. <a routerLink="/">Add some to your board</a> and they'll
+      show up here.
+    </p>
+  } @else {
+    <!-- Headline numbers -->
+    <div class="tiles mb-space-xl grid grid-cols-2 gap-space-sm sm:grid-cols-4">
+      <div class="tile card p-space-md">
+        <p class="m-0 text-label-caps text-on-surface-variant uppercase">Applied</p>
+        <p class="value m-0 mt-space-xs font-mono text-[1.75rem] leading-none">{{ o.applied }}</p>
+        <p class="m-0 mt-space-xs text-body-sm text-on-surface-variant">of {{ o.total }} saved</p>
+      </div>
+      <div class="tile card p-space-md">
+        <p class="m-0 text-label-caps text-on-surface-variant uppercase">Heard back</p>
+        <p class="value response m-0 mt-space-xs font-mono text-[1.75rem] leading-none">
+          {{ percent(o.responded, o.applied) }}
+        </p>
+        <p class="m-0 mt-space-xs text-body-sm text-on-surface-variant">
+          {{ o.responded }} of {{ o.applied }}
+          @if (o.medianDaysToResponse != null) {
+            · usually in {{ days(o.medianDaysToResponse) }}
+          }
+        </p>
+      </div>
+      <div class="tile card p-space-md">
+        <p class="m-0 text-label-caps text-on-surface-variant uppercase">Interviewed</p>
+        <p class="value m-0 mt-space-xs font-mono text-[1.75rem] leading-none">
+          {{ percent(o.interviewed, o.applied) }}
+        </p>
+        <p class="m-0 mt-space-xs text-body-sm text-on-surface-variant">
+          {{ o.interviewed }} · {{ o.offered }} {{ o.offered === 1 ? 'offer' : 'offers' }}
+        </p>
+      </div>
+      <div class="tile card p-space-md">
+        <p class="m-0 text-label-caps text-on-surface-variant uppercase">Ghosted</p>
+        <p class="value ghosted m-0 mt-space-xs font-mono text-[1.75rem] leading-none">
+          {{ percent(o.ghosted, o.applied) }}
+        </p>
+        <p class="m-0 mt-space-xs text-body-sm text-on-surface-variant">
+          {{ o.ghosted }} with no word for 3+ weeks
+        </p>
+      </div>
+    </div>
+
+    <div class="mb-space-xl grid gap-space-lg md:grid-cols-2">
+      <!-- Funnel: one series, so no legend; each bar is labelled with its count and share. -->
+      <section class="funnel card p-space-lg" aria-labelledby="funnel-title">
+        <h2 id="funnel-title" class="m-0 mb-space-md text-headline-sm">How far they get</h2>
+        <ul class="m-0 grid list-none gap-space-sm p-0">
+          @for (step of funnel(); track step.label) {
+            <li
+              class="step"
+              [title]="
+                step.label +
+                ': ' +
+                step.count +
+                ' (' +
+                percent(step.count, o.applied) +
+                ' of applied)'
+              "
+            >
+              <div class="mb-1 flex justify-between text-body-sm">
+                <span class="label">{{ step.label }}</span>
+                <span class="font-mono text-on-surface-variant"
+                  >{{ step.count }} · {{ percent(step.count, o.applied) }}</span
+                >
+              </div>
+              <div
+                class="h-3 overflow-hidden rounded-[4px] bg-surface-container-high"
+                aria-hidden="true"
+              >
+                <span
+                  class="bar block h-full rounded-[4px] bg-primary-container"
+                  [style.width.%]="step.share * 100"
+                ></span>
+              </div>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <!-- Applications sent per week; hover a column for its count. -->
+      <section class="weekly card p-space-lg" aria-labelledby="weekly-title">
+        <h2 id="weekly-title" class="m-0 mb-space-md text-headline-sm">Sent per week</h2>
+        <figure class="m-0">
+          <div class="flex h-32 items-end gap-[2px]" aria-hidden="true">
+            @for (w of s.weeks; track w.weekStart; let last = $last) {
+              <div class="group relative flex h-full flex-1 items-end">
+                <span
+                  class="week-bar block w-full rounded-t-[4px]"
+                  [class]="last ? 'bg-primary-container' : 'bg-primary-container/60'"
+                  [style.height.%]="(w.applied / weekMax()) * 100"
+                  [style.min-height.px]="w.applied > 0 ? 2 : 0"
+                ></span>
+                <span
+                  class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-sm bg-on-surface px-2 py-1 font-mono text-[11px] whitespace-nowrap text-surface group-hover:block"
+                  >Week of {{ w.weekStart | date: 'MMM d' }} · {{ w.applied }}</span
+                >
+              </div>
+            }
+          </div>
+          <div class="mt-1 flex gap-[2px] border-t border-hairline pt-1" aria-hidden="true">
+            @for (w of s.weeks; track w.weekStart; let i = $index) {
+              <span class="flex-1 text-center font-mono text-[10px] text-on-surface-variant">{{
+                i % 3 === 2 ? (w.weekStart | date: 'M/d') : ''
+              }}</span>
+            }
+          </div>
+          <ul class="sr-only">
+            @for (w of s.weeks; track w.weekStart) {
+              <li>Week of {{ w.weekStart | date: 'MMMM d' }}: {{ w.applied }} sent</li>
+            }
+          </ul>
+        </figure>
+      </section>
+    </div>
+
+    <!-- Where they come from -->
+    <section class="sources mb-space-xl" aria-labelledby="sources-title">
+      <h2 id="sources-title" class="mb-space-sm text-headline-sm">By source</h2>
+      <div class="card overflow-x-auto">
+        <table class="w-full border-collapse text-left text-body-sm">
+          <thead>
+            <tr
+              class="border-b border-hairline font-mono text-label-sm text-on-surface-variant uppercase"
+            >
+              <th class="px-space-md py-space-sm font-medium">Source</th>
+              <th class="px-space-md py-space-sm text-right font-medium">Applied</th>
+              <th class="px-space-md py-space-sm text-right font-medium">Heard back</th>
+              <th class="px-space-md py-space-sm text-right font-medium">Interviewed</th>
+              <th class="px-space-md py-space-sm text-right font-medium">Offers</th>
+              <th class="px-space-md py-space-sm text-right font-medium">Ghosted</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (g of s.bySource; track g.name) {
+              <tr class="source-row border-b border-hairline last:border-b-0">
+                <td
+                  class="px-space-md py-space-sm"
+                  [class.text-on-surface-variant]="g.name === 'Not recorded'"
+                >
+                  {{ g.name }}
+                </td>
+                <td class="px-space-md py-space-sm text-right font-mono">{{ g.applied }}</td>
+                <td class="px-space-md py-space-sm text-right font-mono">
+                  {{ percent(g.responded, g.applied) }}
+                </td>
+                <td class="px-space-md py-space-sm text-right font-mono">
+                  {{ percent(g.interviewed, g.applied) }}
+                  <span class="text-on-surface-variant">({{ g.interviewed }})</span>
+                </td>
+                <td class="px-space-md py-space-sm text-right font-mono">{{ g.offered }}</td>
+                <td class="px-space-md py-space-sm text-right font-mono">{{ g.ghosted }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="grid gap-space-lg md:grid-cols-2">
+      <!-- How long each stage takes -->
+      <section class="stages" aria-labelledby="stages-title">
+        <h2 id="stages-title" class="mb-space-sm text-headline-sm">Time in each stage</h2>
+        <div class="card overflow-x-auto">
+          <table class="w-full border-collapse text-left text-body-sm">
+            <thead>
+              <tr
+                class="border-b border-hairline font-mono text-label-sm text-on-surface-variant uppercase"
+              >
+                <th class="px-space-md py-space-sm font-medium">Stage</th>
+                <th class="px-space-md py-space-sm text-right font-medium">Usually</th>
+                <th class="px-space-md py-space-sm text-right font-medium">Average</th>
+                <th class="px-space-md py-space-sm text-right font-medium">In it now</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (stage of s.stages; track stage.stage) {
+                <tr class="stage-row border-b border-hairline last:border-b-0">
+                  <td class="px-space-md py-space-sm">
+                    {{ stageLabels[stage.stage] ?? stage.stage }}
+                  </td>
+                  <td class="px-space-md py-space-sm text-right font-mono">
+                    {{ days(stage.medianDays) }}
+                  </td>
+                  <td class="px-space-md py-space-sm text-right font-mono">
+                    {{ days(stage.averageDays) }}
+                  </td>
+                  <td class="px-space-md py-space-sm text-right font-mono">{{ stage.current }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="m-0 mt-space-xs text-body-sm text-on-surface-variant">
+          Measured from applications that have moved on; "usually" is the median.
+        </p>
+      </section>
+
+      <!-- Which resume does better -->
+      <section class="resumes" aria-labelledby="resumes-title">
+        <h2 id="resumes-title" class="mb-space-sm text-headline-sm">By resume</h2>
+        <div class="card overflow-x-auto">
+          <table class="w-full border-collapse text-left text-body-sm">
+            <thead>
+              <tr
+                class="border-b border-hairline font-mono text-label-sm text-on-surface-variant uppercase"
+              >
+                <th class="px-space-md py-space-sm font-medium">Resume</th>
+                <th class="px-space-md py-space-sm text-right font-medium">Applied</th>
+                <th class="px-space-md py-space-sm text-right font-medium">Interviewed</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (g of s.byResume; track g.name) {
+                <tr class="resume-row border-b border-hairline last:border-b-0">
+                  <td
+                    class="px-space-md py-space-sm"
+                    [class.text-on-surface-variant]="g.name === 'Not recorded'"
+                  >
+                    {{ g.name }}
+                  </td>
+                  <td class="px-space-md py-space-sm text-right font-mono">{{ g.applied }}</td>
+                  <td class="px-space-md py-space-sm text-right font-mono">
+                    {{ percent(g.interviewed, g.applied) }}
+                    <span class="text-on-surface-variant">({{ g.interviewed }})</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="m-0 mt-space-xs text-body-sm text-on-surface-variant">
+          The resume an application's fit was checked against; check fit on an application to count
+          it.
+        </p>
+      </section>
+    </div>
+  }
+} @else {
+  <p class="text-on-surface-variant">Loading…</p>
+}

@@ -35,7 +35,8 @@ Rebuilt from the .NET Beacon, then extended.
 | B1 | Board search and filters kept in the address, drag-and-drop between columns (Angular CDK) | ad661f5 |
 | A1 | Interview brief: its own page, AI-written sections from the posting, resume, fit and rounds, company research with sources, editable, Markdown and print | 1e09f34, 65b2106 |
 | A7 | Story bank: STAR stories with tags and flagged gaps, AI drafts from notes or the resume, used by the brief's Stories section | f33e465 |
-| A6 | Study cards: decks, an SM-2 style scheduler, a keyboard study session, drafts made from a brief and its stories | after f33e465 |
+| A6 | Study cards: decks, an SM-2 style scheduler, a keyboard study session, drafts made from a brief and its stories | 75e56cb |
+| A3 | Stats: funnel, response and ghosting rates, weekly sends, results by source and resume, time in each stage | after 75e56cb |
 
 ## Next: Companies and people
 
@@ -248,7 +249,11 @@ One living prep document per application that moves to interviews, modeled on th
 - Turn J2's gaps into concrete edit suggestions for one posting ("move the Spring Boot project up", "mention Testcontainers").
 - Suggestions only; the resume file is never rewritten automatically.
 
-### A3. Stats
+### A3. Stats (done, except the items below)
+- Built as a Stats page (`/stats`, in the nav) with All time / 90 / 30 day ranges: tiles for applied, heard back (with the median days to a first answer), interviewed and ghosted; a funnel (applied, heard back, interviewed, offer); applications sent per week for 12 weeks (in the browser's time zone); tables by source, by resume and time in each stage (median, average, how many are in it now).
+- Counted from each application's status history, so one interviewed and later rejected still counts as interviewed. Ghosted = still Applied with no change for 21 days. One query with `GROUPING SETS` gives the overall, by-source and by-resume rows; stage times use `LEAD()` over the history; medians use `percentile_cont`.
+- Resume = the resume the application's fit was checked against (J2), since applications don't record which one was sent; others count as "Not recorded".
+- Still to do: record which resume was actually sent with an application; funnel per source as its own chart; a date picker range.
 - Funnel by source (applied -> interview -> offer), response rate, average time in each stage, ghosting rate.
 - Which resume variant (J1) gets more interviews.
 - Learning focus: SQL aggregation, window functions, a chart page in Angular.
