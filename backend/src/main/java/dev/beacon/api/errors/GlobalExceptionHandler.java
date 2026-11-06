@@ -3,6 +3,7 @@ package dev.beacon.api.errors;
 import dev.beacon.application.briefs.BriefException;
 import dev.beacon.application.coverletters.CoverLetterException;
 import dev.beacon.application.stories.StoryException;
+import dev.beacon.application.study.StudyException;
 import dev.beacon.application.documents.PostingCaptureException;
 import dev.beacon.application.fit.FitScoreException;
 import dev.beacon.domain.DomainException;
@@ -85,6 +86,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
         var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
         problem.setTitle("Could not write the brief");
+        return problem;
+    }
+
+    @ExceptionHandler(StudyException.class)
+    public ProblemDetail handleStudy(StudyException ex) {
+        var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
+        var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        problem.setTitle("Could not do that with the study cards");
         return problem;
     }
 

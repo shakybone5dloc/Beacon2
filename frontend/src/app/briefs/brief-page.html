@@ -49,6 +49,15 @@
         }}
       </button>
       <span class="ml-auto flex gap-space-xs">
+        <button
+          type="button"
+          class="make-cards btn btn-sm"
+          [disabled]="makingCards()"
+          title="Turn this brief's questions, refresher and stories into flashcards to drill"
+          (click)="makeCards()"
+        >
+          {{ makingCards() ? 'Making cards…' : 'Make study cards' }}
+        </button>
         <button type="button" class="download btn btn-sm" (click)="download()">
           Download Markdown
         </button>

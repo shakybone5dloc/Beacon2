@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { forkJoin, from, mergeMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApplicationsApi } from '../applications/applications-api';
@@ -34,6 +34,7 @@ import { Resume } from '../resumes/resume.model';
 import { ResumesApi } from '../resumes/resumes-api';
 import { Brief, BriefSection, briefMarkdown, renderMarkdown, sectionKey } from './brief.model';
 import { BriefsApi } from './briefs-api';
+import { StudyApi } from '../study/study-api';
 
 /** Sections written at once by "Write the brief", so the AI provider isn't flooded. */
 const PARALLEL_WRITES = 3;
@@ -56,6 +57,8 @@ export class BriefPage implements OnInit {
   private readonly interviewsApi = inject(InterviewsApi);
   private readonly peopleApi = inject(PeopleApi);
   private readonly resumesApi = inject(ResumesApi);
+  private readonly studyApi = inject(StudyApi);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   /** The application's id, from the route. */
@@ -76,6 +79,7 @@ export class BriefPage implements OnInit {
   protected readonly editing = signal<string | null>(null);
   protected readonly draft = signal('');
   protected readonly saving = signal(false);
+  protected readonly makingCards = signal(false);
 
   protected readonly employerLabel = employerLabel;
   protected readonly key = sectionKey;
@@ -303,6 +307,24 @@ export class BriefPage implements OnInit {
   }
 
   /** The whole brief as a Markdown file. */
+  /** Draft flashcards from this brief and its stories, then open the deck to review them. */
+  protected makeCards(): void {
+    this.makingCards.set(true);
+    this.notice.set(null);
+    this.studyApi.fromBrief(this.id()).subscribe({
+      next: (made) => {
+        this.makingCards.set(false);
+        this.router.navigate(['/study', made.deck.id], {
+          queryParams: { added: made.added, skipped: made.skipped },
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.makingCards.set(false);
+        this.notice.set(problemText(err, 'Could not make study cards. Try again.'));
+      },
+    });
+  }
+
   protected download(): void {
     const app = this.application();
     if (!app) return;

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { anApplication } from '../applications/testing';
 import { anInterview } from '../interviews/testing';
 import { onIt } from '../people/testing';
@@ -306,6 +306,21 @@ describe('BriefPage', () => {
     expect(el.querySelector('[data-kind=COMPANY] .meta')?.textContent?.trim()).toBe(
       'Written by you',
     );
+  });
+
+  it('makes study cards from the brief and opens the deck to review them', async () => {
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const { fixture, el } = await open(aBrief([aSection({ content: 'Q', version: 0 })]));
+
+    el.querySelector<HTMLButtonElement>('button.make-cards')!.click();
+    http
+      .expectOne((r) => r.method === 'POST' && r.url === '/api/applications/a1/study-cards')
+      .flush({ deck: { id: 'd7' }, added: 12, skipped: 2 });
+    await fixture.whenStable();
+
+    expect(navigate).toHaveBeenCalledWith(['/study', 'd7'], {
+      queryParams: { added: 12, skipped: 2 },
+    });
   });
 
   it('points to Settings without an AI key, and still lets you edit', async () => {

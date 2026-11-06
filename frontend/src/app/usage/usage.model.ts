@@ -10,6 +10,7 @@ export const FEATURE_LABELS: Record<string, string> = {
   FIT_SCORE: 'Fit checks',
   INTERVIEW_BRIEF: 'Interview briefs',
   STORY_BANK: 'Story drafts',
+  STUDY_CARDS: 'Study cards',
 };
 
 /** Warn from here; the meter turns red once the budget is used up. */

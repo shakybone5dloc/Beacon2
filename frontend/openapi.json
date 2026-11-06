@@ -751,6 +751,33 @@
         "tags" : [ "Application people" ]
       }
     },
+    "/api/applications/{applicationId}/study-cards" : {
+      "post" : {
+        "operationId" : "makeStudyCards",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MadeCardsResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
+    },
     "/api/applications/{id}" : {
       "delete" : {
         "operationId" : "deleteApplication",
@@ -2679,6 +2706,374 @@
         },
         "tags" : [ "Stories" ]
       }
+    },
+    "/api/study/cards/{id}" : {
+      "delete" : {
+        "operationId" : "deleteCard",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      },
+      "put" : {
+        "operationId" : "updateCard",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveCardRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CardResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
+    },
+    "/api/study/cards/{id}/keep" : {
+      "post" : {
+        "operationId" : "keepCard",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CardResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
+    },
+    "/api/study/cards/{id}/review" : {
+      "post" : {
+        "operationId" : "reviewCard",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReviewCardRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CardResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
+    },
+    "/api/study/decks" : {
+      "get" : {
+        "operationId" : "listDecks",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/DeckResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      },
+      "post" : {
+        "operationId" : "createDeck",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveDeckRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeckResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
+    },
+    "/api/study/decks/{id}" : {
+      "delete" : {
+        "operationId" : "deleteDeck",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      },
+      "get" : {
+        "operationId" : "getDeck",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeckResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      },
+      "put" : {
+        "operationId" : "renameDeck",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveDeckRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeckResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
+    },
+    "/api/study/decks/{id}/cards" : {
+      "get" : {
+        "operationId" : "listDeckCards",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/CardResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      },
+      "post" : {
+        "operationId" : "addCard",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveCardRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CardResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
+    },
+    "/api/study/decks/{id}/due" : {
+      "get" : {
+        "operationId" : "listDueCards",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/CardResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
+    },
+    "/api/study/decks/{id}/keep-drafts" : {
+      "post" : {
+        "operationId" : "keepDeckDrafts",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeckResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
     }
   },
   "components" : {
@@ -3000,6 +3395,58 @@
           }
         },
         "required" : [ "descriptionSaved", "document" ]
+      },
+      "CardResponse" : {
+        "type" : "object",
+        "properties" : {
+          "answer" : {
+            "type" : "string"
+          },
+          "deckId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "dueAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "intervalDays" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lapses" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lastReviewedAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "question" : {
+            "type" : "string"
+          },
+          "repetitions" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "source" : {
+            "type" : "string",
+            "enum" : [ "MANUAL", "BRIEF", "STORY" ]
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "DRAFT", "ACTIVE" ]
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "answer", "deckId", "dueAt", "id", "intervalDays", "lapses", "lastReviewedAt", "question", "repetitions", "source", "status", "version" ]
       },
       "ChangeStatusRequest" : {
         "type" : "object",
@@ -3370,6 +3817,54 @@
           }
         },
         "required" : [ "displayName", "email", "id" ]
+      },
+      "DeckResponse" : {
+        "type" : "object",
+        "properties" : {
+          "applicationId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "applicationLabel" : {
+            "type" : [ "string", "null" ]
+          },
+          "cards" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "drafts" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "due" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "nextDueAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "applicationId", "applicationLabel", "cards", "createdAt", "drafts", "due", "id", "name", "nextDueAt", "updatedAt", "version" ]
       },
       "DocumentResponse" : {
         "type" : "object",
@@ -3766,6 +4261,23 @@
         },
         "required" : [ "email", "password" ]
       },
+      "MadeCardsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "added" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "deck" : {
+            "$ref" : "#/components/schemas/DeckResponse"
+          },
+          "skipped" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "added", "deck", "skipped" ]
+      },
       "MatchSummaryResponse" : {
         "type" : "object",
         "properties" : {
@@ -4088,6 +4600,16 @@
         },
         "required" : [ "text" ]
       },
+      "ReviewCardRequest" : {
+        "type" : "object",
+        "properties" : {
+          "grade" : {
+            "type" : "string",
+            "enum" : [ "AGAIN", "HARD", "GOOD", "EASY" ]
+          }
+        },
+        "required" : [ "grade" ]
+      },
       "SaveAiBudgetRequest" : {
         "type" : "object",
         "properties" : {
@@ -4125,6 +4647,26 @@
         },
         "required" : [ "content" ]
       },
+      "SaveCardRequest" : {
+        "type" : "object",
+        "properties" : {
+          "answer" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 10000,
+            "minLength" : 0
+          },
+          "question" : {
+            "type" : "string",
+            "maxLength" : 2000,
+            "minLength" : 0
+          },
+          "version" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64"
+          }
+        },
+        "required" : [ "question" ]
+      },
       "SaveCoverLetterRequest" : {
         "type" : "object",
         "properties" : {
@@ -4135,6 +4677,21 @@
           }
         },
         "required" : [ "text" ]
+      },
+      "SaveDeckRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "version" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64"
+          }
+        },
+        "required" : [ "name" ]
       },
       "SaveSearchRequest" : {
         "type" : "object",

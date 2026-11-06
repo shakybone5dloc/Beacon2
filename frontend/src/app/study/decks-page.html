@@ -1,0 +1,77 @@
+<header class="mb-space-lg flex flex-wrap items-start justify-between gap-space-md">
+  <div>
+    <h1 class="m-0 mb-space-xs">Study</h1>
+    <p class="m-0 max-w-2xl text-body-md text-on-surface-variant">
+      Flashcards to drill before an interview. Make a deck from an application's interview brief
+      (Make study cards on the brief), or start one here. Cards you miss come back sooner.
+    </p>
+  </div>
+  @if (!adding()) {
+    <button type="button" class="new btn" (click)="adding.set(true)">
+      <span class="material-symbols-outlined !text-base" aria-hidden="true">add</span>
+      New deck
+    </button>
+  }
+</header>
+
+@if (adding()) {
+  <form
+    class="new-deck card mb-space-lg flex flex-wrap items-end gap-space-sm p-space-md"
+    (submit)="$event.preventDefault(); create()"
+  >
+    <label class="grid flex-1 gap-space-xs">
+      Name
+      <input
+        class="input"
+        placeholder="System design basics"
+        [value]="newName()"
+        (input)="newName.set($any($event.target).value)"
+      />
+    </label>
+    <button type="submit" [disabled]="!newName().trim()">Create</button>
+    <button type="button" class="btn" (click)="adding.set(false)">Cancel</button>
+  </form>
+}
+
+@if (error(); as message) {
+  <p class="notice">{{ message }}</p>
+}
+
+@if (decks(); as list) {
+  @if (list.length === 0) {
+    <p class="empty text-on-surface-variant">
+      No decks yet. Open an application's interview brief and use Make study cards, or start a deck
+      here.
+    </p>
+  } @else {
+    <ul class="m-0 grid list-none gap-space-md p-0">
+      @for (deck of list; track deck.id) {
+        <li class="deck card flex flex-wrap items-center justify-between gap-space-md p-space-md">
+          <div class="min-w-0">
+            <a
+              class="name text-headline-sm text-on-surface no-underline hover:text-primary-container"
+              [routerLink]="['/study', deck.id]"
+              >{{ deck.name }}</a
+            >
+            <p class="counts m-0 text-body-sm text-on-surface-variant">
+              {{ deck.cards }} {{ deck.cards === 1 ? 'card' : 'cards' }}
+              @if (deck.drafts > 0) {
+                · {{ deck.drafts }} {{ deck.drafts === 1 ? 'draft' : 'drafts' }} to review
+              }
+              @if (deck.due === 0 && deck.nextDueAt) {
+                · next due {{ dueLabel(deck.nextDueAt, now) }}
+              }
+            </p>
+          </div>
+          @if (deck.due > 0) {
+            <a class="study btn btn-primary" [routerLink]="['/study', deck.id, 'session']">
+              Study {{ deck.due }} due
+            </a>
+          }
+        </li>
+      }
+    </ul>
+  }
+} @else if (!error()) {
+  <p class="text-on-surface-variant">Loading…</p>
+}

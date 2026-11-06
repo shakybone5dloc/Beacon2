@@ -1,0 +1,149 @@
+<p><a routerLink="/study" class="back">← Study</a></p>
+
+@if (error(); as message) {
+  <p class="notice">{{ message }}</p>
+} @else if (deck(); as d) {
+  <header class="mb-space-lg flex flex-wrap items-start justify-between gap-space-md">
+    <div class="min-w-0">
+      <h1 class="m-0">{{ d.name }}</h1>
+      @if (d.applicationId) {
+        <a class="brief text-body-sm" [routerLink]="['/applications', d.applicationId, 'brief']"
+          >{{ d.applicationLabel ?? 'The application' }}'s interview brief →</a
+        >
+      }
+    </div>
+    <div class="flex flex-wrap gap-space-xs">
+      @if (due() > 0) {
+        <a class="study btn btn-primary" [routerLink]="['/study', d.id, 'session']"
+          >Study {{ due() }} due</a
+        >
+      }
+      <button type="button" class="add btn" (click)="startNew()">Add card</button>
+      <button type="button" class="delete-deck btn" (click)="removeDeck(d)">Delete deck</button>
+    </div>
+  </header>
+
+  @if (notice(); as text) {
+    <p class="notice">{{ text }}</p>
+  }
+
+  @if (editing(); as target) {
+    <form
+      class="card-form card mb-space-lg grid gap-space-sm p-space-md"
+      (submit)="$event.preventDefault(); save()"
+    >
+      <h2 class="m-0">{{ target === 'new' ? 'New card' : 'Edit card' }}</h2>
+      <label class="grid gap-space-xs">
+        Question
+        <textarea
+          class="question input min-h-16"
+          rows="2"
+          [value]="question()"
+          (input)="question.set($any($event.target).value)"
+        ></textarea>
+      </label>
+      <label class="grid gap-space-xs">
+        <span>
+          Answer
+          <span class="text-body-sm font-normal text-on-surface-variant"
+            >Markdown; bullet points work well.</span
+          >
+        </span>
+        <textarea
+          class="answer input min-h-24"
+          rows="4"
+          [value]="answer()"
+          (input)="answer.set($any($event.target).value)"
+        ></textarea>
+      </label>
+      <div class="flex gap-space-sm">
+        <button type="submit" class="save" [disabled]="saving() || !question().trim()">
+          {{ saving() ? 'Saving…' : 'Save' }}
+        </button>
+        <button type="button" class="cancel btn" (click)="editing.set(null)">Cancel</button>
+      </div>
+    </form>
+  }
+
+  @if (drafts().length > 0) {
+    <section class="drafts mb-space-xl">
+      <div class="mb-space-sm flex flex-wrap items-baseline justify-between gap-space-sm">
+        <h2 class="m-0">Drafts to review</h2>
+        <button type="button" class="keep-all btn btn-sm" (click)="keepAll()">
+          Keep all {{ drafts().length }}
+        </button>
+      </div>
+      <ul class="m-0 grid list-none gap-space-sm p-0">
+        @for (card of drafts(); track card.id) {
+          <li class="draft card p-space-md">
+            <div class="flex flex-wrap items-start justify-between gap-space-sm">
+              <p class="question m-0 font-semibold">{{ card.question }}</p>
+              <span class="flex gap-space-xs">
+                <button type="button" class="keep btn btn-sm btn-primary" (click)="keep(card)">
+                  Keep
+                </button>
+                <button type="button" class="edit btn btn-sm" (click)="edit(card)">Edit</button>
+                <button type="button" class="delete btn btn-sm" (click)="remove(card)">Drop</button>
+              </span>
+            </div>
+            @if (card.answer) {
+              <div
+                class="answer markdown mt-space-xs text-body-sm"
+                [innerHTML]="markdown(card.answer)"
+              ></div>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <section class="kept">
+    <div class="mb-space-sm flex flex-wrap items-baseline justify-between gap-space-sm">
+      <h2 class="m-0">Cards</h2>
+      @if (kept().length > 0) {
+        <label class="flex items-center gap-space-xs text-body-sm text-on-surface-variant">
+          <input
+            type="checkbox"
+            class="cheat-sheet"
+            [checked]="cheatSheet()"
+            (change)="cheatSheet.set($any($event.target).checked)"
+          />
+          Show answers (cheat sheet)
+        </label>
+      }
+    </div>
+    @if (kept().length === 0) {
+      <p class="empty text-on-surface-variant">
+        No cards to study yet. Keep some drafts, or add a card.
+      </p>
+    } @else {
+      <ul class="m-0 grid list-none gap-space-sm p-0">
+        @for (card of kept(); track card.id) {
+          <li class="kept-card card p-space-md">
+            <div class="flex flex-wrap items-start justify-between gap-space-sm">
+              <p class="question m-0 font-semibold">{{ card.question }}</p>
+              <span class="flex items-center gap-space-xs">
+                <span class="due font-mono text-label-code text-on-surface-variant"
+                  >due {{ dueLabel(card.dueAt, now) }}</span
+                >
+                <button type="button" class="edit btn btn-sm" (click)="edit(card)">Edit</button>
+                <button type="button" class="delete btn btn-sm" (click)="remove(card)">
+                  Delete
+                </button>
+              </span>
+            </div>
+            @if (cheatSheet() && card.answer) {
+              <div
+                class="answer markdown mt-space-xs text-body-sm"
+                [innerHTML]="markdown(card.answer)"
+              ></div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+} @else {
+  <p class="text-on-surface-variant">Loading…</p>
+}

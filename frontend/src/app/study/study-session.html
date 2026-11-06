@@ -1,0 +1,65 @@
+<p>
+  <a [routerLink]="['/study', id()]" class="back">← {{ deck()?.name ?? 'Deck' }}</a>
+</p>
+
+@if (error(); as message) {
+  <p class="notice">{{ message }}</p>
+}
+
+@if (queue(); as cards) {
+  @if (current(); as card) {
+    <p class="left m-0 mb-space-sm text-right font-mono text-label-code text-on-surface-variant">
+      {{ cards.length }} left
+    </p>
+    <article class="session-card card grid gap-space-lg p-space-xl">
+      <p class="question m-0 text-headline-md text-on-surface">{{ card.question }}</p>
+
+      @if (revealed()) {
+        <div
+          class="answer markdown border-t border-hairline pt-space-md"
+          [innerHTML]="answerHtml()"
+        ></div>
+        <div class="grades grid grid-cols-2 gap-space-sm sm:grid-cols-4">
+          @for (g of grades; track g.grade) {
+            <button
+              type="button"
+              class="grade btn h-auto flex-col py-space-sm"
+              [class.btn-primary]="g.grade === 'GOOD'"
+              [disabled]="grading()"
+              [title]="g.hint"
+              (click)="grade(g.grade)"
+            >
+              <span>{{ g.label }}</span>
+              <span class="kbd">{{ g.key }}</span>
+            </button>
+          }
+        </div>
+      } @else {
+        <p class="m-0 text-body-sm text-on-surface-variant">Answer out loud, then reveal.</p>
+        <button type="button" class="reveal btn btn-primary justify-self-start" (click)="reveal()">
+          Show answer <span class="kbd">Space</span>
+        </button>
+      }
+    </article>
+  } @else {
+    <section class="done card grid gap-space-sm p-space-xl text-center">
+      @if (studied().size === 0) {
+        <h1 class="m-0 text-headline-md">Nothing due right now</h1>
+        <p class="m-0 text-on-surface-variant">Every card in this deck is scheduled for later.</p>
+      } @else {
+        <h1 class="m-0 text-headline-md">Done for now</h1>
+        <p class="summary m-0 text-on-surface-variant">
+          {{ studied().size }} {{ studied().size === 1 ? 'card' : 'cards' }} studied{{
+            missed().size > 0 ? ', ' + missed().size + ' missed and repeated' : ''
+          }}. Each comes back when it's due.
+        </p>
+      }
+      <p class="m-0 mt-space-sm">
+        <a [routerLink]="['/study', id()]">Back to the deck</a> ·
+        <a routerLink="/study">All decks</a>
+      </p>
+    </section>
+  }
+} @else if (!error()) {
+  <p class="text-on-surface-variant">Loading…</p>
+}

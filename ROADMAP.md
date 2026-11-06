@@ -34,7 +34,8 @@ Rebuilt from the .NET Beacon, then extended.
 | J0 | Google Jobs (SerpApi) and JSearch as keyed sources, reaching LinkedIn, Indeed and careers sites | ce3b972, 2672b04 |
 | B1 | Board search and filters kept in the address, drag-and-drop between columns (Angular CDK) | ad661f5 |
 | A1 | Interview brief: its own page, AI-written sections from the posting, resume, fit and rounds, company research with sources, editable, Markdown and print | 1e09f34, 65b2106 |
-| A7 | Story bank: STAR stories with tags and flagged gaps, AI drafts from notes or the resume, used by the brief's Stories section | after 65b2106 |
+| A7 | Story bank: STAR stories with tags and flagged gaps, AI drafts from notes or the resume, used by the brief's Stories section | f33e465 |
+| A6 | Study cards: decks, an SM-2 style scheduler, a keyboard study session, drafts made from a brief and its stories | after f33e465 |
 
 ## Next: Companies and people
 
@@ -258,7 +259,11 @@ One living prep document per application that moves to interviews, modeled on th
 ### A5. Weekly digest
 - Email (or in-app) summary: follow-ups due, stale applications, upcoming interviews, new job matches.
 
-### A6. Study cards (spaced repetition)
+### A6. Study cards (spaced repetition) (done, except the items below)
+- Built as a Study page (`/study`, in the nav) listing decks with what's due, a deck page (drafts to keep or drop, kept cards with when each is next due, a cheat sheet with every answer, cards added or edited by hand) and a study session (Space or Enter reveals, 1-4 grades; a card graded Again goes back in the queue and comes round before the session ends).
+- Scheduling is an SM-2 variant in a pure, unit-tested `Scheduler` (ease from 2.5, floor 1.3; Good gives 1 day, then 3, then interval x ease; Hard x1.2 and a little harder; Easy x ease x 1.3; Again back in 10 minutes and a lapse once learned; capped at a year), skipping the Leitner-box step. `study_decks`, `study_cards` (owner, schedule, `due_at`, index on `(owner_id, due_at)` for kept cards) and `study_reviews` (every grade) in V19.
+- **Make study cards** on a brief: the AI turns its likely questions, refresher, gap and pitch into question/answer cards (structured output, up to 25, metered as "Study cards"), and each story the brief picked from the story bank becomes a "Tell the story" card with its STAR outline, without an AI call. They land as drafts in the application's own deck (one per application), skipping questions the deck already has.
+- Still to do: "Study for this interview" on the interview page and the due count on the board's next-interview chip; promoting an interview's prep notes to cards; scheduling that aims every card to be seen before the interview date.
 - Flashcards to drill before an interview: terms, likely questions and your own STAR stories. Prototyped as the "Interview Recall" page (Oct 29) for the Elevance hiring manager round.
 - `study_decks` and `study_cards` per user: question, answer (markdown), optional link to an application, interview (I1) or company (R0).
 - Cards come from four places: written by hand, made from an interview brief (A1: its likely questions, refresher terms and stories), drilled from the story bank (A7), or promoted from an interview's prep notes. Generated cards land as drafts to review and edit before they're studied.

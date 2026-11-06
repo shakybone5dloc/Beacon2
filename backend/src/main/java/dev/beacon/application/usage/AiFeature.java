@@ -5,5 +5,6 @@ public enum AiFeature {
     COVER_LETTER,
     FIT_SCORE,
     INTERVIEW_BRIEF,
-    STORY_BANK
+    STORY_BANK,
+    STUDY_CARDS
 }

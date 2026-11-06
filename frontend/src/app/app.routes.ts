@@ -74,6 +74,21 @@ export const routes: Routes = [
         title: 'Beacon · Stories',
       },
       {
+        path: 'study',
+        loadComponent: () => import('./study/decks-page').then((m) => m.DecksPage),
+        title: 'Beacon · Study',
+      },
+      {
+        path: 'study/:id',
+        loadComponent: () => import('./study/deck-page').then((m) => m.DeckPage),
+        title: 'Beacon · Deck',
+      },
+      {
+        path: 'study/:id/session',
+        loadComponent: () => import('./study/study-session').then((m) => m.StudySession),
+        title: 'Beacon · Studying',
+      },
+      {
         path: 'providers',
         loadComponent: () => import('./providers/provider-guide').then((m) => m.ProviderGuide),
         title: 'Beacon · Getting API keys',

@@ -5,6 +5,7 @@ import dev.beacon.application.briefs.BriefWriter;
 import dev.beacon.application.briefs.CompanyResearcher;
 import dev.beacon.application.coverletters.CoverLetterWriter;
 import dev.beacon.application.stories.StoryWriter;
+import dev.beacon.application.study.CardWriter;
 import dev.beacon.application.documents.PdfPrinter;
 import dev.beacon.application.documents.PostingCaptureException;
 import dev.beacon.application.fit.FitScorer;
@@ -62,6 +63,38 @@ public class DocumentTestDoubles {
     @Bean
     FakeStoryWriter fakeStoryWriter() {
         return new FakeStoryWriter();
+    }
+
+    @Bean
+    FakeCardWriter fakeCardWriter() {
+        return new FakeCardWriter();
+    }
+
+    /** Stands in for OpenAI's study cards: two cards, the same each time. */
+    public static class FakeCardWriter implements CardWriter, Ordered {
+        public final List<CardInput> inputs = new ArrayList<>();
+
+        @Override
+        public String provider() {
+            return ProviderCatalog.OPENAI;
+        }
+
+        @Override
+        public int getOrder() {
+            return Ordered.HIGHEST_PRECEDENCE;
+        }
+
+        @Override
+        public List<CardDraft> write(CardInput input, String apiKey, AiUsageMeter meter) {
+            meter.record(FakeCoverLetterWriter.USAGE);
+            inputs.add(input);
+            return List.of(new CardDraft("What is OAuth?", "- Delegated authorization"),
+                    new CardDraft("Your 30-second pitch", "- Java, Spring, Kafka"));
+        }
+
+        public void reset() {
+            inputs.clear();
+        }
     }
 
     /** Stands in for OpenAI's story drafts; one story from notes, two from a resume. */
