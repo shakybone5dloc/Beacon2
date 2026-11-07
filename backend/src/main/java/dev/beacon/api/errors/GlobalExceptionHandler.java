@@ -4,6 +4,7 @@ import dev.beacon.application.briefs.BriefException;
 import dev.beacon.application.coverletters.CoverLetterException;
 import dev.beacon.application.stories.StoryException;
 import dev.beacon.application.study.StudyException;
+import dev.beacon.application.tailoring.TailoringException;
 import dev.beacon.application.documents.PostingCaptureException;
 import dev.beacon.application.fit.FitScoreException;
 import dev.beacon.domain.DomainException;
@@ -102,6 +103,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
         var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
         problem.setTitle("Could not draft stories");
+        return problem;
+    }
+
+    @ExceptionHandler(TailoringException.class)
+    public ProblemDetail handleTailoring(TailoringException ex) {
+        var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
+        var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        problem.setTitle("Could not suggest resume changes");
         return problem;
     }
 

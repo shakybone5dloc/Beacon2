@@ -751,6 +751,152 @@
         "tags" : [ "Application people" ]
       }
     },
+    "/api/applications/{applicationId}/resume" : {
+      "get" : {
+        "operationId" : "getApplicationResume",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TailoringResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Resume tailoring" ]
+      }
+    },
+    "/api/applications/{applicationId}/resume/sent" : {
+      "put" : {
+        "operationId" : "setSentResume",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SentResumeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TailoringResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Resume tailoring" ]
+      }
+    },
+    "/api/applications/{applicationId}/resume/suggestions" : {
+      "post" : {
+        "operationId" : "suggestResumeChanges",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SuggestResumeChangesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TailoringResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Resume tailoring" ]
+      }
+    },
+    "/api/applications/{applicationId}/resume/suggestions/{suggestionId}" : {
+      "put" : {
+        "operationId" : "markResumeSuggestion",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "path",
+          "name" : "suggestionId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MarkSuggestionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResumeSuggestionResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Resume tailoring" ]
+      }
+    },
     "/api/applications/{applicationId}/study-cards" : {
       "post" : {
         "operationId" : "makeStudyCards",
@@ -4313,6 +4459,17 @@
         },
         "required" : [ "added", "deck", "skipped" ]
       },
+      "MarkSuggestionRequest" : {
+        "type" : "object",
+        "properties" : {
+          "state" : {
+            "type" : "string",
+            "enum" : [ "OPEN", "DONE", "DISMISSED" ],
+            "minLength" : 1
+          }
+        },
+        "required" : [ "state" ]
+      },
       "MatchSummaryResponse" : {
         "type" : "object",
         "properties" : {
@@ -4625,6 +4782,40 @@
           }
         },
         "required" : [ "contentType", "createdAt", "documentId", "filename", "isDefault", "label", "sizeBytes", "skills", "targetTitles", "textStatus", "updatedAt", "version", "yearsExperience" ]
+      },
+      "ResumeSuggestionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "example" : {
+            "type" : [ "string", "null" ]
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "kind" : {
+            "type" : "string",
+            "enum" : [ "ADD", "EMPHASIZE", "REWORD", "MOVE", "CUT" ]
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "section" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string",
+            "enum" : [ "OPEN", "DONE", "DISMISSED" ]
+          },
+          "suggestion" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "createdAt", "example", "id", "kind", "reason", "section", "state", "suggestion" ]
       },
       "ResumeTextResponse" : {
         "type" : "object",
@@ -5083,6 +5274,15 @@
         },
         "required" : [ "finishedAt", "gathered", "newMatches", "notes", "scored", "startedAt" ]
       },
+      "SentResumeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "resumeDocumentId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          }
+        }
+      },
       "SourceResultResponse" : {
         "type" : "object",
         "properties" : {
@@ -5303,6 +5503,41 @@
           }
         },
         "required" : [ "action", "createdAt", "gaps", "id", "metrics", "result", "situation", "tags", "task", "title", "updatedAt", "version" ]
+      },
+      "SuggestResumeChangesRequest" : {
+        "type" : "object",
+        "properties" : {
+          "resumeDocumentId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          }
+        }
+      },
+      "TailoringResponse" : {
+        "type" : "object",
+        "properties" : {
+          "configured" : {
+            "type" : "boolean"
+          },
+          "resumeDocumentId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "resumeLabel" : {
+            "type" : [ "string", "null" ]
+          },
+          "sentResumeDocumentId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "suggestions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ResumeSuggestionResponse"
+            }
+          }
+        },
+        "required" : [ "configured", "resumeDocumentId", "resumeLabel", "sentResumeDocumentId", "suggestions" ]
       },
       "TimelineEntryResponse" : {
         "type" : "object",

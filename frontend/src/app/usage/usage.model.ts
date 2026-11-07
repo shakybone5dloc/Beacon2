@@ -11,6 +11,7 @@ export const FEATURE_LABELS: Record<string, string> = {
   INTERVIEW_BRIEF: 'Interview briefs',
   STORY_BANK: 'Story drafts',
   STUDY_CARDS: 'Study cards',
+  RESUME_TAILORING: 'Resume tailoring',
 };
 
 /** Warn from here; the meter turns red once the budget is used up. */

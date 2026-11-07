@@ -1,0 +1,158 @@
+<h2>Resume</h2>
+
+@if (tailoring(); as t) {
+  @let choices = resumes() ?? [];
+
+  <label class="sent flex flex-wrap items-center gap-space-sm text-body-sm">
+    <span class="text-on-surface-variant">Sent with this application</span>
+    <select class="w-auto" [disabled]="savingSent()" (change)="setSent($any($event.target).value)">
+      <option value="" [selected]="!t.sentResumeDocumentId">Not recorded</option>
+      @for (r of choices; track r.id) {
+        <option [value]="r.id" [selected]="r.id === t.sentResumeDocumentId">{{ r.label }}</option>
+      }
+    </select>
+  </label>
+  <p class="m-0 mt-space-xs text-body-sm text-on-surface-variant">
+    Stats uses this to compare which resume gets more interviews.
+  </p>
+
+  <h3 class="mt-space-lg mb-space-xs text-headline-sm">Tailor it to this posting</h3>
+
+  @if (t.suggestions.length === 0) {
+    <p class="m-0 text-body-sm text-on-surface-variant">
+      Get specific edits that make a resume fit this posting: terms to match, experience to bring
+      forward, things to cut. Beacon only suggests; your resume file is never changed.
+    </p>
+  } @else {
+    <p class="m-0 text-body-sm text-on-surface-variant">
+      For <span class="resume-label font-medium text-on-surface">{{ t.resumeLabel }}</span> ·
+      {{ openCount() }} to go
+    </p>
+  }
+
+  @if (!t.configured) {
+    <p class="m-0 mt-space-sm text-body-sm text-on-surface-variant">
+      To get suggestions, add an OpenAI or Anthropic key under
+      <a routerLink="/settings/api-keys">Settings · API keys</a>.
+    </p>
+  } @else if (!hasJobDescription()) {
+    <p class="notice m-0 mt-space-sm">
+      This application has no job description yet. Save the posting as PDF or paste it in Edit
+      first.
+    </p>
+  } @else if (choices.length === 0) {
+    <p class="m-0 mt-space-sm text-body-sm text-on-surface-variant">
+      Upload a resume (PDF, text or Markdown) here or in the Documents library to tailor it.
+    </p>
+  } @else {
+    <div class="mt-space-sm flex flex-wrap items-end gap-space-sm">
+      <label class="grid gap-space-xs text-body-sm">
+        Resume
+        <select [value]="resumeId()" (change)="resumeId.set($any($event.target).value)">
+          @for (r of choices; track r.id) {
+            <option [value]="r.id" [selected]="r.id === resumeId()">{{ r.label }}</option>
+          }
+        </select>
+      </label>
+      <button type="button" class="suggest primary" [disabled]="suggesting()" (click)="suggest()">
+        {{
+          suggesting()
+            ? 'Thinking...'
+            : t.suggestions.length
+              ? 'Suggest again'
+              : 'Suggest changes with AI'
+        }}
+      </button>
+    </div>
+    @if (t.suggestions.length && !suggesting()) {
+      <p class="m-0 mt-space-xs text-body-sm text-on-surface-variant">
+        Asking again replaces the open and dismissed suggestions and keeps the ones you've done.
+      </p>
+    }
+  }
+
+  @if (groups().active.length) {
+    <ol class="m-0 mt-space-md grid list-none gap-space-sm p-0">
+      @for (s of groups().active; track s.id) {
+        <li
+          class="suggestion rounded-md border border-hairline p-space-md"
+          [class.done]="s.state === 'DONE'"
+          [class.opacity-60]="s.state === 'DONE'"
+        >
+          <div class="flex flex-wrap items-baseline gap-x-space-sm gap-y-1">
+            <span
+              class="kind rounded-sm bg-surface-container-high px-1.5 font-mono text-label-sm uppercase"
+              >{{ kindLabels[s.kind] ?? s.kind }}</span
+            >
+            <span class="section text-body-sm text-on-surface-variant">{{ s.section }}</span>
+          </div>
+          <p class="text m-0 mt-space-xs" [class.line-through]="s.state === 'DONE'">
+            {{ s.suggestion }}
+          </p>
+          @if (s.reason) {
+            <p class="reason m-0 mt-space-xs text-body-sm text-on-surface-variant">
+              Why: {{ s.reason }}
+            </p>
+          }
+          @if (s.example && s.state === 'OPEN') {
+            <div class="mt-space-sm flex items-start gap-space-sm">
+              <blockquote
+                class="example m-0 flex-1 border-l-2 border-primary pl-space-sm text-body-sm whitespace-pre-wrap"
+              >
+                {{ s.example }}
+              </blockquote>
+              <button type="button" class="copy text-body-sm" (click)="copy(s)">
+                {{ copied() === s.id ? 'Copied' : 'Copy' }}
+              </button>
+            </div>
+          }
+          <div class="mt-space-sm flex gap-space-sm">
+            @if (s.state === 'OPEN') {
+              <button type="button" class="mark-done text-body-sm" (click)="mark(s, 'DONE')">
+                Done
+              </button>
+              <button type="button" class="dismiss text-body-sm" (click)="mark(s, 'DISMISSED')">
+                Dismiss
+              </button>
+            } @else {
+              <button type="button" class="reopen text-body-sm" (click)="mark(s, 'OPEN')">
+                Not done yet
+              </button>
+            }
+          </div>
+        </li>
+      }
+    </ol>
+  }
+
+  @if (groups().dismissed.length; as count) {
+    <button
+      type="button"
+      class="toggle-dismissed mt-space-sm text-body-sm"
+      [attr.aria-expanded]="showDismissed()"
+      (click)="showDismissed.set(!showDismissed())"
+    >
+      {{ showDismissed() ? 'Hide' : 'Show' }} {{ count }} dismissed
+    </button>
+    @if (showDismissed()) {
+      <ul class="m-0 mt-space-xs grid list-none gap-space-xs p-0">
+        @for (s of groups().dismissed; track s.id) {
+          <li
+            class="dismissed flex items-baseline gap-space-sm text-body-sm text-on-surface-variant"
+          >
+            <span class="flex-1">{{ s.suggestion }}</span>
+            <button type="button" class="restore text-body-sm" (click)="mark(s, 'OPEN')">
+              Restore
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  }
+} @else if (!notice()) {
+  <p class="m-0 text-body-sm text-on-surface-variant">Loading...</p>
+}
+
+@if (notice(); as text) {
+  <p class="notice mt-space-sm">{{ text }}</p>
+}

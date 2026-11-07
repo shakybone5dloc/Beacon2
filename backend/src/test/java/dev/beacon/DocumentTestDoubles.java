@@ -6,6 +6,8 @@ import dev.beacon.application.briefs.CompanyResearcher;
 import dev.beacon.application.coverletters.CoverLetterWriter;
 import dev.beacon.application.stories.StoryWriter;
 import dev.beacon.application.study.CardWriter;
+import dev.beacon.application.tailoring.ResumeTailor;
+import dev.beacon.domain.tailoring.ResumeSuggestion;
 import dev.beacon.application.documents.PdfPrinter;
 import dev.beacon.application.documents.PostingCaptureException;
 import dev.beacon.application.fit.FitScorer;
@@ -63,6 +65,47 @@ public class DocumentTestDoubles {
     @Bean
     FakeStoryWriter fakeStoryWriter() {
         return new FakeStoryWriter();
+    }
+
+    @Bean
+    FakeResumeTailor fakeResumeTailor() {
+        return new FakeResumeTailor();
+    }
+
+    public static class FakeResumeTailor implements ResumeTailor, Ordered {
+        public final List<TailorInput> inputs = new ArrayList<>();
+
+        @Override
+        public String provider() {
+            return ProviderCatalog.OPENAI;
+        }
+
+        @Override
+        public String model() {
+            return "fake-model";
+        }
+
+        @Override
+        public int getOrder() {
+            return Ordered.HIGHEST_PRECEDENCE;
+        }
+
+        @Override
+        public List<Suggestion> suggest(TailorInput input, String apiKey, AiUsageMeter meter) {
+            meter.record(FakeCoverLetterWriter.USAGE);
+            inputs.add(input);
+            var round = inputs.size();
+            return List.of(
+                    new Suggestion(ResumeSuggestion.Kind.REWORD, "Experience: Acme",
+                            "Say \"Spring Boot\" rather than \"Spring\" (round " + round + ").",
+                            "The posting asks for Spring Boot by name.", "Built REST APIs in Spring Boot 3."),
+                    new Suggestion(ResumeSuggestion.Kind.MOVE, "Skills",
+                            "Move the skills section above education.", "Recruiters scan for the stack first.", null));
+        }
+
+        public void reset() {
+            inputs.clear();
+        }
     }
 
     @Bean

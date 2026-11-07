@@ -189,6 +189,12 @@
           (scored)="reloadApplication()"
         />
 
+        <app-application-resume
+          class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
+          [applicationId]="app.id"
+          [hasJobDescription]="app.jobDescription != null"
+        />
+
         <app-application-people
           class="card mt-space-lg block p-space-lg [&_h2]:mt-0"
           [applicationId]="app.id"

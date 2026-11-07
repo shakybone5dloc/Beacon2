@@ -141,7 +141,8 @@ h2 {
 
 section,
 app-application-people,
-app-application-fit {
+app-application-fit,
+app-application-resume {
   max-width: 720px;
 }
 .salary {

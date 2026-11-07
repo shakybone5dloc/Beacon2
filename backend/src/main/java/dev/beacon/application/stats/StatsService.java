@@ -49,15 +49,18 @@ public class StatsService {
 
     /**
      * One row of flags per application (what it ever reached), then totalled three ways at
-     * once with GROUPING SETS: overall, by source, and by the resume its fit was checked against.
+     * once with GROUPING SETS: overall, by source, and by resume: the one recorded as sent,
+     * else the one its fit was checked against.
      */
     private static final String GROUPS = """
             with apps as (
                 select a.id,
                        coalesce(nullif(trim(a.source), ''), 'Not recorded') as source,
-                       coalesce(rp.label, 'Not recorded') as resume,
+                       coalesce(srp.label, sd.filename, rp.label, 'Not recorded') as resume,
                        a.status, a.status_changed_at
                 from job_applications a
+                left join resume_profiles srp on srp.document_id = a.sent_resume_id
+                left join documents sd on sd.id = a.sent_resume_id
                 left join application_fits af on af.application_id = a.id
                 left join fit_scores fs on fs.id = af.fit_score_id
                 left join resume_profiles rp on rp.document_id = fs.resume_document_id

@@ -18,6 +18,7 @@ import { PossibleDuplicates } from '../contacts/possible-duplicates';
 import { ApplicationInterviews } from '../interviews/application-interviews';
 import { ApplicationTimeline } from '../timeline/application-timeline';
 import { ApplicationFit } from '../fit/application-fit';
+import { ApplicationResume } from '../tailoring/application-resume';
 
 /** Stand-ins for the child panels, which have their own specs and HTTP calls. */
 @Component({
@@ -84,6 +85,12 @@ class FitStub {
   readonly scored = output<unknown>();
 }
 
+@Component({ selector: 'app-application-resume', template: '' })
+class ResumeStub {
+  readonly applicationId = input<string>();
+  readonly hasJobDescription = input(false);
+}
+
 describe('ApplicationDetail', () => {
   let http: HttpTestingController;
   let navigate: ReturnType<typeof vi.spyOn>;
@@ -104,6 +111,7 @@ describe('ApplicationDetail', () => {
           ApplicationInterviews,
           ApplicationTimeline,
           ApplicationFit,
+          ApplicationResume,
         ],
       },
       add: {
@@ -116,6 +124,7 @@ describe('ApplicationDetail', () => {
           InterviewsStub,
           TimelineStub,
           FitStub,
+          ResumeStub,
         ],
       },
     });

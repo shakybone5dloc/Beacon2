@@ -36,7 +36,8 @@ Rebuilt from the .NET Beacon, then extended.
 | A1 | Interview brief: its own page, AI-written sections from the posting, resume, fit and rounds, company research with sources, editable, Markdown and print | 1e09f34, 65b2106 |
 | A7 | Story bank: STAR stories with tags and flagged gaps, AI drafts from notes or the resume, used by the brief's Stories section | f33e465 |
 | A6 | Study cards: decks, an SM-2 style scheduler, a keyboard study session, drafts made from a brief and its stories | 75e56cb |
-| A3 | Stats: funnel, response and ghosting rates, weekly sends, results by source and resume, time in each stage | after 75e56cb |
+| A3 | Stats: funnel, response and ghosting rates, weekly sends, results by source and resume, time in each stage | 8324832 |
+| A2 | Resume tailoring: AI edit suggestions per posting, marked done or dismissed; the resume sent recorded and used by Stats | after 8324832 |
 
 ## Next: Companies and people
 
@@ -245,7 +246,11 @@ One living prep document per application that moves to interviews, modeled on th
 - **Feeds A6:** "Make study cards" turns the brief's likely questions, refresher terms and stories into draft cards.
 - Learning focus: an ordered, section-based document model; prompts per section with structured output; web search with citations; merging regenerated content with user edits.
 
-### A2. Tailored resume suggestions
+### A2. Tailored resume suggestions (done, except the items below)
+- Built as a Resume card on the application page, under Fit. "Suggest changes with AI" takes a resume (the fit's, else the default; any library or attached resume can be picked) and returns up to 8 edits: kind (Add, Emphasize, Reword, Move, Cut), where on the resume, the change, why it helps for this posting, and wording to paste in with a Copy button. Uses the fit's matched skills and gaps when the fit was checked with the same resume.
+- Each suggestion is marked done, dismissed or reopened; asking again replaces the open and dismissed ones and keeps those done (`resume_suggestions`, V20). Metered as "Resume tailoring". The prompt never invents experience: a requirement the resume doesn't show is suggested only "if you have it", with [placeholders] for details.
+- "Sent with this application" records the resume actually sent (`job_applications.sent_resume_id`, set without bumping the application's version), and Stats' by-resume table now uses it before the fit's resume.
+- Still to do: a resume diff/preview with the accepted changes applied; suggestions on Find jobs results before saving; a nudge to record the sent resume when an application moves to Applied.
 - Turn J2's gaps into concrete edit suggestions for one posting ("move the Spring Boot project up", "mention Testcontainers").
 - Suggestions only; the resume file is never rewritten automatically.
 
