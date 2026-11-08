@@ -14,7 +14,7 @@ import {
   isForwardMove,
   orderedMoves,
 } from '../applications/application.model';
-import { Attention, attentionFor } from '../applications/attention';
+import { Attention, attentionFor, byUrgency } from '../applications/attention';
 import { formatLocation, formatSalary, withoutRemoteNote } from '../postings/format';
 import { verdict, Verdict } from '../fit/fit.model';
 
@@ -154,7 +154,7 @@ export class Board implements OnInit {
     this.columns()
       .flatMap((c) => c.cards)
       .filter((card) => card.attention?.needsAttention)
-      .sort((a, b) => urgency(a) - urgency(b)),
+      .sort(byUrgency),
   );
 
   ngOnInit(): void {
@@ -320,15 +320,4 @@ function matchesWords(app: ApplicationResponse, words: string[]): boolean {
     [employerLabel(app), app.role, app.location, app.source, app.notes].filter(Boolean).join(' '),
   );
   return words.every((word) => haystack.includes(word));
-}
-
-/** Date-driven reasons sort ahead of age-based ones, earliest date first. */
-function urgency(card: Card): number {
-  const app = card.app;
-  const date = card.attention?.followUp?.urgent
-    ? app.followUpOn
-    : card.attention?.deadline?.urgent
-      ? app.applyBy
-      : null;
-  return date ? new Date(date).getTime() : Number.MAX_SAFE_INTEGER;
 }

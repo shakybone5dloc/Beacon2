@@ -37,7 +37,8 @@ Rebuilt from the .NET Beacon, then extended.
 | A7 | Story bank: STAR stories with tags and flagged gaps, AI drafts from notes or the resume, used by the brief's Stories section | f33e465 |
 | A6 | Study cards: decks, an SM-2 style scheduler, a keyboard study session, drafts made from a brief and its stories | 75e56cb |
 | A3 | Stats: funnel, response and ghosting rates, weekly sends, results by source and resume, time in each stage | 8324832 |
-| A2 | Resume tailoring: AI edit suggestions per posting, marked done or dismissed; the resume sent recorded and used by Stats | after 8324832 |
+| A2 | Resume tailoring: AI edit suggestions per posting, marked done or dismissed; the resume sent recorded and used by Stats | ac681c1 |
+| B2 | Home: the landing page with Needs attention, Coming up, Queue, Study, This week and To-dos; the Board moves to /board | after ac681c1 |
 
 ## Next: Companies and people
 
@@ -268,6 +269,7 @@ One living prep document per application that moves to interviews, modeled on th
 
 ### A5. Weekly digest
 - Email (or in-app) summary: follow-ups due, stale applications, upcoming interviews, new job matches.
+- Now that Home (B2) shows all of this in the app, A5 is "email me Home weekly": the same sections, sent on a schedule. Needs the Needs attention rules (today in the browser, `applications/attention.ts`) worked out on the server too, so the email and the page agree.
 
 ### A6. Study cards (spaced repetition) (done, except the items below)
 - Built as a Study page (`/study`, in the nav) listing decks with what's due, a deck page (drafts to keep or drop, kept cards with when each is next due, a cheat sheet with every answer, cards added or edited by hand) and a study session (Space or Enter reveals, 1-4 grades; a card graded Again goes back in the queue and comes round before the session ends).
@@ -329,6 +331,20 @@ A page each user builds in Beacon from their resume and extra details, and share
 - Still to do: a "has follow-up due" filter separate from Needs action; filtering by company type or employment type.
 - Search box and filters on the board (company, role, source, remote, has follow-up due).
 - Drag cards between columns with Angular CDK; only allowed transitions accept a drop, with the same 409 conflict handling as the move buttons.
+
+### B2. Home (landing page) (done)
+- A Home page at `/`, first in the nav, showing what needs you right away. Named Home rather than Dashboard so it isn't confused with the Board, which moves to `/board` (old `/?q=...` board links redirect there with their filters).
+- Heading greets the user with the date. Sections, most urgent first, each hidden when empty; "You're all caught up" when everything is:
+  1. Needs attention: follow-ups due, apply-by dates close, applications gone quiet, with their Done buttons. Moved from the top of the Board, which keeps a one-line link here instead.
+  2. Coming up: interviews in the next two weeks, linking to the brief, with study cards due for that application.
+  3. Queue: new matches from saved searches, best fit first, to save or dismiss. Built to also hold the email inbox's suggestions (E4) when they arrive.
+  4. Study: cards due today across decks, with Start studying.
+  5. This week: applications sent this week vs last, response rate and how many are in each stage, linking to Stats.
+  6. To-dos: applied applications with no sent resume recorded (A2), and open resume suggestions on applications not yet applied to.
+  7. Quick actions: New application, Find jobs, Board.
+- Built from the existing endpoints plus one small `GET /api/home/todos` for the to-dos; A5 later emails the same sections.
+- The nav was condensed alongside: Home · Board · Jobs ▾ (Find jobs, Matches, Saved searches) · Network ▾ (Companies, People) · Prep ▾ (Stories, Study, Documents) · Stats. Angular CDK menus; a group highlights when you are on one of its pages, and the new-matches count shows on Jobs. Fits one row from 1024px (was 1280px); the phone row uses the same menus.
+- Learning focus: composing a page from several requests with signals, and a layout where sections come and go.
 
 ## Engineering (any time; earlier is cheaper)
 

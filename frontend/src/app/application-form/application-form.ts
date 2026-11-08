@@ -188,7 +188,7 @@ export class ApplicationForm implements OnInit {
       : this.api.create(request);
 
     save$.pipe(finalize(() => this.submitting.set(false))).subscribe({
-      next: (saved) => this.router.navigate(id ? ['/applications', saved.id] : ['/']),
+      next: (saved) => this.router.navigate(id ? ['/applications', saved.id] : ['/board']),
       error: (err: HttpErrorResponse) => this.applyServerErrors(err),
     });
   }

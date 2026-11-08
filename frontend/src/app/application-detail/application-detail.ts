@@ -190,11 +190,11 @@ export class ApplicationDetail {
       .delete(app.id)
       .pipe(finalize(() => this.deleting.set(false)))
       .subscribe({
-        next: () => this.router.navigate(['/']),
+        next: () => this.router.navigate(['/board']),
         error: (err: HttpErrorResponse) => {
           if (err.status === 404) {
             // Already gone, which is what the user wanted.
-            this.router.navigate(['/']);
+            this.router.navigate(['/board']);
           } else {
             this.notice.set('Could not delete the application. Try again.');
           }

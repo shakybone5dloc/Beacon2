@@ -1,0 +1,264 @@
+<header class="mb-space-lg flex flex-wrap items-end justify-between gap-space-md">
+  <div>
+    <h1 class="greeting m-0">{{ greeting() }}</h1>
+    <p class="m-0 mt-space-xs text-body-md text-on-surface-variant">
+      {{ now() | date: 'EEEE, MMMM d' }}
+    </p>
+  </div>
+  <nav class="quick-actions flex flex-wrap gap-space-sm" aria-label="Quick actions">
+    <a routerLink="/applications/new" class="btn btn-primary">New application</a>
+    <a routerLink="/jobs" class="btn">Find jobs</a>
+    <a routerLink="/board" class="btn">Board</a>
+  </nav>
+</header>
+
+@if (failed().size > 0) {
+  <p class="notice">Some of Home couldn't load. Refresh to try again.</p>
+}
+@if (notice(); as text) {
+  <p class="notice">{{ text }}</p>
+}
+
+@if (caughtUp()) {
+  <p
+    class="caught-up mb-space-lg flex items-center gap-space-sm rounded-md border border-hairline p-space-md text-body-md"
+  >
+    <span class="material-symbols-outlined text-success" aria-hidden="true">check_circle</span>
+    You're all caught up. Nothing needs you right now.
+  </p>
+}
+
+<!-- 1. Needs attention -->
+@if (attention().length) {
+  <section
+    class="attention mb-space-lg rounded-md border border-attention-border bg-attention-panel p-space-md"
+    aria-labelledby="attention-heading"
+  >
+    <h2
+      id="attention-heading"
+      class="m-0 mb-space-md flex items-center gap-space-sm text-headline-sm text-attention"
+    >
+      <span class="material-symbols-outlined !text-[18px]" aria-hidden="true">warning</span>
+      Needs attention
+    </h2>
+    <ul class="m-0 grid list-none gap-space-sm p-0 md:grid-cols-2 xl:grid-cols-3">
+      @for (card of attention(); track card.app.id) {
+        <li
+          class="flex flex-col gap-space-sm rounded-md border border-hairline bg-surface-container-lowest p-space-md"
+        >
+          <div class="flex items-start justify-between gap-space-sm">
+            <div class="min-w-0">
+              <a
+                [routerLink]="['/applications', card.app.id]"
+                class="block truncate text-headline-sm text-on-surface no-underline hover:text-primary-container"
+                >{{ employerLabel(card.app) }}</a
+              >
+              <span class="block truncate text-body-sm text-on-surface-variant">{{
+                card.app.role
+              }}</span>
+            </div>
+            <span class="reason pill pill-amber shrink-0">{{ card.attention.reason }}</span>
+          </div>
+          @if (card.attention.followUp?.urgent) {
+            <div class="flex justify-end">
+              <button
+                type="button"
+                class="btn btn-sm btn-primary"
+                [disabled]="isBusy(card.app.id)"
+                (click)="completeFollowUp(card.app)"
+              >
+                Done
+              </button>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+<div class="grid gap-space-lg md:grid-cols-2">
+  <!-- 2. Coming up -->
+  @if (upcoming().length) {
+    <section class="upcoming card p-space-lg" aria-labelledby="upcoming-heading">
+      <h2 id="upcoming-heading" class="m-0 mb-space-md text-headline-sm">Coming up</h2>
+      <ul class="m-0 grid list-none gap-space-md p-0">
+        @for (u of upcoming(); track u.app.id) {
+          <li class="interview flex gap-space-md">
+            <div
+              class="w-14 shrink-0 rounded-sm bg-surface-container-high py-1 text-center font-mono leading-tight"
+            >
+              <span class="block text-label-sm text-on-surface-variant uppercase">{{
+                u.startsAt | date: 'MMM'
+              }}</span>
+              <span class="block text-headline-sm">{{ u.startsAt | date: 'd' }}</span>
+            </div>
+            <div class="min-w-0">
+              <a
+                [routerLink]="['/applications', u.app.id]"
+                class="block truncate font-medium text-on-surface no-underline hover:text-primary-container"
+                >{{ employerLabel(u.app) }}</a
+              >
+              <span class="block text-body-sm text-on-surface-variant"
+                >{{ u.startsAt | date: 'EEE h:mm a' }} · {{ u.app.role }}</span
+              >
+              <span class="mt-1 flex flex-wrap gap-x-space-md text-body-sm">
+                <a [routerLink]="['/applications', u.app.id, 'brief']">Brief</a>
+                @if (u.cardsDue > 0) {
+                  <a class="study-due" [routerLink]="['/study', u.deckId, 'session']"
+                    >Study {{ u.cardsDue }} {{ u.cardsDue === 1 ? 'card' : 'cards' }}</a
+                  >
+                }
+              </span>
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <!-- 4. Study -->
+  @if (cardsDue() > 0) {
+    <section class="study card p-space-lg" aria-labelledby="study-heading">
+      <h2 id="study-heading" class="m-0 mb-space-xs text-headline-sm">Study</h2>
+      <p class="m-0 mb-space-md text-body-sm text-on-surface-variant">
+        {{ cardsDue() }} {{ cardsDue() === 1 ? 'card is' : 'cards are' }} due.
+      </p>
+      <ul class="m-0 grid list-none gap-space-sm p-0">
+        @for (deck of dueDecks(); track deck.id) {
+          <li class="deck flex items-center justify-between gap-space-sm">
+            <span class="min-w-0 truncate">
+              {{ deck.name }}
+              <span class="font-mono text-body-sm text-on-surface-variant">· {{ deck.due }}</span>
+            </span>
+            <a class="btn btn-sm shrink-0" [routerLink]="['/study', deck.id, 'session']"
+              >Start studying</a
+            >
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</div>
+
+<!-- 3. Queue -->
+@if (queue().length) {
+  <section class="queue mt-space-lg" aria-labelledby="queue-heading">
+    <div class="mb-space-sm flex items-baseline justify-between gap-space-md">
+      <h2 id="queue-heading" class="m-0 text-headline-sm">Queue</h2>
+      <a routerLink="/matches" class="text-body-sm"
+        >All {{ matches()!.length }} new {{ matches()!.length === 1 ? 'match' : 'matches' }}</a
+      >
+    </div>
+    <ul class="card m-0 list-none p-0">
+      @for (m of queue(); track m.id) {
+        <li
+          class="match flex flex-wrap items-center gap-space-md border-b border-hairline px-space-md py-space-sm last:border-b-0"
+        >
+          <div class="min-w-0 flex-1">
+            <a
+              [href]="m.url"
+              target="_blank"
+              rel="noopener"
+              class="block truncate font-medium text-on-surface no-underline hover:text-primary-container"
+              >{{ m.title }}</a
+            >
+            <span class="block truncate text-body-sm text-on-surface-variant"
+              >{{ m.company ?? 'Company not given' }}
+              @if (m.searchName) {
+                · {{ m.searchName }}
+              }
+            </span>
+          </div>
+          @if (m.score != null) {
+            @let v = verdict(m.score);
+            <span class="pill shrink-0 {{ v.pill }}" [title]="'Fit ' + m.score + '%'"
+              >{{ m.score }} · {{ v.label }}</span
+            >
+          }
+          <span class="flex shrink-0 gap-space-xs">
+            <button
+              type="button"
+              class="save btn btn-sm btn-primary"
+              [disabled]="isBusy(m.id)"
+              (click)="saveMatch(m)"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              class="dismiss btn btn-sm"
+              [disabled]="isBusy(m.id)"
+              (click)="dismissMatch(m)"
+            >
+              Dismiss
+            </button>
+          </span>
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+<div class="mt-space-lg grid gap-space-lg md:grid-cols-2">
+  <!-- 5. This week -->
+  @if (applications() && stats()) {
+    @let w = week();
+    <section class="this-week card p-space-lg" aria-labelledby="week-heading">
+      <div class="mb-space-md flex items-baseline justify-between gap-space-md">
+        <h2 id="week-heading" class="m-0 text-headline-sm">This week</h2>
+        <a routerLink="/stats" class="text-body-sm">Stats</a>
+      </div>
+      <dl class="m-0 grid grid-cols-2 gap-space-md">
+        <div>
+          <dt class="text-label-caps text-on-surface-variant uppercase">Sent</dt>
+          <dd class="sent m-0 mt-1 font-mono text-[1.5rem] leading-none">{{ w.thisWeek }}</dd>
+          <dd class="m-0 mt-1 text-body-sm text-on-surface-variant">{{ w.lastWeek }} last week</dd>
+        </div>
+        <div>
+          <dt class="text-label-caps text-on-surface-variant uppercase">Heard back</dt>
+          <dd class="response m-0 mt-1 font-mono text-[1.5rem] leading-none">
+            {{ percent(stats()!.overall.responded, stats()!.overall.applied) }}
+          </dd>
+          <dd class="m-0 mt-1 text-body-sm text-on-surface-variant">of all applied</dd>
+        </div>
+      </dl>
+      <ul
+        class="stages m-0 mt-space-md flex list-none flex-wrap gap-x-space-md gap-y-1 border-t border-hairline p-0 pt-space-sm text-body-sm"
+      >
+        @for (s of stages(); track s.status) {
+          <li>
+            <span class="text-on-surface-variant">{{ s.label }}</span>
+            <span class="ml-1 font-mono">{{ s.count }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <!-- 6. To-dos -->
+  @if (todos(); as t) {
+    @if (todoCount() > 0) {
+      <section class="todos card p-space-lg" aria-labelledby="todos-heading">
+        <h2 id="todos-heading" class="m-0 mb-space-md text-headline-sm">To-dos</h2>
+        <ul class="m-0 grid list-none gap-space-sm p-0 text-body-sm">
+          @for (todo of t.missingSentResume; track todo.applicationId) {
+            <li class="todo missing-resume">
+              Record which resume you sent to
+              <a [routerLink]="['/applications', todo.applicationId]">{{ todo.employer }}</a>
+              <span class="text-on-surface-variant"> · {{ todo.role }}</span>
+            </li>
+          }
+          @for (todo of t.openSuggestions; track todo.applicationId) {
+            <li class="todo open-suggestions">
+              {{ todo.count }} resume {{ todo.count === 1 ? 'suggestion' : 'suggestions' }} to go
+              for
+              <a [routerLink]="['/applications', todo.applicationId]">{{ todo.employer }}</a>
+              <span class="text-on-surface-variant"> · {{ todo.role }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</div>

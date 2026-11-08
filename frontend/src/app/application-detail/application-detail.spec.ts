@@ -434,7 +434,7 @@ describe('ApplicationDetail', () => {
     req.flush(null, { status: 204, statusText: 'No Content' });
     await fixture.whenStable();
 
-    expect(navigate).toHaveBeenCalledWith(['/']);
+    expect(navigate).toHaveBeenCalledWith(['/board']);
   });
 
   it('does nothing when the delete is not confirmed', async () => {

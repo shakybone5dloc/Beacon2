@@ -2,7 +2,7 @@
 
 @if (loadError(); as message) {
   <p class="notice">{{ message }}</p>
-  <p><a routerLink="/">Back to the board</a></p>
+  <p><a routerLink="/board">Back to the board</a></p>
 } @else if (loading()) {
   <p>Loading...</p>
 } @else {
@@ -222,7 +222,7 @@
       @if (id(); as appId) {
         <a [routerLink]="['/applications', appId]">Cancel</a>
       } @else {
-        <a routerLink="/">Cancel</a>
+        <a routerLink="/board">Cancel</a>
       }
     </div>
   </form>

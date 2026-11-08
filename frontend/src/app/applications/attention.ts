@@ -137,3 +137,24 @@ export function daysUntil(date: string, now: Date): number {
 function titleCase(status: ApplicationStatus): string {
   return status.charAt(0) + status.slice(1).toLowerCase();
 }
+
+/**
+ * Orders flagged applications most urgent first: overdue follow-ups and closing
+ * deadlines by their date, then the ones that have simply gone quiet.
+ */
+export function byUrgency(
+  a: { app: ApplicationResponse; attention: Attention | null },
+  b: { app: ApplicationResponse; attention: Attention | null },
+): number {
+  return urgencyOf(a) - urgencyOf(b);
+}
+
+function urgencyOf(card: { app: ApplicationResponse; attention: Attention | null }): number {
+  const app = card.app;
+  const date = card.attention?.followUp?.urgent
+    ? app.followUpOn
+    : card.attention?.deadline?.urgent
+      ? app.applyBy
+      : null;
+  return date ? new Date(date).getTime() : Number.MAX_SAFE_INTEGER;
+}

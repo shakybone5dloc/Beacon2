@@ -157,7 +157,7 @@ describe('Board', () => {
       expect(cardFor(el, 'Acme').classList).not.toContain('flagged');
     });
 
-    it('flags cards and lists them in the attention strip, dated reasons first', async () => {
+    it('flags cards and links the count needing action to Home', async () => {
       const { el } = await render(
         anApplication({ company: 'Acme', status: 'APPLIED', statusChangedAt: daysAgo(8) }),
         anApplication({ company: 'Globex', status: 'INTERVIEWING', followUpOn: dateIn(-2) }),
@@ -170,16 +170,11 @@ describe('Board', () => {
       expect(cardFor(el, 'Initech').classList).toContain('flagged');
       expect(cardFor(el, 'Hooli').classList).not.toContain('flagged');
 
-      const items = Array.from(el.querySelectorAll('.attention li')).map((li) =>
-        li.textContent!.replace(/\s+/g, ' ').trim(),
-      );
-      expect(items.length).toBe(3);
-      expect(items[0]).toContain('Globex');
-      expect(items[0]).toContain('Follow-up 2d overdue');
-      expect(items[1]).toContain('Initech');
-      expect(items[1]).toContain('Closes in 1d');
-      expect(items[2]).toContain('Acme');
-      expect(items[2]).toContain('No movement in 8 days');
+      const link = el.querySelector<HTMLAnchorElement>('.attention-link')!;
+      expect(link.textContent?.trim()).toBe('3 need action');
+      expect(link.getAttribute('href')).toBe('/');
+      // The list itself is on Home now.
+      expect(el.querySelector('.attention')).toBeNull();
     });
 
     it('shows date chips on cards', async () => {
@@ -213,28 +208,6 @@ describe('Board', () => {
       expect(cardFor(el, 'Acme').querySelector('.chip.interview')?.textContent).toContain(
         'Interview tomorrow 2:00 PM',
       );
-    });
-
-    it('clears a due follow-up from the strip with Done', async () => {
-      const app = anApplication({
-        id: 'a1',
-        company: 'Globex',
-        status: 'INTERVIEWING',
-        version: 2,
-        followUpOn: dateIn(0),
-      });
-      const { fixture, el } = await render(app);
-
-      el.querySelector<HTMLButtonElement>('.attention button')!.click();
-
-      const req = http.expectOne('/api/applications/a1/follow-up');
-      expect(req.request.method).toBe('PUT');
-      expect(req.request.body).toEqual({ followUpOn: null, version: 2 });
-      req.flush({ ...app, followUpOn: null, version: 3 });
-      await fixture.whenStable();
-
-      expect(el.querySelector('.attention')).toBeNull();
-      expect(cardFor(el, 'Globex').querySelector('.chip')).toBeNull();
     });
 
     it('leaves closed cards without an age and out of the strip', async () => {

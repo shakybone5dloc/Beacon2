@@ -1,5 +1,19 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router, Routes } from '@angular/router';
 import { authGuard, guestGuard } from './auth/auth.guards';
+
+/** The board's filters, which lived at "/" before Home took its place. */
+const BOARD_FILTERS = ['q', 'source', 'remote', 'action'];
+
+/** A bookmarked "/?q=..." board link still opens the board, with its filters. */
+export const oldBoardLinks: CanActivateFn = (route) => {
+  const filters = Object.fromEntries(
+    Object.entries(route.queryParams).filter(([key]) => BOARD_FILTERS.includes(key)),
+  );
+  return Object.keys(filters).length
+    ? inject(Router).createUrlTree(['/board'], { queryParams: filters })
+    : true;
+};
 
 /**
  * Every page loads when it's first opened, so the startup bundle carries only the app shell;
@@ -24,6 +38,13 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        pathMatch: 'full',
+        canActivate: [oldBoardLinks],
+        loadComponent: () => import('./home/home-page').then((m) => m.HomePage),
+        title: 'Beacon · Home',
+      },
+      {
+        path: 'board',
         loadComponent: () => import('./board/board').then((m) => m.Board),
         title: 'Beacon · Board',
       },

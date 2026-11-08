@@ -1789,6 +1789,24 @@
         "tags" : [ "Fit" ]
       }
     },
+    "/api/home/todos" : {
+      "get" : {
+        "operationId" : "getHomeTodos",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HomeTodosResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Home" ]
+      }
+    },
     "/api/interviews/{id}" : {
       "delete" : {
         "operationId" : "deleteInterview",
@@ -4168,6 +4186,44 @@
           }
         },
         "required" : [ "version" ]
+      },
+      "HomeTodoResponse" : {
+        "type" : "object",
+        "properties" : {
+          "applicationId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "count" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "employer" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "applicationId", "count", "employer", "role" ]
+      },
+      "HomeTodosResponse" : {
+        "type" : "object",
+        "properties" : {
+          "missingSentResume" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/HomeTodoResponse"
+            }
+          },
+          "openSuggestions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/HomeTodoResponse"
+            }
+          }
+        },
+        "required" : [ "missingSentResume", "openSuggestions" ]
       },
       "InterviewResponse" : {
         "type" : "object",

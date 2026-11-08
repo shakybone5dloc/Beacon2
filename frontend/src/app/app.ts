@@ -1,11 +1,15 @@
 import { Component, computed, effect, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import {
   IsActiveMatchOptions,
+  NavigationEnd,
   Router,
   RouterLink,
   RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
+import { filter, map } from 'rxjs';
 import { AuthState } from './auth/auth-state';
 import { MatchesState } from './searches/matches-state';
 import { ThemeChoice, ThemeService } from './theme/theme';
@@ -22,24 +26,51 @@ const THEME_LABELS: Record<ThemeChoice, string> = {
   dark: 'Theme: dark. Switch to follow your system',
 };
 
-interface NavLink {
+export interface NavLink {
   path: string;
   label: string;
 }
 
-const LINKS: NavLink[] = [
-  { path: '/', label: 'Board' },
-  { path: '/jobs', label: 'Find jobs' },
-  { path: '/matches', label: 'Matches' },
-  { path: '/companies', label: 'Companies' },
-  { path: '/people', label: 'People' },
-  { path: '/stories', label: 'Stories' },
-  { path: '/study', label: 'Study' },
+/** A top-level nav entry: a page, or a menu of related pages. */
+export type NavItem = (NavLink & { links?: never }) | { label: string; links: NavLink[] };
+
+/** Six entries, related pages grouped under a menu so the header stays uncrowded. */
+export const NAV: NavItem[] = [
+  { path: '/', label: 'Home' },
+  { path: '/board', label: 'Board' },
+  {
+    label: 'Jobs',
+    links: [
+      { path: '/jobs', label: 'Find jobs' },
+      { path: '/matches', label: 'Matches' },
+      { path: '/searches', label: 'Saved searches' },
+    ],
+  },
+  {
+    label: 'Network',
+    links: [
+      { path: '/companies', label: 'Companies' },
+      { path: '/people', label: 'People' },
+    ],
+  },
+  {
+    label: 'Prep',
+    links: [
+      { path: '/stories', label: 'Stories' },
+      { path: '/study', label: 'Study' },
+      { path: '/documents', label: 'Documents' },
+    ],
+  },
   { path: '/stats', label: 'Stats' },
-  { path: '/documents', label: 'Documents' },
 ];
 
-const BOARD_ACTIVE: IsActiveMatchOptions = {
+/** True when the address is one of the menu's pages or below it, filters aside. */
+export function menuIsActive(links: readonly NavLink[], url: string): boolean {
+  const path = url.split(/[?#]/)[0];
+  return links.some((link) => path === link.path || path.startsWith(link.path + '/'));
+}
+
+const HOME_ACTIVE: IsActiveMatchOptions = {
   paths: 'exact',
   queryParams: 'ignored',
   matrixParams: 'ignored',
@@ -49,7 +80,7 @@ const PREFIX_ACTIVE = { exact: false };
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CdkMenu, CdkMenuItem, CdkMenuTrigger],
   templateUrl: './app.html',
 })
 export class App {
@@ -69,16 +100,23 @@ export class App {
   /** Says what the button does next, since the icon shows the current choice. */
   protected readonly themeLabel = computed(() => THEME_LABELS[this.theme.choice()]);
 
-  protected readonly links = LINKS;
-  /** Board matches only "/" itself, but still counts as active with its filters in the address. */
+  protected readonly nav = NAV;
+  /** Home matches only "/" itself; the others also count as active on their sub-pages and with filters. */
   protected activeOptions(path: string): IsActiveMatchOptions | { exact: boolean } {
-    return path === '/' ? BOARD_ACTIVE : PREFIX_ACTIVE;
+    return path === '/' ? HOME_ACTIVE : PREFIX_ACTIVE;
   }
-  /** On small screens the name and Settings link are hidden, so Settings joins the nav row. */
-  protected readonly mobileLinks: NavLink[] = [
-    ...LINKS,
-    { path: '/settings/api-keys', label: 'Settings' },
-  ];
+
+  /** The current address, so a menu's button can show you're on one of its pages. */
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects),
+    ),
+    { initialValue: this.router.url },
+  );
+  protected menuActive(links: readonly NavLink[]): boolean {
+    return menuIsActive(links, this.url());
+  }
 
   /** "Pat Lee" -> "PL"; an email address gives its first letter. */
   protected readonly initials = computed(() => {

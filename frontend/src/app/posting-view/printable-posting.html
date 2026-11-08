@@ -1,6 +1,6 @@
 @if (error(); as message) {
   <p class="notice">{{ message }}</p>
-  <p><a routerLink="/">Back to the board</a></p>
+  <p><a routerLink="/board">Back to the board</a></p>
 } @else if (application(); as app) {
   <div class="toolbar no-print">
     <a [routerLink]="['/applications', app.id]" class="back">← Back to the application</a>
