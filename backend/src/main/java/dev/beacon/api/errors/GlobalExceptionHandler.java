@@ -2,6 +2,7 @@ package dev.beacon.api.errors;
 
 import dev.beacon.application.briefs.BriefException;
 import dev.beacon.application.coverletters.CoverLetterException;
+import dev.beacon.application.digest.DigestException;
 import dev.beacon.application.stories.StoryException;
 import dev.beacon.application.study.StudyException;
 import dev.beacon.application.tailoring.TailoringException;
@@ -103,6 +104,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
         var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
         problem.setTitle("Could not draft stories");
+        return problem;
+    }
+
+    @ExceptionHandler(DigestException.class)
+    public ProblemDetail handleDigest(DigestException ex) {
+        var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
+        var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        problem.setTitle("Could not send the digest");
         return problem;
     }
 

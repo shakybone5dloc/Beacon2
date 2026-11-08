@@ -4,6 +4,7 @@ import dev.beacon.application.briefs.BriefException;
 import dev.beacon.application.briefs.BriefWriter;
 import dev.beacon.application.briefs.CompanyResearcher;
 import dev.beacon.application.coverletters.CoverLetterWriter;
+import dev.beacon.application.digest.Mailer;
 import dev.beacon.application.stories.StoryWriter;
 import dev.beacon.application.study.CardWriter;
 import dev.beacon.application.tailoring.ResumeTailor;
@@ -70,6 +71,35 @@ public class DocumentTestDoubles {
     @Bean
     FakeResumeTailor fakeResumeTailor() {
         return new FakeResumeTailor();
+    }
+
+    @Bean
+    @Primary
+    FakeMailer fakeMailer() {
+        return new FakeMailer();
+    }
+
+    /** Keeps what would have been emailed. Set {@code configured} false to act like a server with no mail set up. */
+    public static class FakeMailer implements Mailer {
+        public record Sent(String to, String subject, String html, String text) {}
+
+        public final List<Sent> sent = new ArrayList<>();
+        public boolean configured = true;
+
+        @Override
+        public boolean isConfigured() {
+            return configured;
+        }
+
+        @Override
+        public void send(String to, String subject, String html, String text) {
+            sent.add(new Sent(to, subject, html, text));
+        }
+
+        public void reset() {
+            sent.clear();
+            configured = true;
+        }
     }
 
     public static class FakeResumeTailor implements ResumeTailor, Ordered {

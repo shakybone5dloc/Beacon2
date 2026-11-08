@@ -38,7 +38,8 @@ Rebuilt from the .NET Beacon, then extended.
 | A6 | Study cards: decks, an SM-2 style scheduler, a keyboard study session, drafts made from a brief and its stories | 75e56cb |
 | A3 | Stats: funnel, response and ghosting rates, weekly sends, results by source and resume, time in each stage | 8324832 |
 | A2 | Resume tailoring: AI edit suggestions per posting, marked done or dismissed; the resume sent recorded and used by Stats | ac681c1 |
-| B2 | Home: the landing page with Needs attention, Coming up, Queue, Study, This week and To-dos; the Board moves to /board | after ac681c1 |
+| B2 | Home: the landing page with Needs attention, Coming up, Queue, Study, This week and To-dos; the Board moves to /board; nav grouped into menus | 23484eb |
+| A5 | Weekly email: Home's sections on a chosen day and hour over SMTP, with a preview and send-now; attention rules on the server | after 23484eb |
 
 ## Next: Companies and people
 
@@ -267,7 +268,12 @@ One living prep document per application that moves to interviews, modeled on th
 ### A4. Offer comparison
 - Side-by-side total compensation: base, bonus, equity, PTO, benefits, commute vs remote. Builds on the existing offer outcomes.
 
-### A5. Weekly digest
+### A5. Weekly digest (done, except the items below)
+- Built as Settings · Weekly email (`/settings/digest`, linked from Home and the API keys page): on or off, a day and an hour in the browser's time zone, when the next one goes out, a preview of this week's email in a sandboxed frame, and "Send me one now". `digest_settings` in V21; at most one per week, checked every 5 minutes alongside saved searches.
+- The email is Home's sections worked out on the server (`DigestBuilder`): HTML with inline styles plus a plain-text part, every name escaped, links back into Beacon at `BEACON_APP_URL`, and a footer link to change or turn it off. The subject sums it up ("Beacon: 2 need attention · 1 interview coming up").
+- The Needs attention rules now exist on the server too (`AttentionRules`, mirroring `attention.ts`; `AttentionRulesTests` mirrors its spec), so the email and Home flag the same applications for the same reasons.
+- Sent through any SMTP server set in `.env` (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`): a Gmail app password, Resend or Mailgun. Without one, the page says email isn't set up and only the preview works.
+- Still to do: an unsubscribe link that works without signing in; a daily option; skipping the email in a week with nothing new.
 - Email (or in-app) summary: follow-ups due, stale applications, upcoming interviews, new job matches.
 - Now that Home (B2) shows all of this in the app, A5 is "email me Home weekly": the same sections, sent on a schedule. Needs the Needs attention rules (today in the browser, `applications/attention.ts`) worked out on the server too, so the email and the page agree.
 

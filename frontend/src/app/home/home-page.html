@@ -3,6 +3,8 @@
     <h1 class="greeting m-0">{{ greeting() }}</h1>
     <p class="m-0 mt-space-xs text-body-md text-on-surface-variant">
       {{ now() | date: 'EEEE, MMMM d' }}
+      <span aria-hidden="true"> · </span>
+      <a routerLink="/settings/digest" class="email-link text-body-sm">Get this by email weekly</a>
     </p>
   </div>
   <nav class="quick-actions flex flex-wrap gap-space-sm" aria-label="Quick actions">

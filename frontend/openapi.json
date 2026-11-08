@@ -2155,6 +2155,106 @@
         "tags" : [ "API Keys" ]
       }
     },
+    "/api/me/digest" : {
+      "get" : {
+        "operationId" : "getDigestSettings",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "zone",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "UTC"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DigestSettingsResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Digest" ]
+      },
+      "put" : {
+        "operationId" : "saveDigestSettings",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveDigestSettingsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DigestSettingsResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Digest" ]
+      }
+    },
+    "/api/me/digest/preview" : {
+      "get" : {
+        "operationId" : "previewDigest",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "zone",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "UTC"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DigestPreviewResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Digest" ]
+      }
+    },
+    "/api/me/digest/send" : {
+      "post" : {
+        "operationId" : "sendDigestNow",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "zone",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "UTC"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "Digest" ]
+      }
+    },
     "/api/people" : {
       "get" : {
         "operationId" : "listPeople",
@@ -4065,6 +4165,59 @@
         },
         "required" : [ "applicationId", "applicationLabel", "cards", "createdAt", "drafts", "due", "id", "name", "nextDueAt", "updatedAt", "version" ]
       },
+      "DigestPreviewResponse" : {
+        "type" : "object",
+        "properties" : {
+          "html" : {
+            "type" : "string"
+          },
+          "subject" : {
+            "type" : "string"
+          },
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "html", "subject", "text" ]
+      },
+      "DigestSettingsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "dayOfWeek" : {
+            "type" : "string",
+            "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ]
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "hour" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lastSentAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "mailConfigured" : {
+            "type" : "boolean"
+          },
+          "nextSendAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "zone" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "dayOfWeek", "email", "enabled", "hour", "lastSentAt", "mailConfigured", "nextSendAt", "version", "zone" ]
+      },
       "DocumentResponse" : {
         "type" : "object",
         "properties" : {
@@ -4974,6 +5127,34 @@
           }
         },
         "required" : [ "name" ]
+      },
+      "SaveDigestSettingsRequest" : {
+        "type" : "object",
+        "properties" : {
+          "dayOfWeek" : {
+            "type" : "string",
+            "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ],
+            "minLength" : 1
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "hour" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 23,
+            "minimum" : 0
+          },
+          "version" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64"
+          },
+          "zone" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "dayOfWeek", "enabled", "hour", "zone" ]
       },
       "SaveSearchRequest" : {
         "type" : "object",

@@ -120,6 +120,12 @@ export const routes: Routes = [
         title: 'Beacon · Getting API keys',
       },
       {
+        path: 'settings/digest',
+        loadComponent: () =>
+          import('./digest/digest-settings-page').then((m) => m.DigestSettingsPage),
+        title: 'Beacon · Weekly email',
+      },
+      {
         path: 'settings/api-keys',
         loadComponent: () => import('./providers/api-keys-page').then((m) => m.ApiKeysPage),
         title: 'Beacon · API keys',

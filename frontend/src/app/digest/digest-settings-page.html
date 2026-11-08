@@ -1,0 +1,124 @@
+<p class="settings-nav m-0 mb-space-md text-body-sm">
+  <a routerLink="/settings/api-keys">API keys</a>
+  <span class="text-outline" aria-hidden="true"> · </span>
+  <span class="font-semibold">Weekly email</span>
+</p>
+
+<h1>Weekly email</h1>
+<p class="m-0 mb-space-lg text-body-md text-on-surface-variant">
+  What's on Home, in your inbox once a week: what needs attention, interviews coming up, new
+  matches, cards to study and the week's numbers.
+</p>
+
+@if (loadError()) {
+  <p class="notice">Could not load your settings. Try again in a moment.</p>
+} @else if (settings(); as s) {
+  @if (!s.mailConfigured) {
+    <p class="no-mail notice">
+      Email isn't set up on this Beacon server yet, so nothing will be sent. You can still choose
+      when it goes out and preview it. To turn email on, set <code>MAIL_HOST</code>,
+      <code>MAIL_USERNAME</code>, <code>MAIL_PASSWORD</code> and <code>MAIL_FROM</code> in the
+      server's <code>.env</code> and restart it.
+    </p>
+  }
+
+  <section class="card p-space-lg" aria-label="When it goes out">
+    <label class="enabled flex items-center gap-space-sm font-medium">
+      <input
+        type="checkbox"
+        [checked]="s.enabled"
+        [disabled]="saving()"
+        (change)="change({ enabled: $any($event.target).checked })"
+      />
+      Email me every week
+    </label>
+
+    <div class="mt-space-md flex flex-wrap items-end gap-space-md">
+      <label class="grid gap-space-xs text-body-sm">
+        Day
+        <select
+          class="day"
+          [disabled]="saving()"
+          (change)="change({ dayOfWeek: $any($event.target).value })"
+        >
+          @for (d of days; track d.value) {
+            <option [value]="d.value" [selected]="d.value === s.dayOfWeek">{{ d.label }}</option>
+          }
+        </select>
+      </label>
+      <label class="grid gap-space-xs text-body-sm">
+        Time
+        <select
+          class="hour"
+          [disabled]="saving()"
+          (change)="change({ hour: +$any($event.target).value })"
+        >
+          @for (h of hours; track h.value) {
+            <option [value]="h.value" [selected]="h.value === s.hour">{{ h.label }}</option>
+          }
+        </select>
+      </label>
+      <span class="pb-1 text-body-sm text-on-surface-variant">{{ s.zone }}</span>
+    </div>
+
+    <p class="status m-0 mt-space-md text-body-sm text-on-surface-variant">
+      @if (s.enabled && s.nextSendAt) {
+        Next one goes to <span class="text-on-surface">{{ s.email }}</span> on
+        {{ s.nextSendAt | date: 'EEEE, MMM d, h:mm a' }}.
+      } @else {
+        Off. Turn it on to get it at <span class="text-on-surface">{{ s.email }}</span
+        >.
+      }
+      @if (s.lastSentAt) {
+        Last sent {{ s.lastSentAt | date: 'MMM d, h:mm a' }}.
+      }
+      @if (saved()) {
+        <span class="saved text-success">Saved.</span>
+      }
+    </p>
+  </section>
+
+  <div class="mt-space-lg flex flex-wrap gap-space-sm">
+    <button type="button" class="preview btn" [disabled]="previewing()" (click)="preview()">
+      {{
+        previewing()
+          ? 'Building...'
+          : previewHtml()
+            ? 'Refresh preview'
+            : "Preview this week's email"
+      }}
+    </button>
+    <button
+      type="button"
+      class="send btn"
+      [disabled]="sending() || !s.mailConfigured"
+      [title]="s.mailConfigured ? '' : 'Email isn\'t set up on this server'"
+      (click)="sendNow()"
+    >
+      {{ sending() ? 'Sending...' : 'Send me one now' }}
+    </button>
+    @if (sent()) {
+      <span class="sent self-center text-body-sm text-success">Sent to {{ s.email }}.</span>
+    }
+  </div>
+
+  @if (previewHtml(); as html) {
+    <section class="mt-space-lg" aria-label="Preview">
+      <p class="preview-subject m-0 mb-space-xs text-body-sm">
+        <span class="text-on-surface-variant">Subject:</span> {{ previewSubject() }}
+      </p>
+      <iframe
+        class="h-[640px] w-full rounded-md border border-hairline bg-white"
+        title="Preview of this week's email"
+        sandbox=""
+        [srcdoc]="html"
+      ></iframe>
+    </section>
+  }
+} @else {
+  <p class="text-on-surface-variant">Loading...</p>
+}
+
+@if (notice(); as text) {
+  <p class="notice mt-space-md">{{ text }}</p>
+}

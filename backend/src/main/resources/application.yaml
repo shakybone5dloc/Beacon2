@@ -39,6 +39,19 @@ beacon:
   # Encrypts the API keys users save. 32 random bytes, base64-encoded; Beacon won't start without it.
   # Changing it makes saved keys unreadable, and users have to add them again.
   secret-key: ${BEACON_SECRET_KEY:}
+  # Where users open Beacon; links in emails point here.
+  app-url: ${BEACON_APP_URL:http://localhost:4200}
+  # The SMTP server the weekly digest is sent through. Any provider's SMTP works: a Gmail
+  # app password (smtp.gmail.com, 587, your address and the 16-character app password),
+  # Resend (smtp.resend.com, 587, "resend" and an API key) or Mailgun. With no host or
+  # from address, nothing is sent and the digest settings page says so.
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    # The sender, e.g. "Beacon <you@gmail.com>"; Gmail only sends from your own address.
+    from: ${MAIL_FROM:}
   postings:
     user-agent: "Beacon personal job tracker"
     # Sources listed here stay off for everyone, whatever keys users add. Comma-separated ids.
