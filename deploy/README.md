@@ -11,7 +11,9 @@ phone / laptop ──Tailscale (HTTPS)──▶ server:443 ──▶ web (nginx,
 ```
 
 New versions: every push to `main` runs the tests on GitHub Actions and, when they pass, builds
-`ghcr.io/shakybone5dloc/beacon2-api` and `beacon2-web`. The server pulls them with `./update.sh`.
+`ghcr.io/shakybone5dloc/beacon2-api` and `beacon2-web`. Branches and pull requests run the tests
+but build nothing, so only what's merged into `main` goes live. The server checks for new images
+every 10 minutes and updates itself (see [Updates](#updates)).
 
 ## One-time setup
 
@@ -81,11 +83,32 @@ It dumps your local database (leaving it as it is), copies the dump to the serve
 the `ssh -t server '... ./restore.sh ...'` command that loads it. After that, use the server's
 Beacon, not the one on your PC.
 
+### 6. Automatic updates
+
+```bash
+ssh server '(crontab -l 2>/dev/null; echo "*/10 * * * * $HOME/beacon/update.sh --auto > /dev/null 2>&1") | crontab -'
+```
+
+## Updates
+
+Cron runs `./update.sh --auto` every 10 minutes. When CI has published a new version, it:
+
+1. backs up the database to `backups/beacon-…-before-update.dump`, so a new version's database
+   changes can be undone with `./restore.sh` (it doesn't update if that backup fails);
+2. restarts the containers whose image changed; the API applies any database migrations as it
+   starts;
+3. waits for the API to report healthy and writes each step to `update.log`.
+
+When nothing is new, it does nothing and writes nothing. So: merge into `main`, CI takes about
+10 minutes, and the server is updated within 10 more. To hold the server on one version, set
+`BEACON_TAG=<commit sha>` in `.env`; to stop updates, remove the line with `crontab -e`.
+
 ## Everyday
 
 | To | Run on the server, in `~/beacon` |
 |---|---|
-| Update to the newest version | `./update.sh` |
+| Update right now, without waiting for cron | `./update.sh` |
+| See when it last updated | `tail update.log` |
 | See what's running | `docker compose ps` |
 | Read the API's log | `docker compose logs -f api` |
 | List backups | `ls -lh backups` |
