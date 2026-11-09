@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -46,9 +47,16 @@ public class HeadlessBrowserPdfPrinter implements PdfPrinter {
             "/usr/bin/microsoft-edge");
 
     private final String configuredBrowser;
+    private final boolean noSandbox;
 
-    public HeadlessBrowserPdfPrinter(@Value("${beacon.capture.browser:}") String configuredBrowser) {
+    /**
+     * @param noSandbox for running inside a container, where Chromium's own sandbox can't start;
+     *                  the container is the boundary there. Leave off on a desktop.
+     */
+    public HeadlessBrowserPdfPrinter(@Value("${beacon.capture.browser:}") String configuredBrowser,
+                                     @Value("${beacon.capture.no-sandbox:false}") boolean noSandbox) {
         this.configuredBrowser = configuredBrowser;
+        this.noSandbox = noSandbox;
     }
 
     @Override
@@ -79,7 +87,7 @@ public class HeadlessBrowserPdfPrinter implements PdfPrinter {
             workDir = Files.createTempDirectory("beacon-browser-");
             var output = workDir.resolve("page.pdf");
             var browserLog = workDir.resolve("browser.log");
-            var process = new ProcessBuilder(
+            var command = new ArrayList<>(List.of(
                     browser,
                     "--headless=new",
                     "--disable-gpu",
@@ -91,8 +99,13 @@ public class HeadlessBrowserPdfPrinter implements PdfPrinter {
                     "--user-data-dir=" + workDir.resolve("profile"),
                     "--no-pdf-header-footer",
                     "--virtual-time-budget=" + SCRIPT_BUDGET_MS,
-                    "--print-to-pdf=" + output,
-                    target)
+                    "--print-to-pdf=" + output));
+            if (noSandbox) {
+                // Containers lack the kernel features Chromium's sandbox needs; /dev/shm is small there too.
+                command.addAll(List.of("--no-sandbox", "--disable-dev-shm-usage"));
+            }
+            command.add(target);
+            var process = new ProcessBuilder(command)
                     .redirectErrorStream(true)
                     .redirectOutput(browserLog.toFile())
                     .start();

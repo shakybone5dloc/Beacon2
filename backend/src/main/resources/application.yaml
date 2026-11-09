@@ -18,6 +18,9 @@ spring:
       ddl-auto: validate
 
 server:
+  # Behind nginx in Docker: trust its X-Forwarded-* headers (from private addresses only), so
+  # cookies are marked Secure when users come in over HTTPS.
+  forward-headers-strategy: native
   servlet:
     session:
       timeout: 7d

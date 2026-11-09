@@ -1,0 +1,63 @@
+# Beacon on the home server: Postgres, the API, the web app (nginx), and nightly backups.
+# Images come from GitHub's container registry, built by CI from main. Only the web app has a
+# port, on 127.0.0.1, for Tailscale to put HTTPS in front of. See README.md.
+
+name: beacon
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: beacon
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d beacon"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    image: ghcr.io/shakybone5dloc/beacon2-api:${BEACON_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/beacon
+      SPRING_DATASOURCE_USERNAME: postgres
+    # Chromium needs more shared memory than Docker's 64 MB default to print some pages.
+    shm_size: 256m
+
+  web:
+    image: ghcr.io/shakybone5dloc/beacon2-web:${BEACON_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      # Only on this machine; Tailscale serves it to your devices over HTTPS.
+      - "127.0.0.1:${BEACON_PORT:-8790}:80"
+
+  backup:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: beacon
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./backups:/backups
+      - ./backup.sh:/backup.sh:ro
+    entrypoint: ["sh", "/backup.sh"]
+
+volumes:
+  db-data:

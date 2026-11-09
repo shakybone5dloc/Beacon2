@@ -369,7 +369,12 @@ A page each user builds in Beacon from their resume and extra details, and share
 - Playwright: log in, add an application, move it, upload a resume, accept an inbox item.
 - Runs in CI against the compose stack.
 
-### X4. Deploy to the home server
+### X4. Deploy to the home server (built; setup on the server is in progress)
+- Built as `backend/Dockerfile` (Temurin 21 JRE on Alpine, with Chromium for posting PDFs, run with `--no-sandbox` behind `beacon.capture.no-sandbox`), `frontend/Dockerfile` (nginx serving the Angular build and passing `/api` to the API) and `deploy/` (compose stack: Postgres, API, web, nightly `pg_dump` backups kept 14 days; `update.sh`, `restore.sh`, `migrate-from-pc.ps1`, and a README runbook).
+- Reached over Tailscale: the web app listens only on `127.0.0.1:8790` and `tailscale serve` adds HTTPS, so nothing is exposed to the internet. Spring trusts the proxy's forwarded headers, so session and remember-me cookies are Secure.
+- GitHub Actions (`.github/workflows/ci.yml`) runs both test suites on every push and pull request, and on main pushes `ghcr.io/shakybone5dloc/beacon2-api` and `beacon2-web` tagged `latest` and the commit.
+- Checked locally with the production compose file: sign-in through nginx with Secure cookies, a posting printed to PDF by the containerized Chromium, and a backup deleted-then-restored.
+- Still to do: off-machine copies of backups; monitoring (X2); a public domain when portfolio pages (W3) need one.
 - Containerize API and frontend (nginx serves Angular and proxies `/api`), full compose stack, CI pipeline building images.
 - HTTPS, automated Postgres backups with a tested restore.
 - Public on the internet with a real domain once other people use Beacon; portfolio pages (W3) are the first part anyone can open without an account.

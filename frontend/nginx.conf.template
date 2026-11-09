@@ -1,0 +1,36 @@
+# Filled in at container start from PUBLIC_SCHEME and API_UPSTREAM (nginx image's envsubst templates).
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+
+    # Documents are capped at 10 MB; leave room for the form fields.
+    client_max_body_size 11m;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    location /api/ {
+        proxy_pass http://${API_UPSTREAM};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Users reach Beacon over HTTPS through Tailscale, so the API marks its cookies Secure.
+        proxy_set_header X-Forwarded-Proto ${PUBLIC_SCHEME};
+        proxy_set_header X-Forwarded-Host $host;
+        # AI calls and posting captures can take a while.
+        proxy_read_timeout 300s;
+    }
+
+    # Built files have content hashes in their names, so they can be cached for good.
+    location ~* \.(?:js|css|woff2?|svg|png|ico)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # Every other path is a page in the Angular app.
+    location / {
+        add_header Cache-Control "no-cache";
+        try_files $uri $uri/ /index.html;
+    }
+}

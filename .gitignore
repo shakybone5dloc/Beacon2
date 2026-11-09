@@ -1,6 +1,15 @@
 .env
+# Copies of .env under other names hold the same secrets; deploy's template has none.
+.env-*
+*.env
+.env.*
+!/deploy/.env.example
 .idea/
 /*.sql
 
 # Design exports from Google Stitch (kept locally as a reference)
 /stitch_*
+
+# Deployment: backups and dumps stay on the machine that made them
+/deploy/backups/
+*.dump
