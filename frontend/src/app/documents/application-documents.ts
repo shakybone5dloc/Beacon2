@@ -155,9 +155,22 @@ export class ApplicationDocuments implements OnInit {
   }
 }
 
-/** The server's explanation when it sent one. */
+/**
+ * The server's explanation when it sent one. Calls whose success has no body are read as
+ * text, so their error arrives as a JSON string and is parsed here.
+ */
 export function problemText(err: HttpErrorResponse, fallback: string): string {
-  const problem = err.error as ProblemDetail | null;
+  const problem = parseProblem(err.error);
   const fieldError = problem?.errors ? Object.values(problem.errors)[0]?.[0] : undefined;
   return fieldError ?? problem?.detail ?? fallback;
+}
+
+function parseProblem(body: unknown): ProblemDetail | null {
+  if (typeof body !== 'string') return (body as ProblemDetail | null) ?? null;
+  try {
+    const parsed: unknown = JSON.parse(body);
+    return parsed && typeof parsed === 'object' ? (parsed as ProblemDetail) : null;
+  } catch {
+    return null;
+  }
 }

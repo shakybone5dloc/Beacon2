@@ -98,6 +98,25 @@ describe('DigestSettingsPage', () => {
     expect(el.querySelector('.sent')?.textContent).toContain('Sent to me@example.com');
   });
 
+  it("shows the mail server's reason when sending fails", async () => {
+    const { fixture, el } = await open(someSettings());
+
+    el.querySelector<HTMLButtonElement>('.send')!.click();
+    // A call with no success body is read as text, so the problem arrives as a JSON string.
+    http
+      .expectOne((r) => r.url === '/api/me/digest/send')
+      .flush(
+        JSON.stringify({
+          title: 'Could not send the digest',
+          detail: "The mail server didn't accept the email: 550 testing emails only",
+        }),
+        { status: 502, statusText: 'Bad Gateway' },
+      );
+    await fixture.whenStable();
+
+    expect(el.querySelector('.notice')?.textContent).toContain('550 testing emails only');
+  });
+
   it('says when the server cannot send email, and still allows a preview', async () => {
     const { el } = await open(someSettings({ mailConfigured: false }));
 
