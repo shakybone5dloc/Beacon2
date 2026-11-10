@@ -58,10 +58,16 @@ else
     log "New version found; restarting"
 fi
 
-if $auto; then
-    docker compose up -d --quiet-pull > /dev/null 2>&1
-else
-    docker compose up -d --quiet-pull
+run() {
+    if $auto; then "$@" > /dev/null 2>&1; else "$@"; fi
+}
+
+# Starts anything that isn't running (and applies compose.yaml changes).
+run docker compose up -d --quiet-pull
+if [ "$before" != "$after" ]; then
+    # Compose doesn't always notice that a pulled "latest" is a different image, so the
+    # API and web app are recreated explicitly; the database and backups keep running.
+    run docker compose up -d --force-recreate --no-deps api web
 fi
 docker image prune -f > /dev/null
 
@@ -72,7 +78,18 @@ if [ "$before" != "$after" ]; then
         [ "$status" = healthy ] && break
         sleep 5
     done
-    log "Update finished; API is $status"
+    # Check the containers really run the images just pulled.
+    stale=""
+    for service in api web; do
+        running=$(docker inspect --format '{{.Image}}' "$(docker compose ps -q "$service")" 2>/dev/null || echo none)
+        wanted=$(docker image inspect --format '{{.Id}}' "$(docker compose config --images | grep "beacon2-$service")" 2>/dev/null || echo unknown)
+        [ "$running" = "$wanted" ] || stale="$stale $service"
+    done
+    if [ -n "$stale" ]; then
+        log "Update INCOMPLETE: still on the old image:$stale (API is $status)"
+        exit 1
+    fi
+    log "Update finished; running the new version, API is $status"
 fi
 
 $auto || docker compose ps
