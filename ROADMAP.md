@@ -302,6 +302,22 @@ One living prep document per application that moves to interviews, modeled on th
 - AI helps draft a story from your resume or from rough notes, and suggests which stories fit a posting. You write the final version.
 - Stories can be drilled as study cards (A6).
 
+### A8. Recall practice (builds on A6)
+- Why: A6 trains recognizing an answer (show, reveal, self-grade). Interviews need producing it, out loud, under pressure, including on a low-focus day. A8 adds the missing steps between the two. Planned; nothing built yet.
+- **Order:** A6's open items first (below), then the terminology deck, Type mode with AI grading, Say mode, "Blanked on it" capture, Pressure mode, and the focus check-in.
+- **First, finish A6:** "Study for this interview" on the interview page, scheduling aimed at the interview date, the due count on the board's next-interview chip, and drilling stories as cards.
+- **Terminology deck:** one deck per user (not per application) for terms and concepts. Terms come from the posting, J2's fit gaps and the brief's technical refresher, merged by normalized name across applications, so a term asked about in three postings is one card. Each card: a plain-English definition, when you'd use it and the trade-off, and an optional "I used this when…" line linked to a story (A7). Lands as drafts, like the brief's cards.
+- **Answer modes** on the study session, chosen per session:
+  - **Reveal**: today's flow, kept as the low-effort mode.
+  - **Type**: write the answer before the reveal.
+  - **Say**: speak it; the browser's Web Speech API turns it into text (Chrome and Edge, no key). The text is shown before it's graded and can be fixed.
+  - For Type and Say, the AI compares the answer with the card's and suggests a grade (Again / Hard / Good / Easy) with a short note on what was missed and a tighter way to say it. The user accepts or changes the grade; the scheduler only ever uses the grade the user confirms. `study_reviews` gains `mode`, `answer_text`, `suggested_grade` and `feedback`. Metered as "Recall grading". Without a key, Type and Say still work with self-grading.
+- **Pressure mode**: Say mode with a visible countdown (default 45 seconds, adjustable) and one or two AI follow-ups after the answer ("When wouldn't you use it?", "How is it different from X?"), each answered and graded the same way. A "Buy time" button shows the user's stalling phrase (set in Settings, e.g. "Let me think about how I'd explain that…") so saying it becomes a habit.
+- **Focus check-in**: Sharp / Okay / Foggy at the start of a session. Foggy means 5 cards, Reveal only; Okay is the normal session; Sharp offers Say and Pressure. Stored only to pick the session's defaults; never shown in Stats or anywhere else.
+- **"Blanked on it" capture**: the interview's debrief (I1) gets a list for questions blanked on or remembered later. Each becomes a draft card due the next day, tagged `blanked`, in the application's deck (or the terminology deck for a term). Optionally drafts a short follow-up note ("I wanted to add to my answer on…").
+- **Experimental (last, maybe never):** bedtime cueing (targeted memory reactivation). Each studied term gets a soft sound; a bedtime mode replays that day's sounds quietly, timed for deep sleep. The evidence is real but the effect is modest, and a phone can only guess when deep sleep is. Not planned in detail.
+- Learning focus: a second structured-output prompt that grades instead of writes, adding columns to an existing table with a Flyway migration, the Web Speech API behind an Angular service with signals, a countdown and session state machine in the study screen, and normalizing and merging terms across applications.
+
 ## Then: Portfolio (public pages)
 
 A page each user builds in Beacon from their resume and extra details, and shares with recruiters and hiring teams, like a LinkedIn public profile: anyone with the link can open it, no account needed. W1 and W2 work before Beacon is hosted; W3 and W4 need it on the internet (X4).
