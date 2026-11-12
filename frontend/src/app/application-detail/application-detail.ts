@@ -236,6 +236,8 @@ export class ApplicationDetail {
   protected contactLogged(): void {
     this.people()?.reload();
     this.timeline()?.reload();
+    // A logged check-in email may have set the follow-up date.
+    this.load();
   }
 
   private load(): void {

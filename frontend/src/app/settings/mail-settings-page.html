@@ -1,0 +1,48 @@
+<p class="settings-nav m-0 mb-space-md text-body-sm">
+  <a routerLink="/settings/api-keys">API keys</a>
+  <span class="text-outline" aria-hidden="true"> · </span>
+  <a routerLink="/settings/digest">Weekly email</a>
+  <span class="text-outline" aria-hidden="true"> · </span>
+  <span class="font-semibold">Sending email</span>
+</p>
+
+<h1>Sending email</h1>
+<p class="m-0 mb-space-lg text-body-md text-on-surface-variant">
+  When you write an email from Beacon, like a check-in on an application, Beacon fills in the
+  message and opens it for you to send. It never sends your email itself.
+</p>
+
+@if (loadError()) {
+  <p class="notice">Could not load your settings. Try again in a moment.</p>
+} @else if (mailClient(); as current) {
+  <fieldset class="card m-0 grid gap-space-md p-space-lg">
+    <legend class="sr-only">Open emails in</legend>
+    <p class="m-0 font-medium" aria-hidden="true">Open emails in</p>
+    @for (o of options; track o.value) {
+      <label class="flex items-start gap-space-sm font-normal">
+        <input
+          type="radio"
+          name="mailClient"
+          class="mt-1"
+          [value]="o.value"
+          [checked]="current === o.value"
+          [disabled]="saving()"
+          (change)="choose(o.value)"
+        />
+        <span>
+          <span class="block font-medium">{{ o.label }}</span>
+          <span class="block text-body-sm text-on-surface-variant">{{ o.hint }}</span>
+        </span>
+      </label>
+    }
+    @if (saved()) {
+      <p class="saved m-0 text-body-sm text-success">Saved.</p>
+    }
+  </fieldset>
+} @else {
+  <p class="text-on-surface-variant">Loading...</p>
+}
+
+@if (notice(); as text) {
+  <p class="notice mt-space-md">{{ text }}</p>
+}

@@ -7,6 +7,8 @@ import { finalize, map, Observable } from 'rxjs';
 import { ApplicationsApi } from '../applications/applications-api';
 import { employerLabel } from '../applications/application.model';
 import { PeopleApi } from '../people/people-api';
+import { CheckInEmail, TEAM } from './check-in-email';
+import { TEAM_SUGGESTIONS } from './check-in.model';
 import { ContactsApi } from './contacts-api';
 import {
   CHANNEL_ICONS,
@@ -32,7 +34,7 @@ const LONG_BODY = 280;
  */
 @Component({
   selector: 'app-contact-log',
-  imports: [DatePipe, ReactiveFormsModule, RouterLink],
+  imports: [CheckInEmail, DatePipe, ReactiveFormsModule, RouterLink],
   templateUrl: './contact-log.html',
 })
 export class ContactLog implements OnInit {
@@ -54,6 +56,12 @@ export class ContactLog implements OnInit {
   protected readonly saving = signal(false);
   protected readonly formError = signal<string | null>(null);
   private readonly expanded = signal<ReadonlySet<string>>(new Set());
+  /** True while the check-in email panel is open (an application's page only). */
+  protected readonly checkingIn = signal(false);
+
+  /** The "With" choice for a team (an inbox or department) instead of one of the people. */
+  protected readonly team = TEAM;
+  protected readonly teamSuggestions = TEAM_SUGGESTIONS;
 
   protected readonly channels = CHANNELS;
   protected readonly channelLabels = CHANNEL_LABELS;
@@ -65,6 +73,8 @@ export class ContactLog implements OnInit {
   protected readonly form = this.fb.group({
     /** The application (on a person's page, '' for none) or the person (on an application's page). */
     other: [''],
+    /** Who it was with when "With" is a team, e.g. "Hiring team". */
+    team: ['', Validators.maxLength(100)],
     channel: ['LINKEDIN' as ContactChannel],
     direction: ['INBOUND' as ContactDirection],
     occurredAt: ['', Validators.required],
@@ -87,8 +97,10 @@ export class ContactLog implements OnInit {
     channel: ContactChannel = 'LINKEDIN',
     direction: ContactDirection = 'INBOUND',
   ): void {
+    this.checkingIn.set(false);
     this.form.reset({
       other: '',
+      team: '',
       channel,
       direction,
       occurredAt: toLocalInput(new Date()),
@@ -99,7 +111,9 @@ export class ContactLog implements OnInit {
 
   protected edit(contact: Contact): void {
     this.form.reset({
-      other: (this.forPerson() ? contact.applicationId : contact.personId) ?? '',
+      other:
+        (this.forPerson() ? contact.applicationId : contact.team ? TEAM : contact.personId) ?? '',
+      team: contact.team ?? '',
       channel: contact.channel,
       direction: contact.direction,
       occurredAt: toLocalInput(new Date(contact.occurredAt)),
@@ -114,13 +128,19 @@ export class ContactLog implements OnInit {
 
   protected save(): void {
     const value = this.form.getRawValue();
+    const withTeam = !this.forPerson() && value.other === TEAM;
     if (this.form.invalid || (!this.forPerson() && !value.other)) {
       this.form.markAllAsTouched();
       this.formError.set(this.forPerson() ? 'Pick when it happened.' : 'Pick who it was with.');
       return;
     }
+    if (withTeam && !value.team.trim()) {
+      this.formError.set('Name the team, like "Hiring team".');
+      return;
+    }
     const fields = {
-      personId: this.personId() ?? value.other,
+      personId: withTeam ? null : (this.personId() ?? value.other),
+      team: withTeam ? value.team.trim() : null,
       applicationId: this.forPerson() ? value.other || null : this.applicationId(),
       channel: value.channel,
       direction: value.direction,
@@ -177,11 +197,24 @@ export class ContactLog implements OnInit {
 
   /** "From Pat Lee" when they reached out, "To Pat Lee" when the user did. */
   protected heading(contact: Contact): string {
-    return `${contact.direction === 'INBOUND' ? 'From' : 'To'} ${contact.personName}`;
+    return `${contact.direction === 'INBOUND' ? 'From' : 'To'} ${contact.personName ?? contact.team}`;
   }
 
   protected about(contact: Contact): string {
     return `${employerLabel(contact)} – ${contact.jobRole}`;
+  }
+
+  /** Opens the check-in email panel in place of the form. */
+  protected checkIn(): void {
+    this.editing.set(null);
+    this.checkingIn.set(true);
+  }
+
+  /** The check-in email was logged: it's in the list now, and the follow-up date may have moved. */
+  protected checkInLogged(): void {
+    this.checkingIn.set(false);
+    this.reload();
+    this.logged.emit();
   }
 
   private open(target: Contact | 'new'): void {
@@ -227,8 +260,9 @@ export class ContactLog implements OnInit {
               id: p.id,
               label: p.company ? `${p.name} (${p.company})` : p.name,
             }));
-            if (target !== 'new' && !choices.some((c) => c.id === target.personId)) {
-              choices.push({ id: target.personId, label: target.personName });
+            const personId = target === 'new' ? null : target.personId;
+            if (target !== 'new' && personId && !choices.some((c) => c.id === personId)) {
+              choices.push({ id: personId, label: target.personName ?? '' });
             }
             return choices.sort((a, b) => a.label.localeCompare(b.label));
           }),

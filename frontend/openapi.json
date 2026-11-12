@@ -224,6 +224,86 @@
         "tags" : [ "Interview briefs" ]
       }
     },
+    "/api/applications/{applicationId}/check-in" : {
+      "get" : {
+        "operationId" : "startCheckIn",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "query",
+          "name" : "zone",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "UTC"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CheckInResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Check-in emails" ]
+      }
+    },
+    "/api/applications/{applicationId}/check-in/draft" : {
+      "post" : {
+        "operationId" : "draftCheckIn",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "applicationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "query",
+          "name" : "zone",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "UTC"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CheckInDraftRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CheckInDraftResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Check-in emails" ]
+      }
+    },
     "/api/applications/{applicationId}/contacts" : {
       "get" : {
         "operationId" : "listApplicationContacts",
@@ -2282,6 +2362,50 @@
         "tags" : [ "Digest" ]
       }
     },
+    "/api/me/mail-client" : {
+      "get" : {
+        "operationId" : "getMailClient",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MailClientResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Check-in emails" ]
+      },
+      "put" : {
+        "operationId" : "saveMailClient",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MailClientRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MailClientResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Check-in emails" ]
+      }
+    },
     "/api/people" : {
       "get" : {
         "operationId" : "listPeople",
@@ -3821,6 +3945,80 @@
         },
         "required" : [ "status", "version" ]
       },
+      "CheckInDraftRequest" : {
+        "type" : "object",
+        "properties" : {
+          "body" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 10000,
+            "minLength" : 0
+          },
+          "recipient" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 200,
+            "minLength" : 0
+          }
+        }
+      },
+      "CheckInDraftResponse" : {
+        "type" : "object",
+        "properties" : {
+          "body" : {
+            "type" : "string"
+          },
+          "subject" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "body", "subject" ]
+      },
+      "CheckInRecipient" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : [ "string", "null" ]
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "personId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "role" : {
+            "type" : "string",
+            "enum" : [ "RECRUITER", "HIRING_MANAGER", "INTERVIEWER", "REFERRAL", "OTHER" ]
+          }
+        }
+      },
+      "CheckInResponse" : {
+        "type" : "object",
+        "properties" : {
+          "aiAvailable" : {
+            "type" : "boolean"
+          },
+          "body" : {
+            "type" : "string"
+          },
+          "defaultTeam" : {
+            "type" : "string"
+          },
+          "mailClient" : {
+            "type" : "string",
+            "enum" : [ "GMAIL", "MAIL_APP" ]
+          },
+          "recipients" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CheckInRecipient"
+            }
+          },
+          "subject" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "aiAvailable", "body", "defaultTeam", "mailClient", "recipients", "subject" ]
+      },
       "ChooseBriefResumeRequest" : {
         "type" : "object",
         "properties" : {
@@ -3920,11 +4118,14 @@
             "format" : "date-time"
           },
           "personId" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "format" : "uuid"
           },
           "personName" : {
-            "type" : "string"
+            "type" : [ "string", "null" ]
+          },
+          "team" : {
+            "type" : [ "string", "null" ]
           },
           "updatedAt" : {
             "type" : "string",
@@ -3935,7 +4136,7 @@
             "format" : "int64"
           }
         },
-        "required" : [ "applicationId", "body", "channel", "company", "createdAt", "direction", "id", "jobRole", "occurredAt", "personId", "personName", "updatedAt", "version" ]
+        "required" : [ "applicationId", "body", "channel", "company", "createdAt", "direction", "id", "jobRole", "occurredAt", "personId", "personName", "team", "updatedAt", "version" ]
       },
       "CoverLetterDraftRequest" : {
         "type" : "object",
@@ -4100,11 +4301,16 @@
             "format" : "date-time"
           },
           "personId" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "format" : "uuid"
+          },
+          "team" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 100,
+            "minLength" : 0
           }
         },
-        "required" : [ "channel", "direction", "occurredAt", "personId" ]
+        "required" : [ "channel", "direction", "occurredAt" ]
       },
       "CreatePersonRequest" : {
         "type" : "object",
@@ -4744,6 +4950,26 @@
           }
         },
         "required" : [ "added", "deck", "skipped" ]
+      },
+      "MailClientRequest" : {
+        "type" : "object",
+        "properties" : {
+          "mailClient" : {
+            "type" : "string",
+            "enum" : [ "GMAIL", "MAIL_APP" ]
+          }
+        },
+        "required" : [ "mailClient" ]
+      },
+      "MailClientResponse" : {
+        "type" : "object",
+        "properties" : {
+          "mailClient" : {
+            "type" : "string",
+            "enum" : [ "GMAIL", "MAIL_APP" ]
+          }
+        },
+        "required" : [ "mailClient" ]
       },
       "MarkSuggestionRequest" : {
         "type" : "object",
@@ -6054,15 +6280,20 @@
             "format" : "date-time"
           },
           "personId" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "format" : "uuid"
+          },
+          "team" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 100,
+            "minLength" : 0
           },
           "version" : {
             "type" : "integer",
             "format" : "int64"
           }
         },
-        "required" : [ "channel", "direction", "occurredAt", "personId", "version" ]
+        "required" : [ "channel", "direction", "occurredAt", "version" ]
       },
       "UpdateInterviewRequest" : {
         "type" : "object",

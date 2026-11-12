@@ -167,9 +167,14 @@ public class ApplicationService {
         var found = repository.findByIdAndOwnerId(id, ownerId);
         found.ifPresent(application -> {
             // The people and their contact logs stay; only their links to this application go.
+            // Contacts with the company's teams go with it.
             people.deleteAllByApplicationId(application.getId());
             interviews.deleteAllByApplicationId(application.getId());
-            contacts.findAllByApplicationIdOrderByOccurredAtDesc(application.getId()).forEach(Contact::forgetApplication);
+            for (var contact : contacts.findAllByApplicationIdOrderByOccurredAtDesc(application.getId())) {
+                // A contact with a team (no person) has no other log to live in.
+                if (contact.getPerson() == null) contacts.delete(contact);
+                else contact.forgetApplication();
+            }
             repository.delete(application);
         });
         return found.isPresent();

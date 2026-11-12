@@ -1,0 +1,107 @@
+<form
+  class="check-in mt-space-md grid gap-space-md rounded-md border border-hairline bg-surface-container-low p-space-md"
+  [formGroup]="form"
+>
+  <h3 class="m-0">Check in by email</h3>
+  @if (error(); as message) {
+    <p class="notice m-0">{{ message }}</p>
+  } @else if (checkIn(); as c) {
+    <p class="m-0 text-body-sm text-on-surface-variant">
+      Ask whether there's any update. Beacon fills in the message and opens it in
+      {{ clientLabels[c.mailClient] }} for you to send; it never sends anything itself.
+      <a routerLink="/settings/email">Change where it opens</a>
+    </p>
+    <div class="grid gap-space-md sm:grid-cols-2">
+      <label class="grid gap-space-xs">
+        To
+        <select formControlName="to" (change)="recipientChanged()">
+          @for (r of c.recipients; track r.personId) {
+            <option [value]="r.personId">{{ r.name }}{{ r.email ? '' : ' (no email saved)' }}</option>
+          }
+          <option [value]="team">A team, not one person</option>
+        </select>
+      </label>
+      @if (form.controls.to.value === team) {
+        <label class="grid gap-space-xs">
+          Team
+          <input class="team-name" formControlName="teamName" list="check-in-teams" />
+          <datalist id="check-in-teams">
+            @for (t of teamSuggestions; track t) {
+              <option [value]="t"></option>
+            }
+          </datalist>
+        </label>
+      }
+      <label class="grid gap-space-xs sm:col-span-2">
+        Email address
+        <input
+          class="address"
+          type="email"
+          formControlName="address"
+          placeholder="Leave blank to fill it in in your mail"
+        />
+      </label>
+    </div>
+    <label class="grid gap-space-xs">
+      Subject
+      <input class="subject" formControlName="subject" />
+    </label>
+    <label class="grid gap-space-xs">
+      Message
+      <textarea class="message" formControlName="body" rows="10"></textarea>
+    </label>
+    @if (notice(); as message) {
+      <p class="check-in-notice m-0 text-body-sm text-error" role="alert">{{ message }}</p>
+    }
+
+    @if (!opened()) {
+      <div class="flex flex-wrap items-center gap-space-sm">
+        <a
+          class="open btn btn-primary no-underline"
+          [href]="url()"
+          target="_blank"
+          rel="noopener noreferrer"
+          (click)="markOpened()"
+        >
+          <span class="material-symbols-outlined !text-base" aria-hidden="true">outgoing_mail</span>
+          {{ openLabel() }}
+        </a>
+        @if (c.aiAvailable) {
+          <button type="button" class="draft btn" [disabled]="drafting()" (click)="draft()">
+            {{ drafting() ? 'Drafting…' : 'Draft with AI' }}
+          </button>
+        } @else {
+          <span class="no-ai text-body-sm text-on-surface-variant">
+            To draft with AI, add a key under <a routerLink="/settings/api-keys">Settings · API keys</a>.
+          </span>
+        }
+        <button type="button" class="btn" (click)="closed.emit()">Cancel</button>
+      </div>
+    } @else {
+      <div class="sent grid gap-space-sm rounded-md border border-hairline bg-surface p-space-md">
+        <p class="m-0 font-semibold">Did you send it?</p>
+        <p class="m-0 text-body-sm text-on-surface-variant">
+          Log it and it joins the contact log
+          {{ person() ? 'with ' + person()!.name : 'as an email to ' + (form.controls.teamName.value || 'the team') }}.
+          If you changed the wording in your mail, paste the final text above first.
+        </p>
+        <label class="flex flex-wrap items-center gap-space-sm font-normal">
+          <input type="checkbox" formControlName="followUp" />
+          Remind me to follow up on
+          <input class="follow-up-on" type="date" formControlName="followUpOn" />
+        </label>
+        <div class="flex flex-wrap gap-space-sm">
+          <button type="button" class="log btn btn-primary" [disabled]="logging()" (click)="log()">
+            {{ logging() ? 'Logging…' : 'Yes, log it' }}
+          </button>
+          <a class="reopen btn no-underline" [href]="url()" target="_blank" rel="noopener noreferrer"
+            >Open it again</a
+          >
+          <button type="button" class="not-sent btn" (click)="closed.emit()">I didn't send it</button>
+        </div>
+      </div>
+    }
+  } @else {
+    <p class="m-0 text-on-surface-variant">Loading...</p>
+  }
+</form>

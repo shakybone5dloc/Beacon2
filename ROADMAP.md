@@ -76,6 +76,8 @@ Rebuilt from the .NET Beacon, then extended.
 - Paste-in form for LinkedIn messages and texts (LinkedIn has no personal messaging API; texts have no general API). Manual fields for now; AI extraction arrives in E3.
 - Quick-add for phone calls.
 - Duplicate-pitch warning: a second recruiter pitching what looks like the same role (same `company_id` + title within a few weeks). Double submission can disqualify a candidate.
+- **Contacts with a team** (Nov 12): a contact can be with a team instead of a person, for an email to a recruiting inbox or a department ("Hiring team", "Recruiting", "HR", or any text). It needs an application, shows as "To Hiring team" in that application's contact log and timeline, adds nobody to People, and is deleted with the application (V23: `contacts.person_id` nullable, `contacts.team`).
+- **Check in by email** (Nov 12) in an application's contact log: pick a person on the application or a team, and Beacon fills in a short "any update?" message from when you applied or last interviewed. "Draft with AI" rewrites it from the application's history with the user's key (metered as "Check-in emails"). It opens in Gmail or the device's mail app (Settings · Sending email, `users.mail_client`) for the user to send; Beacon never sends it. Afterwards "Did you send it?" logs it as an outbound email contact and can set the follow-up date.
 
 ## Then: Interviews and timeline
 

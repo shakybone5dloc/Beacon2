@@ -1,7 +1,18 @@
 <div class="flex flex-wrap items-center justify-between gap-space-sm">
   <h2 class="m-0">Contact log</h2>
-  @if (!editing()) {
-    <div class="flex gap-space-sm">
+  @if (!editing() && !checkingIn()) {
+    <div class="flex flex-wrap gap-space-sm">
+      @if (!forPerson()) {
+        <button
+          type="button"
+          class="check-in-start btn btn-sm"
+          title="Write an email asking whether there's any update"
+          (click)="checkIn()"
+        >
+          <span class="material-symbols-outlined !text-base" aria-hidden="true">outgoing_mail</span>
+          Check in by email
+        </button>
+      }
       <button type="button" class="btn btn-sm" (click)="start()">
         <span class="material-symbols-outlined !text-base" aria-hidden="true">add_comment</span>
         Log contact
@@ -16,6 +27,14 @@
 
 @if (error(); as message) {
   <p class="notice mt-space-md">{{ message }}</p>
+}
+
+@if (checkingIn()) {
+  <app-check-in-email
+    [applicationId]="applicationId()!"
+    (logged)="checkInLogged()"
+    (closed)="checkingIn.set(false)"
+  />
 }
 
 @if (editing(); as target) {
@@ -41,18 +60,36 @@
           With
           <select formControlName="other">
             <option value="" disabled>
-              {{ choices().length ? 'Pick someone on this application…' : 'No one on it yet' }}
+              {{ choices().length ? 'Pick someone on this application…' : 'Pick who it was with…' }}
             </option>
             @for (c of choices(); track c.id) {
               <option [value]="c.id">{{ c.label }}</option>
             }
+            <option [value]="team">A team, not one person</option>
           </select>
-          @if (choices().length === 0) {
+          @if (choices().length === 0 && form.controls.other.value !== team) {
             <span class="no-people text-body-sm font-normal text-on-surface-variant">
-              Add them to this application under People first.
+              For a person, add them to this application under People first. For an inbox or a
+              department, pick "A team".
             </span>
           }
         </label>
+        @if (form.controls.other.value === team) {
+          <label class="grid gap-space-xs">
+            Team
+            <input
+              class="team-name"
+              formControlName="team"
+              list="contact-teams"
+              placeholder="Hiring team"
+            />
+            <datalist id="contact-teams">
+              @for (t of teamSuggestions; track t) {
+                <option [value]="t"></option>
+              }
+            </datalist>
+          </label>
+        }
       }
       <label class="grid gap-space-xs">
         When
@@ -123,8 +160,12 @@
               } @else {
                 <span class="who font-semibold"
                   >{{ c.direction === 'INBOUND' ? 'From' : 'To' }}
-                  <a [routerLink]="['/people', c.personId]">{{ c.personName }}</a></span
-                >
+                  @if (c.personId) {
+                    <a [routerLink]="['/people', c.personId]">{{ c.personName }}</a>
+                  } @else {
+                    <span class="team">{{ c.team }}</span>
+                  }
+                </span>
               }
               <span class="pill">{{ channelLabels[c.channel] }}</span>
               <time class="text-body-sm text-on-surface-variant" [attr.datetime]="c.occurredAt">{{

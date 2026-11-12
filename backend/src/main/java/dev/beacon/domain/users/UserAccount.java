@@ -31,6 +31,10 @@ public class UserAccount {
     @Column(name = "ai_monthly_budget_usd", precision = 10, scale = 2)
     private BigDecimal aiMonthlyBudgetUsd;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mail_client", nullable = false, length = 20)
+    private MailClient mailClient = MailClient.GMAIL;
+
     protected UserAccount() { }
 
     /** @param passwordHash already encoded; the domain never sees a plain password */
@@ -58,6 +62,12 @@ public class UserAccount {
     public String getDisplayName() { return displayName; }
     public Instant getCreatedAt() { return createdAt; }
     public BigDecimal getAiMonthlyBudgetUsd() { return aiMonthlyBudgetUsd; }
+    public MailClient getMailClient() { return mailClient; }
+
+    public void setMailClient(MailClient mailClient) {
+        if (mailClient == null) throw new IllegalArgumentException("Pick where emails open");
+        this.mailClient = mailClient;
+    }
 
     /** @param budgetUsd null to remove the budget */
     public void setAiMonthlyBudget(BigDecimal budgetUsd) {

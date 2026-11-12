@@ -126,6 +126,12 @@ export const routes: Routes = [
         title: 'Beacon · Weekly email',
       },
       {
+        path: 'settings/email',
+        loadComponent: () =>
+          import('./settings/mail-settings-page').then((m) => m.MailSettingsPage),
+        title: 'Beacon · Sending email',
+      },
+      {
         path: 'settings/api-keys',
         loadComponent: () => import('./providers/api-keys-page').then((m) => m.ApiKeysPage),
         title: 'Beacon · API keys',

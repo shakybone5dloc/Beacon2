@@ -12,6 +12,7 @@ export const FEATURE_LABELS: Record<string, string> = {
   STORY_BANK: 'Story drafts',
   STUDY_CARDS: 'Study cards',
   RESUME_TAILORING: 'Resume tailoring',
+  CHECK_IN_EMAIL: 'Check-in emails',
 };
 
 /** Warn from here; the meter turns red once the budget is used up. */

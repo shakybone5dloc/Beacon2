@@ -11,7 +11,8 @@ import java.util.UUID;
 
 /** Same fields as {@link CreateContactRequest}, plus the version the edit started from. */
 public record UpdateContactRequest(
-        @NotNull UUID personId,
+        @Nullable UUID personId,
+        @Nullable @Size(max = 100) String team,
         @Nullable UUID applicationId,
         @NotNull ContactChannel channel,
         @NotNull ContactDirection direction,

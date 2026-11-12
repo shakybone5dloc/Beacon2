@@ -7,5 +7,6 @@ public enum AiFeature {
     INTERVIEW_BRIEF,
     STORY_BANK,
     STUDY_CARDS,
-    RESUME_TAILORING
+    RESUME_TAILORING,
+    CHECK_IN_EMAIL
 }

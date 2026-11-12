@@ -9,6 +9,7 @@ import java.util.UUID;
 /** What create and update contact requests share; the records' accessors implement it. */
 public interface ContactFields {
     UUID personId();
+    String team();
     UUID applicationId();
     ContactChannel channel();
     ContactDirection direction();

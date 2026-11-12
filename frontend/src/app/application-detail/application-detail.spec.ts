@@ -364,6 +364,8 @@ describe('ApplicationDetail', () => {
 
     documents.changed.emit([aDocument()]);
     fixture.debugElement.query(By.directive(ContactLogStub)).componentInstance.logged.emit();
+    // A logged check-in email may have set the follow-up date, so the application reloads.
+    http.expectOne('/api/applications/a1').flush(app);
     fixture.debugElement.query(By.directive(InterviewsStub)).componentInstance.changed.emit();
     http.expectOne('/api/applications/a1').flush(app);
     fixture.debugElement.query(By.directive(PeopleStub)).componentInstance.changed.emit();
