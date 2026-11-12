@@ -29,6 +29,9 @@
     </button>
   }
   <span class="spacer"></span>
+  @if (liveUrl(); as url) {
+    <a class="live-link" [href]="url" target="_blank" rel="noopener noreferrer">Live page ↗</a>
+  }
   <a class="print" [routerLink]="['/applications', app.id, 'posting']">Printable view</a>
 </div>
 

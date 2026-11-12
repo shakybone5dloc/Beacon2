@@ -34,6 +34,7 @@
 .spacer {
   flex: 1;
 }
+.live-link,
 .print {
   font-size: 0.85rem;
   color: var(--accent);
