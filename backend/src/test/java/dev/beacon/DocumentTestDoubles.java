@@ -143,6 +143,36 @@ public class DocumentTestDoubles {
         return new FakeCardWriter();
     }
 
+    @Bean
+    FakeCheckInWriter fakeCheckInWriter() {
+        return new FakeCheckInWriter();
+    }
+
+    public static class FakeCheckInWriter implements dev.beacon.application.checkin.CheckInWriter, Ordered {
+        public final List<Input> inputs = new ArrayList<>();
+
+        @Override
+        public String provider() {
+            return ProviderCatalog.OPENAI;
+        }
+
+        @Override
+        public int getOrder() {
+            return Ordered.HIGHEST_PRECEDENCE;
+        }
+
+        @Override
+        public Email write(Input input, String apiKey, AiUsageMeter meter) {
+            meter.record(FakeCoverLetterWriter.USAGE);
+            inputs.add(input);
+            return new Email("Following up: " + input.role(), "Hello " + input.recipient() + ",\n\nAny update?");
+        }
+
+        public void reset() {
+            inputs.clear();
+        }
+    }
+
     /** Stands in for OpenAI's study cards: two cards, the same each time. */
     public static class FakeCardWriter implements CardWriter, Ordered {
         public final List<CardInput> inputs = new ArrayList<>();

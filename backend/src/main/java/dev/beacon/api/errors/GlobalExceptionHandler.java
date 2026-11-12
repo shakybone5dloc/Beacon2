@@ -4,6 +4,7 @@ import dev.beacon.application.briefs.BriefException;
 import dev.beacon.application.coverletters.CoverLetterException;
 import dev.beacon.application.digest.DigestException;
 import dev.beacon.application.stories.StoryException;
+import dev.beacon.application.checkin.CheckInException;
 import dev.beacon.application.study.StudyException;
 import dev.beacon.application.tailoring.TailoringException;
 import dev.beacon.application.documents.PostingCaptureException;
@@ -88,6 +89,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
         var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
         problem.setTitle("Could not write the brief");
+        return problem;
+    }
+
+    @ExceptionHandler(CheckInException.class)
+    public ProblemDetail handleCheckIn(CheckInException ex) {
+        var status = ex.isUpstream() ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(422);
+        var problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        problem.setTitle("Could not draft the email");
         return problem;
     }
 

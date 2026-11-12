@@ -51,6 +51,7 @@ const entries: TimelineEntry[] = [
       id: 'c1',
       personId: 'p1',
       personName: 'Pat Lee',
+      team: null,
       applicationId: 'a1',
       company: 'Acme',
       jobRole: 'Java Engineer',

@@ -13,6 +13,7 @@ function aContact(overrides: Partial<Contact> = {}): Contact {
     id: 'c1',
     personId: 'p1',
     personName: 'Pat Lee',
+    team: null,
     applicationId: 'a1',
     company: 'Acme',
     jobRole: 'Java Engineer',
@@ -95,6 +96,7 @@ describe('contacts', () => {
         'Pick someone on this application…',
         'Pat Lee (Robert Half)',
         'Sam Ortiz',
+        'A team, not one person',
       ]);
 
       const form = el.querySelector<HTMLFormElement>('form')!;
@@ -107,6 +109,7 @@ describe('contacts', () => {
       const req = http.expectOne((r) => r.method === 'POST' && r.url === '/api/contacts');
       expect(req.request.body).toEqual({
         personId: 'p1',
+        team: null,
         applicationId: 'a1',
         channel: 'LINKEDIN',
         direction: 'OUTBOUND',
@@ -120,6 +123,62 @@ describe('contacts', () => {
       expect(logged).toHaveBeenCalled();
       expect(el.querySelector('form')).toBeNull();
       expect(el.querySelector('.who')?.textContent).toContain('To Pat Lee');
+    });
+
+    it('logs a contact with a team when there is no one person', async () => {
+      const { fixture, el } = await open([]);
+      button(el, 'Log contact').click();
+      http.expectOne('/api/applications/a1/people').flush([]);
+      await fixture.whenStable();
+
+      const form = el.querySelector<HTMLFormElement>('form')!;
+      expect(form.querySelector('.team-name')).toBeNull();
+      set(form.querySelector('select[formControlName=other]')!, '__team');
+      fixture.detectChanges();
+      // A team needs a name.
+      form.dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+      expect(el.textContent).toContain('Name the team');
+
+      set(form.querySelector<HTMLInputElement>('.team-name')!, ' Hiring team ');
+      set(form.querySelector('select[formControlName=channel]')!, 'EMAIL');
+      form.querySelector<HTMLInputElement>('input[value=OUTBOUND]')!.click();
+      form.dispatchEvent(new Event('submit'));
+
+      const req = http.expectOne((r) => r.method === 'POST' && r.url === '/api/contacts');
+      expect(req.request.body).toMatchObject({
+        personId: null,
+        team: 'Hiring team',
+        applicationId: 'a1',
+        channel: 'EMAIL',
+        direction: 'OUTBOUND',
+      });
+      const logged = aContact({ personId: null, personName: null, team: 'Hiring team', direction: 'OUTBOUND' });
+      req.flush(logged);
+      http.expectOne('/api/applications/a1/contacts').flush([logged]);
+      await fixture.whenStable();
+
+      expect(el.querySelector('.who')?.textContent?.replace(/\s+/g, ' ')).toContain('To Hiring team');
+      expect(el.querySelector('.who a')).toBeNull();
+    });
+
+    it('opens the check-in email in place of the form', async () => {
+      const { fixture, el } = await open([]);
+
+      el.querySelector<HTMLButtonElement>('.check-in-start')!.click();
+      fixture.detectChanges();
+      http.expectOne((r) => r.url === '/api/applications/a1/check-in').flush({
+        recipients: [],
+        defaultTeam: 'Hiring team',
+        subject: 'Checking in',
+        body: 'Hello,',
+        mailClient: 'GMAIL',
+        aiAvailable: false,
+      });
+      await fixture.whenStable();
+
+      expect(el.querySelector('app-check-in-email .check-in')).not.toBeNull();
+      expect(el.querySelector('.check-in-start')).toBeNull();
     });
 
     it('asks who it was with before saving', async () => {

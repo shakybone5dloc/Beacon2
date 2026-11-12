@@ -67,13 +67,70 @@ class ContactsApiTests extends SignedInApiTests {
                 {"direction": "INBOUND", "occurredAt": "2026-10-01T09:00:00Z"}
                 """);
         assertThat(missing).hasStatus(HttpStatus.BAD_REQUEST);
-        assertThat(missing).bodyJson().extractingPath("$.errors.personId").isNotNull();
         assertThat(missing).bodyJson().extractingPath("$.errors.channel").isNotNull();
+
+        // With neither a person nor a team, there's nobody it was with.
+        var nobody = createContact("""
+                {"channel": "SMS", "direction": "INBOUND", "occurredAt": "2026-10-01T09:00:00Z"}
+                """);
+        assertThat(nobody).hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(nobody).bodyJson().extractingPath("$.errors.personId").isNotNull();
 
         var unknown = createContact(contact("00000000-0000-0000-0000-000000000000", "SMS", "INBOUND",
                 "2026-10-01T09:00:00Z"));
         assertThat(unknown).hasStatus(HttpStatus.BAD_REQUEST);
         assertThat(unknown).bodyJson().extractingPath("$.errors.personId").isNotNull();
+    }
+
+    @Test
+    void logsAContactWithATeamInsteadOfAPerson() {
+        var appId = id(createApplication("""
+                {"companyName": "Elevance Health", "role": "Staff Engineer"}
+                """));
+
+        var result = createContact("""
+                {"team": "  Hiring team ", "applicationId": "%s", "channel": "EMAIL", "direction": "OUTBOUND",
+                 "occurredAt": "2026-11-12T15:00:00Z", "body": "Checking in on my application."}
+                """.formatted(appId));
+
+        assertThat(result).hasStatus(HttpStatus.CREATED);
+        assertThat(result).bodyJson().extractingPath("$.team").isEqualTo("Hiring team");
+        assertThat(result).bodyJson().extractingPath("$.personId").isNull();
+        assertThat(result).bodyJson().extractingPath("$.personName").isNull();
+        assertThat(result).bodyJson().extractingPath("$.company").isEqualTo("Elevance Health");
+        var log = mvc.get().uri("/api/applications/{id}/contacts", appId).exchange();
+        assertThat(log).bodyJson().extractingPath("$[*].team").asArray().containsExactly("Hiring team");
+        // Nobody was added to the application.
+        assertThat(mvc.get().uri("/api/applications/{id}/people", appId).exchange())
+                .bodyJson().extractingPath("$").asArray().isEmpty();
+        // It's on the timeline like any other contact.
+        assertThat(mvc.get().uri("/api/applications/{id}/timeline", appId).exchange())
+                .bodyJson().extractingPath("$[*].contact.team").asArray().contains("Hiring team");
+
+        // It goes with the application: there's no person's log to keep it in.
+        assertThat(mvc.delete().uri("/api/applications/{id}", appId).exchange()).hasStatus(HttpStatus.NO_CONTENT);
+    }
+
+    @Test
+    void aContactIsWithAPersonOrATeamAndATeamNeedsItsApplication() {
+        var appId = id(createApplication("""
+                {"companyName": "Acme", "role": "Engineer"}
+                """));
+        var pat = id(createPerson("Pat", "RECRUITER"));
+
+        var both = createContact("""
+                {"personId": "%s", "team": "Hiring team", "applicationId": "%s", "channel": "EMAIL",
+                 "direction": "OUTBOUND", "occurredAt": "2026-11-12T15:00:00Z"}
+                """.formatted(pat, appId));
+        assertThat(both).hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(both).bodyJson().extractingPath("$.errors.team").isNotNull();
+
+        var noApplication = createContact("""
+                {"team": "Hiring team", "channel": "EMAIL", "direction": "OUTBOUND",
+                 "occurredAt": "2026-11-12T15:00:00Z"}
+                """);
+        assertThat(noApplication).hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(noApplication).bodyJson().extractingPath("$.errors.applicationId").isNotNull();
     }
 
     @Test

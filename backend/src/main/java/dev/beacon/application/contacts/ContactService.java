@@ -26,7 +26,8 @@ import java.util.UUID;
  * The outreach log. Contacts belong to one user; every method takes the owner's id,
  * and another user's contacts, people and applications behave as if they don't exist.
  * Create and update throw {@link UnknownReferenceException} for a person or
- * application id that isn't the owner's.
+ * application id that isn't the owner's, and for a contact that names both a person and a
+ * team, neither, or a team without an application.
  */
 @Service
 public class ContactService {
@@ -96,15 +97,25 @@ public class ContactService {
 
     /** Looks up the person and application, and puts the person on that application if they aren't yet. */
     private Contact.Details details(UUID ownerId, ContactFields f, Instant now) {
-        var person = people.findByIdAndOwnerId(f.personId(), ownerId)
+        var team = f.team() == null || f.team().isBlank() ? null : f.team().strip();
+        if (f.personId() == null && team == null) {
+            throw new UnknownReferenceException("personId", "Pick who it was with: a person or a team");
+        }
+        if (f.personId() != null && team != null) {
+            throw new UnknownReferenceException("team", "Pick a person or a team, not both");
+        }
+        if (team != null && f.applicationId() == null) {
+            throw new UnknownReferenceException("applicationId", "A contact with a team needs its application");
+        }
+        var person = f.personId() == null ? null : people.findByIdAndOwnerId(f.personId(), ownerId)
                 .orElseThrow(() -> new UnknownReferenceException("personId", "No such person"));
         JobApplication application = null;
         if (f.applicationId() != null) {
             application = applications.findByIdAndOwnerId(f.applicationId(), ownerId)
                     .orElseThrow(() -> new UnknownReferenceException("applicationId", "No such application"));
-            linkIfNeeded(application, person, now);
+            if (person != null) linkIfNeeded(application, person, now);
         }
-        return new Contact.Details(person, application, f.channel(), f.direction(), f.occurredAt(), f.body());
+        return new Contact.Details(person, team, application, f.channel(), f.direction(), f.occurredAt(), f.body());
     }
 
     /** Someone who contacted the user about an application is involved in it, in their usual role. */
@@ -115,7 +126,9 @@ public class ContactService {
 
     public static ContactResponse toResponse(Contact c) {
         var app = c.getApplication();
-        return new ContactResponse(c.getId(), c.getPerson().getId(), c.getPerson().getName(),
+        var person = c.getPerson();
+        return new ContactResponse(c.getId(), person == null ? null : person.getId(),
+                person == null ? null : person.getName(), c.getTeam(),
                 app == null ? null : app.getId(), app == null ? null : app.getCompanyName(),
                 app == null ? null : app.getRole(), c.getChannel(), c.getDirection(), c.getOccurredAt(), c.getBody(),
                 c.getVersion(), c.getCreatedAt(), c.getUpdatedAt());

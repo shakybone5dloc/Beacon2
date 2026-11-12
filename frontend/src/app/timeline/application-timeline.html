@@ -33,7 +33,11 @@
                 @if (e.contact; as c) {
                   {{ channelLabels[c.channel] }}
                   {{ c.direction === 'INBOUND' ? 'from' : 'to' }}
-                  <a [routerLink]="['/people', c.personId]">{{ c.personName }}</a>
+                  @if (c.personId) {
+                    <a [routerLink]="['/people', c.personId]">{{ c.personName }}</a>
+                  } @else {
+                    {{ c.team }}
+                  }
                 }
               }
               @case ('INTERVIEW') {
