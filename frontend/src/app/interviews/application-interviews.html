@@ -204,8 +204,41 @@
                 ></p>
               </details>
             }
+            @if (studyNotice(); as n) {
+              @if (n.interviewId === i.id) {
+                <p class="study-notice m-0 mt-space-xs text-body-sm text-error" role="alert">
+                  {{ n.text }}
+                </p>
+              }
+            }
           </div>
           <div class="ml-[30px] flex shrink-0 flex-wrap items-start gap-space-xs sm:ml-0">
+            @if (isAhead(i)) {
+              @if (deck(); as d) {
+                @if (d.due > 0) {
+                  <a
+                    class="study-due btn btn-sm btn-primary no-underline"
+                    [routerLink]="['/study', d.id, 'session']"
+                    >Study {{ d.due }} {{ d.due === 1 ? 'card' : 'cards' }}</a
+                  >
+                }
+              }
+              <button
+                type="button"
+                class="make-cards btn btn-sm"
+                [disabled]="makingFor() !== null"
+                title="Draft cards from the brief and this interview's prep notes, or from the posting"
+                (click)="makeCards(i)"
+              >
+                {{
+                  makingFor() === i.id
+                    ? 'Making cards…'
+                    : (deck()?.due ?? 0) > 0
+                      ? 'Make more cards'
+                      : 'Study for this interview'
+                }}
+              </button>
+            }
             <a
               class="calendar btn btn-sm no-underline"
               [href]="calendarUrl(i)"

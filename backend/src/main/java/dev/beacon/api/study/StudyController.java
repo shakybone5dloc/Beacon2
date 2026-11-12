@@ -5,6 +5,7 @@ import dev.beacon.application.study.StudyService;
 import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.study.CardResponse;
 import dev.beacon.contracts.study.DeckResponse;
+import dev.beacon.contracts.study.DrillStoriesRequest;
 import dev.beacon.contracts.study.MadeCardsResponse;
 import dev.beacon.contracts.study.ReviewCardRequest;
 import dev.beacon.contracts.study.SaveCardRequest;
@@ -135,5 +136,27 @@ public class StudyController {
     public ResponseEntity<MadeCardsResponse> make(@AuthenticationPrincipal SignedInUser user,
                                                   @PathVariable UUID applicationId) {
         return ResponseEntity.of(maker.fromBrief(user.id(), applicationId));
+    }
+
+    /**
+     * Drills stories from the bank as "Tell the story" cards in the user's Stories deck (made the
+     * first time), kept straight away; stories already in it are skipped.
+     */
+    @Operation(operationId = "drillStories")
+    @PostMapping("/api/study/stories")
+    public MadeCardsResponse drillStories(@AuthenticationPrincipal SignedInUser user,
+                                          @Valid @RequestBody DrillStoriesRequest body) {
+        return maker.drillStories(user.id(), body.storyIds());
+    }
+
+    /**
+     * "Study for this interview": draft cards from the application's brief and this interview's
+     * prep notes (or the posting and fit gaps without a brief), in the application's deck.
+     */
+    @Operation(operationId = "makeInterviewStudyCards")
+    @PostMapping("/api/interviews/{interviewId}/study-cards")
+    public ResponseEntity<MadeCardsResponse> makeForInterview(@AuthenticationPrincipal SignedInUser user,
+                                                              @PathVariable UUID interviewId) {
+        return ResponseEntity.of(maker.fromInterview(user.id(), interviewId));
     }
 }

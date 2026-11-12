@@ -6,6 +6,9 @@ import { ApplicationInterviews } from './application-interviews';
 import { durationLabel, formatInZone, Interview, toInputValue } from './interview.model';
 import { onIt } from '../people/testing';
 import { anInterview } from './testing';
+import { aDeck } from '../study/testing';
+import { Deck } from '../study/study.model';
+import { Router } from '@angular/router';
 
 function set(
   input: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
@@ -55,13 +58,14 @@ describe('interviews', () => {
   });
 
   describe('ApplicationInterviews', () => {
-    async function open(interviews: Interview[]) {
+    async function open(interviews: Interview[], decks: Deck[] = []) {
       const fixture = TestBed.createComponent(ApplicationInterviews);
       fixture.componentRef.setInput('applicationId', 'a1');
       const changed = vi.fn();
       fixture.componentInstance.changed.subscribe(changed);
       fixture.detectChanges();
       http.expectOne('/api/applications/a1/interviews').flush(interviews);
+      http.expectOne('/api/study/decks').flush(decks);
       await fixture.whenStable();
       return { fixture, changed, el: fixture.nativeElement as HTMLElement };
     }
@@ -78,6 +82,59 @@ describe('interviews', () => {
       expect(el.querySelector('a.calendar')?.getAttribute('href')).toBe(
         '/api/interviews/i1/calendar.ics',
       );
+    });
+
+    it('offers to study for an interview ahead, and links the cards due', async () => {
+      const { el } = await open([anInterview()], [aDeck({ id: 'd9', applicationId: 'a1', due: 6 })]);
+
+      expect(el.querySelector('a.study-due')?.textContent).toContain('Study 6 cards');
+      expect(el.querySelector('a.study-due')?.getAttribute('href')).toBe('/study/d9/session');
+      expect(el.querySelector('.make-cards')?.textContent).toContain('Make more cards');
+    });
+
+    it('makes cards for the interview and opens the deck to keep them', async () => {
+      const { fixture, el } = await open([anInterview()]);
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      expect(el.querySelector('a.study-due')).toBeNull();
+
+      el.querySelector<HTMLButtonElement>('.make-cards')!.click();
+      fixture.detectChanges();
+      expect(el.querySelector('.make-cards')?.textContent).toContain('Making cards…');
+      http
+        .expectOne({ method: 'POST', url: '/api/interviews/i1/study-cards' })
+        .flush({ deck: aDeck({ id: 'd9' }), added: 5, skipped: 1 });
+
+      expect(navigate).toHaveBeenCalledWith(['/study', 'd9'], {
+        queryParams: { added: 5, skipped: 1, from: 'interview' },
+      });
+    });
+
+    it('says why cards could not be made, under that interview', async () => {
+      const { fixture, el } = await open([anInterview()]);
+
+      el.querySelector<HTMLButtonElement>('.make-cards')!.click();
+      http
+        .expectOne('/api/interviews/i1/study-cards')
+        .flush(
+          { detail: 'Add prep notes to this interview, write its brief, or paste the job posting first.' },
+          { status: 422, statusText: 'Unprocessable' },
+        );
+      fixture.detectChanges();
+
+      expect(el.querySelector('.study-notice')?.textContent).toContain('Add prep notes');
+    });
+
+    it('offers no studying for a past or cancelled interview', async () => {
+      const { el } = await open(
+        [
+          anInterview({ id: 'i1', startsAt: '2020-01-01T15:00:00Z', endsAt: '2020-01-01T16:00:00Z' }),
+          anInterview({ id: 'i2', outcome: 'CANCELLED' }),
+        ],
+        [aDeck({ applicationId: 'a1', due: 3 })],
+      );
+
+      expect(el.querySelector('.make-cards')).toBeNull();
+      expect(el.querySelector('a.study-due')).toBeNull();
     });
 
     it('marks a cancelled interview and does not call it next', async () => {
@@ -127,6 +184,7 @@ describe('interviews', () => {
       });
       req.flush(anInterview({ type: 'PANEL' }));
       http.expectOne('/api/applications/a1/interviews').flush([anInterview({ type: 'PANEL' })]);
+      http.expectOne('/api/study/decks').flush([]);
       await fixture.whenStable();
 
       expect(changed).toHaveBeenCalled();
@@ -175,6 +233,7 @@ describe('interviews', () => {
       });
       req.flush(anInterview({ outcome: 'PASSED', version: 3 }));
       http.expectOne('/api/applications/a1/interviews').flush([anInterview({ outcome: 'PASSED' })]);
+      http.expectOne('/api/study/decks').flush([]);
     });
 
     it('deletes after confirming', async () => {

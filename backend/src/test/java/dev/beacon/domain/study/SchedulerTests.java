@@ -72,4 +72,47 @@ class SchedulerTests {
         var longOne = new Schedule(2.5, 300, 9, 0, NOW);
         assertThat(Scheduler.next(longOne, Grade.EASY, NOW).intervalDays()).isEqualTo(365);
     }
+
+    @Test
+    void aCardThatWouldSkipTheInterviewComesBackTheDayBeforeIt() {
+        var learned = after(Schedule.fresh(NOW), Grade.GOOD, Grade.GOOD); // 3 days
+        var interview = NOW.plus(Duration.ofDays(4));
+
+        var s = Scheduler.next(learned, Grade.GOOD, NOW, interview); // 8 days by SM-2
+
+        assertThat(s.dueAt()).isEqualTo(interview.minus(Duration.ofDays(1)));
+        // The interval still grows, so after the interview the card goes back to its pace.
+        assertThat(s.intervalDays()).isEqualTo(8);
+        assertThat(s.repetitions()).isEqualTo(3);
+    }
+
+    @Test
+    void inTheLastDayACardComesBackAboutTwoHoursBeforeTheInterview() {
+        var interview = NOW.plus(Duration.ofHours(20));
+
+        var s = Scheduler.next(Schedule.fresh(NOW), Grade.GOOD, NOW, interview);
+
+        assertThat(s.dueAt()).isEqualTo(interview.minus(Duration.ofHours(2)));
+    }
+
+    @Test
+    void aCardAlreadyDueBeforeTheInterviewKeepsItsDate() {
+        var interview = NOW.plus(Duration.ofDays(10));
+
+        var s = Scheduler.next(Schedule.fresh(NOW), Grade.GOOD, NOW, interview);
+
+        assertThat(s).isEqualTo(Scheduler.next(Schedule.fresh(NOW), Grade.GOOD, NOW));
+        // A miss comes back in ten minutes, as always.
+        assertThat(Scheduler.next(Schedule.fresh(NOW), Grade.AGAIN, NOW, interview).dueAt())
+                .isEqualTo(NOW.plus(Duration.ofMinutes(10)));
+    }
+
+    @Test
+    void anInterviewTooCloseOrPastLeavesTheScheduleAlone() {
+        var plain = Scheduler.next(Schedule.fresh(NOW), Grade.GOOD, NOW);
+
+        assertThat(Scheduler.next(Schedule.fresh(NOW), Grade.GOOD, NOW, NOW.plus(Duration.ofHours(4)))).isEqualTo(plain);
+        assertThat(Scheduler.next(Schedule.fresh(NOW), Grade.GOOD, NOW, NOW.minus(Duration.ofDays(1)))).isEqualTo(plain);
+        assertThat(Scheduler.next(Schedule.fresh(NOW), Grade.GOOD, NOW, null)).isEqualTo(plain);
+    }
 }

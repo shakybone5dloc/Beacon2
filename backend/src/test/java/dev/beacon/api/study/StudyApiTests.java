@@ -162,6 +162,187 @@ class StudyApiTests extends SignedInApiTests {
                 """), "$.id");
     }
 
+    @Test
+    void gradingAimsTheNextReviewAtTheApplicationsInterview() {
+        var appId = application();
+        var cardId = keptCard(appId);
+        var interviewAt = scheduleInterview(appId, Duration.ofHours(84)); // 3.5 days
+
+        // Easy on a new card means 3 days, which would skip the interview: it comes back the day before.
+        var graded = post("/api/study/cards/" + cardId + "/review", "{\"grade\": \"EASY\"}");
+
+        assertThat(Instant.parse(read(graded, "$.dueAt"))).isEqualTo(interviewAt.minus(Duration.ofDays(1)));
+        assertThat(graded).bodyJson().extractingPath("$.intervalDays").isEqualTo(3);
+    }
+
+    @Test
+    void inTheLastDayBeforeAnInterviewEveryCardNotSeenSinceIsDueAndCountedOnTheApplication() {
+        var appId = application();
+        var cardId = keptCard(appId);
+        // Learned well a few days ago and not due for another ten.
+        jdbc.update("update study_cards set due_at = now() + interval '10 days', last_reviewed_at = now() - interval '3 days' "
+                + "where id = ?::uuid", cardId);
+        assertThat(mvc.get().uri("/api/applications/{id}", appId).exchange())
+                .bodyJson().extractingPath("$.studyDue").isEqualTo(0);
+
+        scheduleInterview(appId, Duration.ofHours(12));
+
+        assertThat(mvc.get().uri("/api/applications/{id}", appId).exchange())
+                .bodyJson().extractingPath("$.studyDue").isEqualTo(1);
+        assertThat(mvc.get().uri("/api/applications").exchange())
+                .bodyJson().extractingPath("$[0].studyDue").isEqualTo(1);
+        String deckId = jdbc.queryForObject("select deck_id::text from study_cards where id = ?::uuid", String.class, cardId);
+        assertThat(mvc.get().uri("/api/study/decks/{id}/due", deckId).exchange())
+                .bodyJson().extractingPath("$[*].id").asArray().containsExactly(cardId);
+        assertThat(mvc.get().uri("/api/study/decks/{id}", deckId).exchange())
+                .bodyJson().extractingPath("$.due").isEqualTo(1);
+
+        // Seen once in that last day, it waits: about two hours before the interview at the latest.
+        post("/api/study/cards/" + cardId + "/review", "{\"grade\": \"GOOD\"}");
+        assertThat(mvc.get().uri("/api/applications/{id}", appId).exchange())
+                .bodyJson().extractingPath("$.studyDue").isEqualTo(0);
+    }
+
+    @Test
+    void studyingForAnInterviewAddsItsPrepNotesToTheBrief() {
+        var appId = application();
+        writeBriefSection(appId, "QUESTIONS", "- What is OAuth?");
+        String interviewId = read(post("/api/applications/" + appId + "/interviews", """
+                {"localStart": "2099-03-10T14:00:00", "timeZone": "UTC", "durationMinutes": 45, "type": "TECHNICAL",
+                 "prepNotes": "Review Kafka consumer groups."}
+                """), "$.id");
+
+        var made = post("/api/interviews/" + interviewId + "/study-cards", "");
+
+        assertThat(made).hasStatus(HttpStatus.OK);
+        assertThat(made).bodyJson().extractingPath("$.deck.applicationId").isEqualTo(appId);
+        assertThat(made).bodyJson().extractingPath("$.added").isEqualTo(2);
+        var sections = writer.inputs.getFirst().sections();
+        assertThat(sections).extracting(s -> s.title())
+                .containsExactly("Likely questions", "Prep notes for this interview");
+        assertThat(sections.get(1).markdown()).isEqualTo("Review Kafka consumer groups.");
+
+        // Again: the same questions are skipped, and it's still the one deck.
+        var again = post("/api/interviews/" + interviewId + "/study-cards", "");
+        assertThat(again).bodyJson().extractingPath("$.added").isEqualTo(0);
+        assertThat(again).bodyJson().extractingPath("$.deck.id").isEqualTo(read(made, "$.deck.id"));
+    }
+
+    @Test
+    void withoutABriefTheCardsComeFromThePostingAndTheFitGaps() {
+        var appId = application();
+        String interviewId = read(post("/api/applications/" + appId + "/interviews", """
+                {"localStart": "2099-03-10T14:00:00", "timeZone": "UTC", "durationMinutes": 45, "type": "TECHNICAL"}
+                """), "$.id");
+        var resumeId = java.util.UUID.randomUUID();
+        jdbc.update("""
+                insert into documents (id, owner_id, kind, filename, content_type, size_bytes, content, created_at)
+                values (?, ?, 'RESUME', 'r.txt', 'text/plain', 1, 'x'::bytea, now())
+                """, resumeId, signedIn.id());
+        String fitId = java.util.UUID.randomUUID().toString();
+        jdbc.update("""
+                insert into fit_scores (id, owner_id, resume_document_id, input_hash, score, gaps, rationale,
+                                        provider, model, created_at)
+                values (?::uuid, ?, ?, 'h', 70, '{Kafka,Kubernetes}', 'ok', 'openai', 'm', now())
+                """, fitId, signedIn.id(), resumeId);
+        jdbc.update("insert into application_fits (application_id, fit_score_id, linked_at) values (?::uuid, ?::uuid, now())",
+                appId, fitId);
+
+        assertThat(post("/api/interviews/" + interviewId + "/study-cards", "")).hasStatus(HttpStatus.OK);
+
+        var sections = writer.inputs.getFirst().sections();
+        assertThat(sections).extracting(s -> s.title()).containsExactly("Gaps from the fit check", "Job posting");
+        assertThat(sections.get(0).markdown()).isEqualTo("- Kafka\n- Kubernetes");
+        assertThat(sections.get(1).markdown()).isEqualTo("Java and OAuth.");
+    }
+
+    @Test
+    void studyingForAnInterviewNeedsSomethingToMakeCardsFrom() {
+        String appId = read(post("/api/applications", "{\"companyName\": \"GHX\", \"role\": \"Engineer\"}"), "$.id");
+        String interviewId = read(post("/api/applications/" + appId + "/interviews", """
+                {"localStart": "2099-03-10T14:00:00", "timeZone": "UTC", "durationMinutes": 45, "type": "TECHNICAL"}
+                """), "$.id");
+
+        var made = post("/api/interviews/" + interviewId + "/study-cards", "");
+
+        assertThat(made).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(made).bodyText().contains("Add prep notes to this interview");
+        assertThat(writer.inputs).isEmpty();
+        assertThat(post("/api/interviews/" + java.util.UUID.randomUUID() + "/study-cards", ""))
+                .hasStatus(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void drillsStoriesIntoOneStoriesDeckAndTheCardsFollowEdits() {
+        String first = read(post("/api/stories", """
+                {"title": "Multi-tenant authorization", "situation": "Landlords shared one app.",
+                 "action": "Built row-level policies.", "result": "No leaks.", "tags": ["security"]}
+                """), "$.id");
+        String second = read(post("/api/stories", "{\"title\": \"Legacy to cloud\", \"tags\": []}"), "$.id");
+
+        var drilled = post("/api/study/stories", "{\"storyIds\": [\"" + first + "\"]}");
+
+        assertThat(drilled).hasStatus(HttpStatus.OK);
+        assertThat(drilled).bodyJson().extractingPath("$.deck.kind").isEqualTo("STORIES");
+        assertThat(drilled).bodyJson().extractingPath("$.deck.name").isEqualTo("Stories");
+        assertThat(drilled).bodyJson().extractingPath("$.added").isEqualTo(1);
+        // Kept straight away: they're the user's own words.
+        assertThat(drilled).bodyJson().extractingPath("$.deck.due").isEqualTo(1);
+        String deckId = read(drilled, "$.deck.id");
+        String cardId = read(mvc.get().uri("/api/study/decks/{id}/cards", deckId).exchange(), "$[0].id");
+        assertThat(mvc.get().uri("/api/study/decks/{id}/cards", deckId).exchange()).bodyJson()
+                .extractingPath("$[0].question").isEqualTo("Tell the story: Multi-tenant authorization (security)");
+
+        // Every story: the one already drilled is skipped, and it's still the one deck.
+        var all = post("/api/study/stories", "{}");
+        assertThat(all).bodyJson().extractingPath("$.deck.id").isEqualTo(deckId);
+        assertThat(all).bodyJson().extractingPath("$.added").isEqualTo(1);
+        assertThat(all).bodyJson().extractingPath("$.skipped").isEqualTo(1);
+
+        // Studied, then the story is improved: the card's answer follows and its schedule stays.
+        post("/api/study/cards/" + cardId + "/review", "{\"grade\": \"GOOD\"}");
+        String dueAt = jdbc.queryForObject("select due_at::text from study_cards where id = ?::uuid", String.class, cardId);
+        Integer version = JsonPath.read(content(mvc.get().uri("/api/stories/{id}", first).exchange()), "$.version");
+        assertThat(put("/api/stories/" + first, """
+                {"title": "Multi-tenant authorization", "situation": "Landlords shared one app.",
+                 "action": "Built row-level policies.", "result": "No leaks across 40 tenants.", "tags": ["security"],
+                 "version": %d}
+                """.formatted(version))).hasStatus(HttpStatus.OK);
+
+        var card = jdbc.queryForMap("select answer, due_at::text as due_at from study_cards where id = ?::uuid", cardId);
+        assertThat((String) card.get("answer")).contains("No leaks across 40 tenants.");
+        assertThat(card.get("due_at")).isEqualTo(dueAt);
+        assertThat(second).isNotNull();
+    }
+
+    @Test
+    void drillingNeedsAStory() {
+        var drilled = post("/api/study/stories", "{}");
+
+        assertThat(drilled).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(drilled).bodyText().contains("Write a story first");
+    }
+
+    /** One kept card in the application's own deck, made from its brief. */
+    private String keptCard(String appId) {
+        writeBriefSection(appId, "QUESTIONS", "- What is OAuth?");
+        String deckId = read(post("/api/applications/" + appId + "/study-cards", ""), "$.deck.id");
+        post("/api/study/decks/" + deckId + "/keep-drafts", "");
+        jdbc.update("delete from study_cards where deck_id = ?::uuid and id <> "
+                + "(select id from study_cards where deck_id = ?::uuid order by created_at limit 1)", deckId, deckId);
+        return jdbc.queryForObject("select id::text from study_cards where deck_id = ?::uuid", String.class, deckId);
+    }
+
+    /** An interview this far from now, in UTC; returns when it starts. */
+    private Instant scheduleInterview(String appId, Duration fromNow) {
+        var start = Instant.now().plus(fromNow).truncatedTo(java.time.temporal.ChronoUnit.MINUTES);
+        var local = java.time.LocalDateTime.ofInstant(start, java.time.ZoneOffset.UTC);
+        assertThat(post("/api/applications/" + appId + "/interviews", """
+                {"localStart": "%s", "timeZone": "UTC", "durationMinutes": 45, "type": "TECHNICAL"}
+                """.formatted(local))).hasStatus(HttpStatus.CREATED);
+        return start;
+    }
+
     private void writeBriefSection(String appId, String kind, String content) {
         assertThat(put("/api/applications/" + appId + "/brief/sections/" + kind,
                 "{\"content\": \"" + content + "\", \"version\": null}")).hasStatus(HttpStatus.OK);
@@ -174,6 +355,14 @@ class StudyApiTests extends SignedInApiTests {
 
     private MvcTestResult put(String uri, String json) {
         return mvc.put().uri(uri).contentType(MediaType.APPLICATION_JSON).content(json).exchange();
+    }
+
+    private static String content(MvcTestResult result) {
+        try {
+            return result.getResponse().getContentAsString();
+        } catch (UnsupportedEncodingException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     private static <T> T read(MvcTestResult result, String path) {

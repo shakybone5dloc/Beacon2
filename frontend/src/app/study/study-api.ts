@@ -6,12 +6,14 @@ import {
   createDeck,
   deleteCard,
   deleteDeck,
+  drillStories,
   getDeck,
   keepCard,
   keepDeckDrafts,
   listDeckCards,
   listDecks,
   listDueCards,
+  makeInterviewStudyCards,
   makeStudyCards,
   renameDeck,
   reviewCard,
@@ -84,5 +86,18 @@ export class StudyApi {
   /** Draft cards from the application's brief and its stories, in the application's deck. */
   fromBrief(applicationId: string): Observable<MadeCards> {
     return this.api.invoke(makeStudyCards, { applicationId });
+  }
+
+  /**
+   * "Tell the story" cards for these stories (all of them when null) in the Stories deck, kept
+   * straight away; ones already there are skipped.
+   */
+  drillStories(storyIds: string[] | null): Observable<MadeCards> {
+    return this.api.invoke(drillStories, { body: { storyIds } });
+  }
+
+  /** Draft cards for one interview: the brief plus its prep notes, or the posting and fit gaps. */
+  fromInterview(interviewId: string): Observable<MadeCards> {
+    return this.api.invoke(makeInterviewStudyCards, { interviewId });
   }
 }

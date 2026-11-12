@@ -49,6 +49,8 @@ public record ApplicationResponse (
         @Nullable Instant lastInterviewAt,
         /** The latest fit score (0-100); null until fit has been checked. */
         @Nullable Integer fitScore,
+        /** Kept study cards due now in the application's deck (A6); 0 when it has none or no deck. */
+        int studyDue,
         Long version,
         @ArraySchema(schema = @Schema(implementation = ApplicationStatus.class))
         List<String> allowedTransitions

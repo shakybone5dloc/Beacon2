@@ -1,9 +1,12 @@
 import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { problemText } from '../documents/application-documents';
 import { PeopleApi } from '../people/people-api';
+import { StudyApi } from '../study/study-api';
+import { Deck } from '../study/study.model';
 import { InterviewsApi } from './interviews-api';
 import {
   browserTimeZone,
@@ -33,6 +36,8 @@ export class ApplicationInterviews implements OnInit {
   private readonly api = inject(InterviewsApi);
   private readonly peopleApi = inject(PeopleApi);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly studyApi = inject(StudyApi);
+  private readonly router = inject(Router);
 
   readonly applicationId = input.required<string>();
   /** After any change: the board's next interview moves, and interviewers join the application. */
@@ -48,6 +53,12 @@ export class ApplicationInterviews implements OnInit {
   protected readonly saving = signal(false);
   protected readonly formError = signal<string | null>(null);
   protected readonly interviewerIds = signal<ReadonlySet<string>>(new Set());
+  /** The application's study deck, once it has one (A6). */
+  protected readonly deck = signal<Deck | null>(null);
+  /** The interview whose study cards are being made. */
+  protected readonly makingFor = signal<string | null>(null);
+  /** Why making cards failed, under that interview. */
+  protected readonly studyNotice = signal<{ interviewId: string; text: string } | null>(null);
 
   protected readonly types = INTERVIEW_TYPES;
   protected readonly typeLabels = INTERVIEW_TYPE_LABELS;
@@ -88,6 +99,40 @@ export class ApplicationInterviews implements OnInit {
     this.api.onApplication(this.applicationId()).subscribe({
       next: (interviews) => this.interviews.set(interviews),
       error: () => this.error.set('Could not load the interviews.'),
+    });
+    // Without it the interviews still show; only the "Study N cards" link is missing.
+    this.studyApi.decks().subscribe({
+      next: (decks) => this.deck.set(decks.find((d) => d.applicationId === this.applicationId()) ?? null),
+      error: () => this.deck.set(null),
+    });
+  }
+
+  /** Still ahead and not cancelled: worth studying for. */
+  protected isAhead(interview: Interview): boolean {
+    return !this.isPast(interview) && interview.outcome !== 'CANCELLED';
+  }
+
+  /**
+   * Drafts cards from the brief and this interview's prep notes (or the posting and fit gaps)
+   * and opens the deck to keep or drop them.
+   */
+  protected makeCards(interview: Interview): void {
+    this.makingFor.set(interview.id);
+    this.studyNotice.set(null);
+    this.studyApi.fromInterview(interview.id).subscribe({
+      next: (made) => {
+        this.makingFor.set(null);
+        this.router.navigate(['/study', made.deck.id], {
+          queryParams: { added: made.added, skipped: made.skipped, from: 'interview' },
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.makingFor.set(null);
+        this.studyNotice.set({
+          interviewId: interview.id,
+          text: problemText(err, 'Could not make study cards. Try again.'),
+        });
+      },
     });
   }
 

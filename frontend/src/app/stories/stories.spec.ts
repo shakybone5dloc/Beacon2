@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { StoriesPage } from './stories-page';
 import { Story, StoryDraft, tagsFromText } from './story.model';
 
@@ -89,6 +89,34 @@ describe('StoriesPage', () => {
     expect(
       Array.from(el.querySelectorAll('.story .title')).map((t) => t.textContent?.trim()),
     ).toEqual(['Mentored two juniors']);
+  });
+
+  it('drills the stories shown as study cards and opens the Stories deck', async () => {
+    const { fixture, el } = await open([
+      aStory({ id: 's1', tags: ['security'] }),
+      aStory({ id: 's2', title: 'Legacy to cloud', tags: ['migration'] }),
+    ]);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const deck = { id: 'd5', name: 'Stories', kind: 'STORIES' };
+
+    el.querySelector<HTMLButtonElement>('.drill')!.click();
+    const all = http.expectOne({ method: 'POST', url: '/api/study/stories' });
+    expect(all.request.body).toEqual({ storyIds: null });
+    all.flush({ deck, added: 2, skipped: 0 });
+    expect(navigate).toHaveBeenCalledWith(['/study', 'd5'], {
+      queryParams: { added: 2, skipped: 0, from: 'stories' },
+    });
+
+    // With a tag picked, only those stories.
+    Array.from(el.querySelectorAll<HTMLButtonElement>('.tags .tag'))
+      .find((b) => b.textContent?.trim() === 'security')!
+      .click();
+    fixture.detectChanges();
+    expect(el.querySelector('.drill')?.textContent).toContain('Drill these as cards');
+    el.querySelector<HTMLButtonElement>('.drill')!.click();
+    const some = http.expectOne('/api/study/stories');
+    expect(some.request.body).toEqual({ storyIds: ['s1'] });
+    some.flush({ deck, added: 0, skipped: 1 });
   });
 
   it('shows the whole story when its title is clicked', async () => {

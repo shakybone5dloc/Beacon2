@@ -52,10 +52,15 @@ export class DeckPage implements OnInit {
     const added = params.get('added');
     if (added != null) {
       const skipped = Number(params.get('skipped') ?? 0);
+      const cards = added === '1' ? 'card' : 'cards';
+      const leftOut = skipped > 0 ? `; ${skipped} the deck already had were left out.` : '.';
+      const from = params.get('from');
       this.notice.set(
-        `Made ${added} draft ${added === '1' ? 'card' : 'cards'} from the brief` +
-          (skipped > 0 ? `; ${skipped} the deck already had were left out.` : '.') +
-          ' Keep the ones worth drilling.',
+        from === 'stories'
+          ? // Story cards are the user's own words, so they're kept straight away.
+            `Added ${added} story ${cards}${leftOut}`
+          : `Made ${added} draft ${cards} ${from === 'interview' ? 'for the interview' : 'from the brief'}` +
+              `${leftOut} Keep the ones worth drilling.`,
       );
     }
     this.load();

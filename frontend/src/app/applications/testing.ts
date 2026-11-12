@@ -30,6 +30,7 @@ export function anApplication(overrides: Partial<ApplicationResponse> = {}): App
     nextInterviewAt: null,
     lastInterviewAt: null,
     fitScore: null,
+    studyDue: 0,
     version: 0,
     allowedTransitions: [],
     ...overrides,

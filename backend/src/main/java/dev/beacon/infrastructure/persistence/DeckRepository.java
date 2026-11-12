@@ -14,4 +14,6 @@ public interface DeckRepository extends JpaRepository<Deck, UUID> {
     Optional<Deck> findByIdAndOwnerId(UUID id, UUID ownerId);
 
     Optional<Deck> findByApplicationIdAndOwnerId(UUID applicationId, UUID ownerId);
+
+    Optional<Deck> findByOwnerIdAndKind(UUID ownerId, Deck.Kind kind);
 }

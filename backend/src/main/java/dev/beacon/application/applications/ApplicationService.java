@@ -14,6 +14,7 @@ import dev.beacon.domain.interviews.InterviewOutcome;
 import dev.beacon.domain.people.PersonRole;
 import dev.beacon.infrastructure.persistence.ApplicationFitRepository;
 import dev.beacon.infrastructure.persistence.ApplicationPersonRepository;
+import dev.beacon.infrastructure.persistence.CardRepository;
 import dev.beacon.infrastructure.persistence.ContactRepository;
 import dev.beacon.infrastructure.persistence.InterviewRepository;
 import dev.beacon.infrastructure.persistence.JobApplicationRepository;
@@ -41,12 +42,15 @@ public class ApplicationService {
     private final ContactRepository contacts;
     private final InterviewRepository interviews;
     private final ApplicationFitRepository fits;
+    private final CardRepository cards;
     private final CompanyService companies;
     private final Clock clock;
 
     public ApplicationService(JobApplicationRepository repository, ApplicationPersonRepository people,
                               ContactRepository contacts, InterviewRepository interviews,
-                              ApplicationFitRepository fits, CompanyService companies, Clock clock) {
+                              ApplicationFitRepository fits, CardRepository cards, CompanyService companies,
+                              Clock clock) {
+        this.cards = cards;
         this.repository = repository;
         this.people = people;
         this.contacts = contacts;
@@ -176,7 +180,10 @@ public class ApplicationService {
         return ApplicationMappings.toResponse(application, extras);
     }
 
-    /** Agencies, interview dates and fit scores for these applications, by id: three queries however many there are. */
+    /**
+     * Agencies, interview dates, fit scores and study cards due for these applications, by id:
+     * four queries however many there are.
+     */
     private Map<UUID, Extras> extras(List<JobApplication> found) {
         if (found.isEmpty()) return Map.of();
         var agencies = agencies(found);
@@ -189,10 +196,15 @@ public class ApplicationService {
         for (var row : fits.findScores(ids)) {
             scores.put((UUID) row[0], (Integer) row[1]);
         }
+        var studyDue = new HashMap<UUID, Integer>();
+        for (var row : cards.dueByApplication(ids, Instant.now(clock))) {
+            studyDue.put((UUID) row[0], ((Number) row[1]).intValue());
+        }
         var extras = new HashMap<UUID, Extras>();
         for (var id : ids) {
             var dates = nextAndLast.getOrDefault(id, new Instant[2]);
-            extras.put(id, new Extras(agencies.get(id), dates[0], dates[1], scores.get(id)));
+            extras.put(id, new Extras(agencies.get(id), dates[0], dates[1], scores.get(id),
+                    studyDue.getOrDefault(id, 0)));
         }
         return extras;
     }

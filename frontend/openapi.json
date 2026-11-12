@@ -1889,6 +1889,33 @@
         "tags" : [ "Interviews" ]
       }
     },
+    "/api/interviews/{interviewId}/study-cards" : {
+      "post" : {
+        "operationId" : "makeInterviewStudyCards",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "interviewId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MadeCardsResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
+    },
     "/api/matches" : {
       "get" : {
         "operationId" : "listMatches",
@@ -3373,6 +3400,34 @@
         },
         "tags" : [ "Study cards" ]
       }
+    },
+    "/api/study/stories" : {
+      "post" : {
+        "operationId" : "drillStories",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DrillStoriesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MadeCardsResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
     }
   },
   "components" : {
@@ -3610,6 +3665,10 @@
             "type" : "string",
             "format" : "date-time"
           },
+          "studyDue" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "updatedAt" : {
             "type" : "string",
             "format" : "date-time"
@@ -3622,7 +3681,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "allowedTransitions", "appliedAt", "applyBy", "company", "companyId", "createdAt", "employmentType", "fitScore", "followUpOn", "id", "jobDescription", "jobUrl", "lastInterviewAt", "location", "nextInterviewAt", "notes", "postedOn", "remote", "role", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "source", "status", "statusChangedAt", "updatedAt", "version", "viaAgency" ]
+        "required" : [ "allowedTransitions", "appliedAt", "applyBy", "company", "companyId", "createdAt", "employmentType", "fitScore", "followUpOn", "id", "jobDescription", "jobUrl", "lastInterviewAt", "location", "nextInterviewAt", "notes", "postedOn", "remote", "role", "salaryCurrency", "salaryMax", "salaryMin", "salaryPeriod", "salaryText", "source", "status", "statusChangedAt", "studyDue", "updatedAt", "version", "viaAgency" ]
       },
       "BriefResponse" : {
         "type" : "object",
@@ -4147,6 +4206,10 @@
             "type" : "string",
             "format" : "uuid"
           },
+          "kind" : {
+            "type" : "string",
+            "enum" : [ "STANDARD", "STORIES" ]
+          },
           "name" : {
             "type" : "string"
           },
@@ -4163,7 +4226,7 @@
             "format" : "int64"
           }
         },
-        "required" : [ "applicationId", "applicationLabel", "cards", "createdAt", "drafts", "due", "id", "name", "nextDueAt", "updatedAt", "version" ]
+        "required" : [ "applicationId", "applicationLabel", "cards", "createdAt", "drafts", "due", "id", "kind", "name", "nextDueAt", "updatedAt", "version" ]
       },
       "DigestPreviewResponse" : {
         "type" : "object",
@@ -4261,6 +4324,20 @@
           "resumeDocumentId" : {
             "type" : [ "string", "null" ],
             "format" : "uuid"
+          }
+        }
+      },
+      "DrillStoriesRequest" : {
+        "type" : "object",
+        "properties" : {
+          "storyIds" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "type" : "string",
+              "format" : "uuid"
+            },
+            "maxItems" : 500,
+            "minItems" : 0
           }
         }
       },
