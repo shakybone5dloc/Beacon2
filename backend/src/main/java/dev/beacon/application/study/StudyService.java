@@ -2,11 +2,13 @@ package dev.beacon.application.study;
 
 import dev.beacon.contracts.study.CardResponse;
 import dev.beacon.contracts.study.DeckResponse;
+import dev.beacon.domain.interviews.InterviewOutcome;
 import dev.beacon.domain.study.Card;
 import dev.beacon.domain.study.Deck;
 import dev.beacon.domain.study.Grade;
 import dev.beacon.infrastructure.persistence.CardRepository;
 import dev.beacon.infrastructure.persistence.DeckRepository;
+import dev.beacon.infrastructure.persistence.InterviewRepository;
 import dev.beacon.infrastructure.persistence.JobApplicationRepository;
 import dev.beacon.infrastructure.persistence.ReviewRepository;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -29,10 +31,12 @@ public class StudyService {
     private final CardRepository cards;
     private final ReviewRepository reviews;
     private final JobApplicationRepository applications;
+    private final InterviewRepository interviews;
     private final Clock clock;
 
     public StudyService(DeckRepository decks, CardRepository cards, ReviewRepository reviews,
-                        JobApplicationRepository applications, Clock clock) {
+                        JobApplicationRepository applications, InterviewRepository interviews, Clock clock) {
+        this.interviews = interviews;
         this.decks = decks;
         this.cards = cards;
         this.reviews = reviews;
@@ -148,10 +152,20 @@ public class StudyService {
                 throw new StudyException("Keep this draft before studying it.");
             }
             var now = Instant.now(clock);
-            reviews.save(card.review(grade, now));
-            decks.findById(card.getDeckId()).ifPresent(deck -> deck.touch(now));
+            var deck = decks.findById(card.getDeckId()).orElseThrow();
+            reviews.save(card.review(grade, now, nextInterview(deck, now)));
+            deck.touch(now);
             return toResponse(cards.saveAndFlush(card));
         });
+    }
+
+    /** When the deck's application next has an interview, or null when it has none ahead. */
+    private Instant nextInterview(Deck deck, Instant now) {
+        if (deck.getApplicationId() == null) return null;
+        return interviews.findNextAndLast(List.of(deck.getApplicationId()), now, InterviewOutcome.CANCELLED).stream()
+                .findFirst()
+                .map(row -> (Instant) row[1])
+                .orElse(null);
     }
 
     private static void requireVersion(Long current, Long given, String what) {
@@ -172,12 +186,23 @@ public class StudyService {
         var label = deck.getApplicationId() == null ? null : applications.findByIdAndOwnerId(deck.getApplicationId(), ownerId)
                 .map(a -> a.getEmployerLabel() + " – " + a.getRole())
                 .orElse(null);
-        return new DeckResponse(deck.getId(), deck.getName(), deck.getApplicationId(), label,
+        return new DeckResponse(deck.getId(), deck.getName(), deck.getKind(), deck.getApplicationId(), label,
                 counts == null ? 0 : ((Number) counts[1]).longValue(),
                 counts == null || counts[2] == null ? 0 : ((Number) counts[2]).longValue(),
                 counts == null || counts[3] == null ? 0 : ((Number) counts[3]).longValue(),
-                counts == null ? null : (Instant) counts[4],
+                counts == null ? null : instant(counts[4]),
                 deck.getVersion(), deck.getCreatedAt(), deck.getUpdatedAt());
+    }
+
+    /** A timestamp from a native query, whichever type the driver hands back. */
+    static Instant instant(Object value) {
+        return switch (value) {
+            case null -> null;
+            case Instant i -> i;
+            case java.time.OffsetDateTime o -> o.toInstant();
+            case java.sql.Timestamp t -> t.toInstant();
+            default -> throw new IllegalStateException("Not a timestamp: " + value.getClass());
+        };
     }
 
     static CardResponse toResponse(Card c) {

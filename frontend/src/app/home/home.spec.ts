@@ -62,6 +62,7 @@ function aDeck(overrides: Partial<Deck> = {}): Deck {
   return {
     id: 'd1',
     name: 'GHX – Backend Engineer',
+    kind: 'STANDARD',
     applicationId: 'a1',
     applicationLabel: 'GHX – Backend Engineer',
     cards: 4,

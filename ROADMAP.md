@@ -277,11 +277,13 @@ One living prep document per application that moves to interviews, modeled on th
 - Email (or in-app) summary: follow-ups due, stale applications, upcoming interviews, new job matches.
 - Now that Home (B2) shows all of this in the app, A5 is "email me Home weekly": the same sections, sent on a schedule. Needs the Needs attention rules (today in the browser, `applications/attention.ts`) worked out on the server too, so the email and the page agree.
 
-### A6. Study cards (spaced repetition) (done, except the items below)
+### A6. Study cards (spaced repetition) (done)
 - Built as a Study page (`/study`, in the nav) listing decks with what's due, a deck page (drafts to keep or drop, kept cards with when each is next due, a cheat sheet with every answer, cards added or edited by hand) and a study session (Space or Enter reveals, 1-4 grades; a card graded Again goes back in the queue and comes round before the session ends).
 - Scheduling is an SM-2 variant in a pure, unit-tested `Scheduler` (ease from 2.5, floor 1.3; Good gives 1 day, then 3, then interval x ease; Hard x1.2 and a little harder; Easy x ease x 1.3; Again back in 10 minutes and a lapse once learned; capped at a year), skipping the Leitner-box step. `study_decks`, `study_cards` (owner, schedule, `due_at`, index on `(owner_id, due_at)` for kept cards) and `study_reviews` (every grade) in V19.
 - **Make study cards** on a brief: the AI turns its likely questions, refresher, gap and pitch into question/answer cards (structured output, up to 25, metered as "Study cards"), and each story the brief picked from the story bank becomes a "Tell the story" card with its STAR outline, without an AI call. They land as drafts in the application's own deck (one per application), skipping questions the deck already has.
-- Still to do: "Study for this interview" on the interview page and the due count on the board's next-interview chip; promoting an interview's prep notes to cards; scheduling that aims every card to be seen before the interview date.
+- **Aimed at the interview**: when a deck's application has an interview ahead, a card that SM-2 would schedule past it comes back the day before instead (about two hours before, once inside the last day); the interval still grows, so afterwards it returns to its normal pace (`Scheduler.next(schedule, grade, now, interviewAt)`). In that last day every kept card not seen since counts as due, so cards learned before the interview was scheduled get one more look too. The board's next-interview chip adds the count ("Interview tomorrow 2:00 PM · 6 to study", `studyDue` on the application).
+- **Study for this interview** on each interview still ahead: "Study N cards" opens the session when cards are due; otherwise it drafts cards from the brief plus that interview's prep notes, or from the posting and the fit check's gaps when there's no brief, and opens the deck to keep or drop them.
+- **Drill as cards** on the Stories page: a "Tell the story" card for each story (or the ones a tag filter shows) in one Stories deck per user, kept straight away, no AI call. Cards made from a story follow it when it's edited and keep their schedule (V22: `study_decks.kind`).
 - Flashcards to drill before an interview: terms, likely questions and your own STAR stories. Prototyped as the "Interview Recall" page (Oct 29) for the Elevance hiring manager round.
 - `study_decks` and `study_cards` per user: question, answer (markdown), optional link to an application, interview (I1) or company (R0).
 - Cards come from four places: written by hand, made from an interview brief (A1: its likely questions, refresher terms and stories), drilled from the story bank (A7), or promoted from an interview's prep notes. Generated cards land as drafts to review and edit before they're studied.
@@ -295,7 +297,8 @@ One living prep document per application that moves to interviews, modeled on th
 - Built as a Stories page (`/stories`, in the nav): each story has a title, situation, task, action, result, the numbers behind it and tags (lower-cased, so "Leadership" and "leadership" are one), with a tag filter. Anything in square brackets that isn't a link, like `[how many tenants?]`, is listed under the story as "Still to fill in" until it's replaced.
 - AI drafting (one structured-output call, both providers): **Draft from notes** turns rough notes into one story and opens it in the form; **Suggest from my resume** proposes up to five from the default resume, each kept (opened in the form to check) or discarded. Nothing is saved until the user saves it. Drafts never invent numbers; they leave placeholders. Metered as "Story drafts".
 - The brief's Stories section now picks two to four stories from the bank, as written, and adds a "Tie to the role" line for this company; Likely questions point to them by title. With an empty bank it still drafts from the resume and suggests saving them.
-- Still to do: suggesting which stories fit a posting outside the brief (on the application page); drilling stories as study cards (A6).
+- Stories can be drilled as study cards (see A6).
+- Still to do: suggesting which stories fit a posting outside the brief (on the application page).
 - Your STAR stories, kept once and reused across applications: title, situation, task, action, result, the numbers that back it up, and tags for what each answers ("auth you've built", "leadership", "hardest problem", "legacy to cloud").
 - A brief (A1) picks stories by tag for each application and adds a "Tie to <company>" line; the story itself stays shared, so improving it improves every brief that uses it.
 - Gaps get flagged: the Elevance doc's "[how many tenants/roles]" placeholders become a "needs a number" warning on the story until you fill it in.
@@ -305,7 +308,7 @@ One living prep document per application that moves to interviews, modeled on th
 ### A8. Recall practice (builds on A6)
 - Why: A6 trains recognizing an answer (show, reveal, self-grade). Interviews need producing it, out loud, under pressure, including on a low-focus day. A8 adds the missing steps between the two. Planned; nothing built yet.
 - **Order:** A6's open items first (below), then the terminology deck, Type mode with AI grading, Say mode, "Blanked on it" capture, Pressure mode, and the focus check-in.
-- **First, finish A6:** "Study for this interview" on the interview page, scheduling aimed at the interview date, the due count on the board's next-interview chip, and drilling stories as cards.
+- **First, finish A6 (done):** "Study for this interview" on the interview page, scheduling aimed at the interview date, the due count on the board's next-interview chip, and drilling stories as cards.
 - **Terminology deck:** one deck per user (not per application) for terms and concepts. Terms come from the posting, J2's fit gaps and the brief's technical refresher, merged by normalized name across applications, so a term asked about in three postings is one card. Each card: a plain-English definition, when you'd use it and the trade-off, and an optional "I used this when…" line linked to a story (A7). Lands as drafts, like the brief's cards.
 - **Answer modes** on the study session, chosen per session:
   - **Reveal**: today's flow, kept as the low-effort mode.
@@ -385,11 +388,12 @@ A page each user builds in Beacon from their resume and extra details, and share
 - Playwright: log in, add an application, move it, upload a resume, accept an inbox item.
 - Runs in CI against the compose stack.
 
-### X4. Deploy to the home server (built; setup on the server is in progress)
+### X4. Deploy to the home server (done, except the items below)
 - Built as `backend/Dockerfile` (Temurin 21 JRE on Alpine, with Chromium for posting PDFs, run with `--no-sandbox` behind `beacon.capture.no-sandbox`), `frontend/Dockerfile` (nginx serving the Angular build and passing `/api` to the API) and `deploy/` (compose stack: Postgres, API, web, nightly `pg_dump` backups kept 14 days; `update.sh`, `restore.sh`, `migrate-from-pc.ps1`, and a README runbook).
 - Reached over Tailscale: the web app listens only on `127.0.0.1:8790` and `tailscale serve` adds HTTPS, so nothing is exposed to the internet. Spring trusts the proxy's forwarded headers, so session and remember-me cookies are Secure.
 - GitHub Actions (`.github/workflows/ci.yml`) runs both test suites on every push and pull request, and on main pushes `ghcr.io/shakybone5dloc/beacon2-api` and `beacon2-web` tagged `latest` and the commit.
 - Checked locally with the production compose file: sign-in through nginx with Secure cookies, a posting printed to PDF by the containerized Chromium, and a backup deleted-then-restored.
+- Running on the home server since Nov 10 with the data moved over from the PC. Cron runs `update.sh --auto` every 10 minutes: when CI has published new images it backs the database up, recreates the API and web containers, checks they run the new images and logs to `update.log`, so merging into `main` is the whole deploy.
 - Still to do: off-machine copies of backups; monitoring (X2); a public domain when portfolio pages (W3) need one.
 - Containerize API and frontend (nginx serves Angular and proxies `/api`), full compose stack, CI pipeline building images.
 - HTTPS, automated Postgres backups with a tested restore.

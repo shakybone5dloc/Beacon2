@@ -2,6 +2,7 @@ package dev.beacon.domain.study;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.stream.Stream;
 
 /**
  * When to see a card next, after the user grades how well they knew it: a variant of SM-2,
@@ -57,6 +58,32 @@ public final class Scheduler {
         };
         next = Math.min(next, MAX_INTERVAL_DAYS);
         return new Schedule(round(nextEase), next, reps + 1, current.lapses(), now.plus(Duration.ofDays(next)));
+    }
+
+    /**
+     * The last stretch before an interview, when every kept card should be seen once more: the
+     * day before it.
+     */
+    public static final Duration FINAL_LOOK = Duration.ofDays(1);
+    /** The latest a card is brought back before the interview itself. */
+    static final Duration LAST_CALL = Duration.ofHours(2);
+    /** A card isn't brought forward to sooner than this after it was just answered. */
+    static final Duration MIN_GAP = Duration.ofHours(3);
+
+    /**
+     * Like {@link #next(Schedule, Grade, Instant)}, but aimed at an interview: a card that would
+     * next be due after it comes back the day before instead, or about two hours before once
+     * that's passed. The interval still grows as usual, so after the interview the card returns
+     * to its normal pace. With no interview ahead, or one too close to aim at, it's plain SM-2.
+     */
+    public static Schedule next(Schedule current, Grade grade, Instant now, Instant interviewAt) {
+        var plain = next(current, grade, now);
+        if (interviewAt == null || !interviewAt.isAfter(now)) return plain;
+        var target = Stream.of(interviewAt.minus(FINAL_LOOK), interviewAt.minus(LAST_CALL))
+                .filter(at -> !at.isBefore(now.plus(MIN_GAP)))
+                .findFirst();
+        if (target.isEmpty() || !plain.dueAt().isAfter(target.get())) return plain;
+        return new Schedule(plain.ease(), plain.intervalDays(), plain.repetitions(), plain.lapses(), target.get());
     }
 
     private static double round(double ease) {

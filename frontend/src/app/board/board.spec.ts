@@ -208,6 +208,24 @@ describe('Board', () => {
       expect(cardFor(el, 'Acme').querySelector('.chip.interview')?.textContent).toContain(
         'Interview tomorrow 2:00 PM',
       );
+      expect(cardFor(el, 'Acme').querySelector('.chip.interview')?.textContent).not.toContain(
+        'to study',
+      );
+    });
+
+    it('adds the study cards due to the interview chip', async () => {
+      const { el } = await render(
+        anApplication({
+          company: 'Acme',
+          status: 'INTERVIEWING',
+          nextInterviewAt: new Date(Date.now() + 2 * DAY).toISOString(),
+          studyDue: 6,
+        }),
+      );
+
+      expect(cardFor(el, 'Acme').querySelector('.chip.interview')?.textContent).toContain(
+        '· 6 to study',
+      );
     });
 
     it('leaves closed cards without an age and out of the strip', async () => {

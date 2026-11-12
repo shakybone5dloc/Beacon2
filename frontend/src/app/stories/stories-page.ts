@@ -1,9 +1,10 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { problemText } from '../documents/application-documents';
+import { StudyApi } from '../study/study-api';
 import { StoriesApi } from './stories-api';
 import { STAR_PARTS, Story, StoryDraft, tagsFromText } from './story.model';
 
@@ -21,6 +22,8 @@ import { STAR_PARTS, Story, StoryDraft, tagsFromText } from './story.model';
 export class StoriesPage implements OnInit {
   private readonly api = inject(StoriesApi);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly studyApi = inject(StudyApi);
+  private readonly router = inject(Router);
 
   protected readonly stories = signal<Story[] | null>(null);
   protected readonly error = signal<string | null>(null);
@@ -43,6 +46,7 @@ export class StoriesPage implements OnInit {
   protected readonly suggesting = signal(false);
 
   protected readonly tagFilter = signal<string | null>(null);
+  protected readonly drilling = signal(false);
   protected readonly expanded = signal<ReadonlySet<string>>(new Set());
 
   protected readonly form = this.fb.group({
@@ -167,6 +171,27 @@ export class StoriesPage implements OnInit {
         },
         error: (err: HttpErrorResponse) =>
           this.draftError.set(problemText(err, 'Could not draft the story. Try again.')),
+      });
+  }
+
+  /**
+   * Makes a study card for each story shown (all of them, or the tag being filtered by) in the
+   * Stories deck, and opens it.
+   */
+  protected drill(): void {
+    const all = this.tagFilter() == null;
+    this.drilling.set(true);
+    this.draftError.set(null);
+    this.studyApi
+      .drillStories(all ? null : this.shown().map((s) => s.id))
+      .pipe(finalize(() => this.drilling.set(false)))
+      .subscribe({
+        next: (made) =>
+          this.router.navigate(['/study', made.deck.id], {
+            queryParams: { added: made.added, skipped: made.skipped, from: 'stories' },
+          }),
+        error: (err: HttpErrorResponse) =>
+          this.draftError.set(problemText(err, 'Could not make the study cards. Try again.')),
       });
   }
 

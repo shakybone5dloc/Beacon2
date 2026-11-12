@@ -195,7 +195,8 @@
                   <span class="chip interview pill pill-blue"
                     ><span class="material-symbols-outlined !text-[12px]" aria-hidden="true"
                       >event</span
-                    >{{ i.label }}</span
+                    >{{ i.label
+                    }}{{ app.studyDue > 0 ? ' · ' + app.studyDue + ' to study' : '' }}</span
                   >
                 }
                 @if (a?.deadline; as d) {

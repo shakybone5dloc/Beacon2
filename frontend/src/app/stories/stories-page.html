@@ -19,6 +19,18 @@
       <button type="button" class="suggest btn" [disabled]="suggesting()" (click)="suggest()">
         {{ suggesting() ? 'Reading your resume…' : 'Suggest from my resume' }}
       </button>
+      @if (shown().length > 0) {
+        <button
+          type="button"
+          class="drill btn"
+          [disabled]="drilling()"
+          title="A study card for each story, to practice telling it"
+          (click)="drill()"
+        >
+          <span class="material-symbols-outlined !text-base" aria-hidden="true">style</span>
+          {{ tagFilter() ? 'Drill these as cards' : 'Drill as cards' }}
+        </button>
+      }
     </div>
   }
 </header>

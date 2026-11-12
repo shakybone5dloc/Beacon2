@@ -7,25 +7,10 @@ import { DecksPage } from './decks-page';
 import { StudySession } from './study-session';
 import { Card, Deck, dueLabel } from './study.model';
 
+import { aDeck } from './testing';
+
 const PAST = '2026-01-01T00:00:00Z';
 const FUTURE = '2099-01-01T00:00:00Z';
-
-function aDeck(overrides: Partial<Deck> = {}): Deck {
-  return {
-    id: 'd1',
-    name: 'GHX – Senior Java Engineer',
-    applicationId: 'a1',
-    applicationLabel: 'GHX – Senior Java Engineer',
-    cards: 2,
-    due: 1,
-    drafts: 0,
-    nextDueAt: PAST,
-    version: 0,
-    createdAt: PAST,
-    updatedAt: PAST,
-    ...overrides,
-  };
-}
 
 function aCard(overrides: Partial<Card> = {}): Card {
   return {
@@ -110,7 +95,7 @@ describe('study pages', () => {
         { added: '3', skipped: '1' },
       );
       expect(el.querySelector('.notice')?.textContent).toContain(
-        'Made 3 draft cards from the brief; 1 the deck already had were left out.',
+        'Made 3 draft cards from the brief; 1 the deck already had were left out. Keep the ones worth drilling.',
       );
       expect(el.querySelector('.draft .answer li')?.textContent).toBe('Delegated authorization');
 

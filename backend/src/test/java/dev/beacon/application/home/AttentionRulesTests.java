@@ -139,7 +139,7 @@ class AttentionRulesTests {
         ApplicationResponse build() {
             return new ApplicationResponse(UUID.randomUUID(), null, "Acme", role, null, null, null, null, applyBy,
                     followUpOn, null, null, null, null, null, null, null, null, null, null, null, status, NOW, NOW,
-                    changed, nextInterview, lastInterview, null, 0L, List.of());
+                    changed, nextInterview, lastInterview, null, 0, 0L, List.of());
         }
     }
 }

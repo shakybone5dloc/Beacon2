@@ -3,6 +3,8 @@ package dev.beacon.application.stories;
 import dev.beacon.contracts.stories.SaveStoryRequest;
 import dev.beacon.contracts.stories.StoryResponse;
 import dev.beacon.domain.stories.Story;
+import dev.beacon.domain.study.StoryCard;
+import dev.beacon.infrastructure.persistence.CardRepository;
 import dev.beacon.infrastructure.persistence.StoryRepository;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -20,10 +22,12 @@ import java.util.UUID;
 public class StoryService {
 
     private final StoryRepository stories;
+    private final CardRepository cards;
     private final Clock clock;
 
-    public StoryService(StoryRepository stories, Clock clock) {
+    public StoryService(StoryRepository stories, CardRepository cards, Clock clock) {
         this.stories = stories;
+        this.cards = cards;
         this.clock = clock;
     }
 
@@ -56,7 +60,11 @@ public class StoryService {
             if (!Objects.equals(story.getVersion(), request.version())) {
                 throw new OptimisticLockingFailureException("This story was changed somewhere else.");
             }
-            story.apply(fields(request), Instant.now(clock));
+            var now = Instant.now(clock);
+            story.apply(fields(request), now);
+            // Its study cards follow, keeping their schedules: the story is the same, better told.
+            cards.findAllByStoryId(story.getId())
+                    .forEach(card -> card.edit(StoryCard.question(story), StoryCard.answer(story), now));
             return toResponse(stories.saveAndFlush(story));
         });
     }

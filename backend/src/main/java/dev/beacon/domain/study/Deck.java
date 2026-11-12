@@ -10,6 +10,11 @@ import java.util.UUID;
 @Table(name = "study_decks")
 public class Deck {
 
+    /** STORIES is the user's one deck of story-bank cards; every other deck is STANDARD. */
+    public enum Kind { STANDARD, STORIES }
+
+    public static final String STORIES_NAME = "Stories";
+
     @Id
     private UUID id;
 
@@ -20,6 +25,10 @@ public class Deck {
     private String name;
 
     private UUID applicationId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, updatable = false)
+    private Kind kind;
 
     @Version
     private Long version;
@@ -38,8 +47,16 @@ public class Deck {
         deck.ownerId = ownerId;
         deck.name = name.strip();
         deck.applicationId = applicationId;
+        deck.kind = Kind.STANDARD;
         deck.createdAt = now;
         deck.updatedAt = now;
+        return deck;
+    }
+
+    /** The user's deck of stories from the bank, made the first time they drill one. */
+    public static Deck stories(UUID ownerId, Instant now) {
+        var deck = create(ownerId, STORIES_NAME, null, now);
+        deck.kind = Kind.STORIES;
         return deck;
     }
 
@@ -54,6 +71,7 @@ public class Deck {
     public UUID getOwnerId() { return ownerId; }
     public String getName() { return name; }
     public UUID getApplicationId() { return applicationId; }
+    public Kind getKind() { return kind; }
     public Long getVersion() { return version; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
