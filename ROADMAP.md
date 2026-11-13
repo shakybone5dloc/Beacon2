@@ -403,7 +403,7 @@ A page each user builds in Beacon from their resume and extra details, and share
 - HTTPS, automated Postgres backups with a tested restore.
 - Public on the internet with a real domain once other people use Beacon; portfolio pages (W3) are the first part anyone can open without an account.
 
-### X5. Data export and account deletion
+### X5. Data export and account deletion (needed for the beta, see L3)
 - Export everything a user owns (JSON + documents as a zip); delete account and all data.
 - Becomes important once mailbox credentials and email snippets are stored.
 
@@ -418,6 +418,65 @@ Still to do: pausing background jobs at 100% of the budget (none exist yet; J3 s
 - Turns the Oct 30 estimate (about $30/month on gpt-6-sol for 5 applications a day, about $15 with cheaper models for routine jobs) into measured numbers, and shows which features are worth moving to a cheaper model.
 - Earlier is cheaper: start logging with the cover-letter writer that exists today, so every AI feature added later reports from day one.
 - Learning focus: capturing usage from both OpenAI and Anthropic responses behind one interface, an aggregation query by month and feature, and money math with `BigDecimal`.
+
+## Launch: invite-only beta (before posting on LinkedIn)
+
+**Plan (Nov 13):** a free, invite-only beta of the bring-your-own-keys plan ("Open", see Business), found through a LinkedIn post. Testers add their own OpenAI or Anthropic key, so Beacon's only cost is hosting; no payments or plans yet. Production runs on AWS under its own domain, with the database at Supabase (or RDS; see L6). The home server becomes staging.
+
+Most of what's missing isn't features: it's the safety, account and hosting work a single user behind Tailscale never needed. In order, L1-L4 are code that can start now; L5-L7 wait on the name, the domain and the AWS account.
+
+### L1. Isolate posting capture
+- Today "Save posting as PDF" opens any user-given URL in Chromium with JavaScript on, without Chromium's sandbox, inside the API container that also holds `BEACON_SECRET_KEY` and the database password.
+- `PublicUrls` checks the address once, before loading. The page can then redirect, or make requests, to private addresses: the database container, the home network or tailnet, and on AWS the instance metadata service (169.254.169.254), which hands out the server's AWS credentials.
+- The check also misses Tailscale's 100.64.0.0/10 range and private IPv6 (fc00::/7).
+- Fix:
+  - run capture in its own container with no secrets, allowed to reach only the public internet;
+  - widen the address checks in `PublicUrls` and `CareersPageFinder`;
+  - on AWS, require IMDSv2 with a hop limit of 1, so containers can't reach the metadata service, and give the instance role the fewest permissions possible.
+
+### L2. Sign-up and login protection
+- Invite codes: registration needs a code handed out to testers. A public post reaches more people than intended.
+- Rate limits on login and registration (per IP and per account) and a short lockout after repeated failures. Nothing limits attempts today.
+
+### L3. Account export and deletion (X5)
+- Export everything a user owns, and delete an account with all its data. `ai_usage` has no foreign key to `users` (V14), so deletion removes its rows explicitly.
+
+### L4. Security headers and public surface
+- nginx sends none of the usual protections: a content security policy, HSTS, blocking framing (`frame-ancestors`), `Referrer-Policy`, `X-Content-Type-Options`. Add them for the app and the API.
+- Turn off Swagger UI and `/v3/api-docs` in production (the build keeps generating `openapi.json` for the client).
+- Check how uploaded documents are served back: content type, `Content-Disposition: attachment` where it isn't a PDF shown in the viewer, and no HTML or SVG rendered from Beacon's origin.
+
+### L5. Name, domain and email
+- Pick the name (P4) before buying the domain.
+- A verified sending domain: Amazon SES (cheap; ask AWS for production access early, as a new account can only send to verified addresses) or Resend (the current account is in sandbox mode and only delivers to its owner, so the weekly digest would fail for other users today).
+- Then password reset (by emailed link) and email verification at sign-up. Neither exists; a tester who forgets their password is locked out.
+
+### L6. AWS and the database
+- **App server:** one small Lightsail or EC2 instance (about 4 GB for Chromium) running the same compose stack as the home server, minus the database, with `update.sh` and cron as now. Caddy or nginx on the instance for HTTPS rather than a paid load balancer.
+- **Secrets** in AWS Parameter Store rather than `.env`. Keep a copy of `BEACON_SECRET_KEY` somewhere outside AWS: without it, saved API keys can't be read.
+- **Database: Supabase** (the current plan), used as plain Postgres, since Beacon has its own sign-in:
+  - Turn off Supabase's automatic Data API (or confirm it exposes nothing). Beacon's tables are in `public`, and a `public` table without row-level security is readable by anyone with the project's public key.
+  - Connect through the session-mode pooler (works over IPv4 and with Flyway), not transaction mode, which breaks the prepared statements JPA uses. The direct connection may be IPv6-only without the IPv4 add-on.
+  - Same AWS region as the app server; SSL required; Supabase's network restrictions limited to the server's Elastic IP.
+  - The Pro plan, not free: free projects pause when idle and have no backups. Keep a nightly `pg_dump` of our own too (to S3 or the home server) and test a restore.
+  - Documents (up to 10 MB each) are stored in the database, so they count toward its size; they can move to S3 later.
+- **Alternatives** if Supabase stops fitting: RDS on the smallest instance (no public address at all, often free for a new account's first year), or Postgres on the app server (cheapest, but backups and upgrades are ours, as on the home server).
+- **Staging:** the home server keeps following `main`. Production only moves when promoted, by setting `BEACON_TAG` to a commit already running on staging. Migrations can't be undone (V25 drops a column), so nothing reaches testers' data untried.
+
+### L7. Before the post
+- Uptime check and alerts: site down, API unhealthy, disk filling. Error tracking can follow (X2).
+- A first-run guide on an empty board: tracking, the board and the free job sources work with no keys; the AI features need the tester's own key, billed to them (link to the provider guide).
+- A "Send feedback" link (an email to start with).
+- A privacy policy and terms: Beacon stores resumes, encrypted API keys, and personal details about recruiters and interviewers. Say it's a beta and that features may change.
+- Check each keyed job source's terms for use by others through Beacon (P1).
+
+### Soon after the beta starts
+- End-to-end tests of the main flows in CI (X3).
+- Admin basics: list users, disable an account.
+- Error tracking (X2).
+- A phone and accessibility pass on the main pages.
+
+Can wait until after launch: payments and plans (P1-P3), email integration (E1-E6), the AI web sweep (J5), portfolio pages (W1-W4), offer comparison (A4) and the rest of A8.
 
 ## Business (research and decide before opening Beacon to others)
 
