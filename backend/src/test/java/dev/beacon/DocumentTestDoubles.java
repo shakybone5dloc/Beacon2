@@ -144,6 +144,37 @@ public class DocumentTestDoubles {
     }
 
     @Bean
+    FakeAnswerGrader fakeAnswerGrader() {
+        return new FakeAnswerGrader();
+    }
+
+    public static class FakeAnswerGrader implements dev.beacon.application.study.AnswerGrader, Ordered {
+        public final List<Input> inputs = new ArrayList<>();
+
+        @Override
+        public String provider() {
+            return ProviderCatalog.OPENAI;
+        }
+
+        @Override
+        public int getOrder() {
+            return Ordered.HIGHEST_PRECEDENCE;
+        }
+
+        @Override
+        public Verdict grade(Input input, String apiKey, AiUsageMeter meter) {
+            meter.record(FakeCoverLetterWriter.USAGE);
+            inputs.add(input);
+            return new Verdict(dev.beacon.domain.study.Grade.HARD, "- Right idea\n- Missed the redirect",
+                    "PKCE stops a stolen code being swapped for a token.");
+        }
+
+        public void reset() {
+            inputs.clear();
+        }
+    }
+
+    @Bean
     FakeCheckInWriter fakeCheckInWriter() {
         return new FakeCheckInWriter();
     }

@@ -1,6 +1,23 @@
-<p>
+<div class="mb-space-sm flex flex-wrap items-center justify-between gap-space-sm">
   <a [routerLink]="['/study', id()]" class="back">← {{ deck()?.name ?? 'Deck' }}</a>
-</p>
+  <div class="modes flex gap-space-xs" role="radiogroup" aria-label="How to answer">
+    @for (m of modes; track m.mode) {
+      <button
+        type="button"
+        role="radio"
+        class="mode btn btn-sm"
+        [class.btn-primary]="mode() === m.mode"
+        [attr.aria-checked]="mode() === m.mode"
+        [attr.aria-label]="m.label"
+        [disabled]="revealed()"
+        [title]="m.hint"
+        (click)="setMode(m.mode)"
+      >
+        {{ m.label }}
+      </button>
+    }
+  </div>
+</div>
 
 @if (error(); as message) {
   <p class="notice">{{ message }}</p>
@@ -14,7 +31,53 @@
     <article class="session-card card grid gap-space-lg p-space-xl">
       <p class="question m-0 text-headline-md text-on-surface">{{ card.question }}</p>
 
+      @if (mode() === 'TYPE') {
+        <label class="grid gap-space-xs">
+          <span class="text-body-sm text-on-surface-variant">Your answer</span>
+          <textarea
+            class="typed-answer"
+            rows="5"
+            [ngModel]="typed()"
+            (ngModelChange)="typed.set($event)"
+            [readonly]="revealed()"
+            placeholder="Write it as you'd say it in the interview."
+          ></textarea>
+        </label>
+      }
+
       @if (revealed()) {
+        @if (mode() === 'TYPE') {
+          @if (checking()) {
+            <p class="checking m-0 text-body-sm text-on-surface-variant" role="status">
+              Checking your answer…
+            </p>
+          } @else if (check(); as c) {
+            <section
+              class="ai-check grid gap-space-sm rounded-md border border-hairline bg-surface-container-low p-space-md"
+              aria-label="What the AI thought"
+            >
+              <p class="suggested m-0 font-semibold">
+                Suggested: {{ gradeLabel(c.suggestedGrade) }}
+                <span class="font-normal text-body-sm text-on-surface-variant">
+                  · your call, pick any grade below</span
+                >
+              </p>
+              <div class="feedback markdown text-body-sm" [innerHTML]="feedbackHtml()"></div>
+              @if (c.tighter) {
+                <p class="tighter m-0 text-body-sm">
+                  <span class="text-on-surface-variant">Tighter:</span> {{ c.tighter }}
+                </p>
+              }
+            </section>
+          } @else if (checkError(); as message) {
+            <p class="check-error m-0 text-body-sm text-error" role="alert">{{ message }}</p>
+          } @else if (!canCheck() && typed().trim()) {
+            <p class="no-key m-0 text-body-sm text-on-surface-variant">
+              Compare it yourself. To have the AI suggest a grade, add a key under
+              <a routerLink="/settings/api-keys">Settings · API keys</a>.
+            </p>
+          }
+        }
         <div
           class="answer markdown border-t border-hairline pt-space-md"
           [innerHTML]="answerHtml()"
@@ -24,8 +87,8 @@
             <button
               type="button"
               class="grade btn h-auto flex-col py-space-sm"
-              [class.btn-primary]="g.grade === 'GOOD'"
-              [disabled]="grading()"
+              [class.btn-primary]="g.grade === highlighted()"
+              [disabled]="grading() || checking()"
               [title]="g.hint"
               (click)="grade(g.grade)"
             >
@@ -34,6 +97,11 @@
             </button>
           }
         </div>
+      } @else if (mode() === 'TYPE') {
+        <button type="button" class="reveal btn btn-primary justify-self-start" (click)="reveal()">
+          {{ typed().trim() && canCheck() ? 'Check my answer' : 'Show answer' }}
+          <span class="kbd">Ctrl+Enter</span>
+        </button>
       } @else {
         <p class="m-0 text-body-sm text-on-surface-variant">Answer out loud, then reveal.</p>
         <button type="button" class="reveal btn btn-primary justify-self-start" (click)="reveal()">

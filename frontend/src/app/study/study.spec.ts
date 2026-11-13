@@ -146,15 +146,32 @@ describe('study pages', () => {
   });
 
   describe('StudySession', () => {
-    async function open(cards: Card[]) {
+    async function open(cards: Card[], gradingAvailable = false) {
       configure();
       const fixture = TestBed.createComponent(StudySession);
       fixture.componentRef.setInput('id', 'd1');
       fixture.detectChanges();
       http.expectOne('/api/study/decks/d1').flush(aDeck());
       http.expectOne('/api/study/decks/d1/due').flush(cards);
+      http.expectOne('/api/study/recall-grading').flush({ available: gradingAvailable });
       await fixture.whenStable();
       return { fixture, el: fixture.nativeElement as HTMLElement };
+    }
+
+    beforeEach(() => localStorage.removeItem('beacon.study.mode'));
+
+    /** Switches to Type mode and types an answer. */
+    async function typeAnswer(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }, el: HTMLElement, text: string) {
+      Array.from(el.querySelectorAll<HTMLButtonElement>('.modes .mode'))
+        .find((b) => b.textContent?.trim() === 'Type')!
+        .click();
+      fixture.detectChanges();
+      const box = el.querySelector<HTMLTextAreaElement>('.typed-answer')!;
+      box.value = text;
+      box.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      return box;
     }
 
     function press(key: string) {
@@ -174,7 +191,13 @@ describe('study pages', () => {
 
       press('3');
       const req = http.expectOne('/api/study/cards/c1/review');
-      expect(req.request.body).toEqual({ grade: 'GOOD' });
+      expect(req.request.body).toEqual({
+        grade: 'GOOD',
+        mode: 'REVEAL',
+        answer: null,
+        suggestedGrade: null,
+        feedback: null,
+      });
       req.flush(aCard({ dueAt: FUTURE, intervalDays: 1 }));
       await fixture.whenStable();
 
@@ -201,6 +224,81 @@ describe('study pages', () => {
       expect(el.querySelector('.done .summary')?.textContent).toContain(
         '1 card studied, 1 missed and repeated',
       );
+    });
+
+    it('in Type mode, has the AI check the answer and keeps the grade the user picks', async () => {
+      const { fixture, el } = await open([aCard(), aCard({ id: 'c2', question: 'Your pitch' })], true);
+      const box = await typeAnswer(fixture, el, ' Letting an app act for you ');
+      expect(el.querySelector('button.reveal')?.textContent).toContain('Check my answer');
+
+      // Ctrl+Enter from the answer box checks it.
+      box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true }));
+      fixture.detectChanges();
+      expect(el.querySelector('.checking')).not.toBeNull();
+      const check = http.expectOne((r) => r.method === 'POST' && r.url === '/api/study/cards/c1/check');
+      expect(check.request.body).toEqual({ answer: 'Letting an app act for you' });
+      check.flush({ suggestedGrade: 'HARD', feedback: '- Missed scopes', tighter: 'OAuth lets an app act for you.' });
+      fixture.detectChanges();
+
+      expect(el.querySelector('.suggested')?.textContent).toContain('Suggested: Hard');
+      expect(el.querySelector('.feedback li')?.textContent).toBe('Missed scopes');
+      expect(el.querySelector('.tighter')?.textContent).toContain('OAuth lets an app act for you.');
+      expect(el.querySelector('button.grade.btn-primary')?.textContent).toContain('Hard');
+      expect(el.querySelector('.answer li')?.textContent).toBe('Delegated authorization');
+
+      // The user disagrees and picks Good.
+      press('3');
+      const review = http.expectOne('/api/study/cards/c1/review');
+      expect(review.request.body).toEqual({
+        grade: 'GOOD',
+        mode: 'TYPE',
+        answer: 'Letting an app act for you',
+        suggestedGrade: 'HARD',
+        feedback: '- Missed scopes',
+      });
+      review.flush(aCard({ dueAt: FUTURE }));
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      // The next card starts blank, and the mode is remembered.
+      expect(el.querySelector('.question')?.textContent).toBe('Your pitch');
+      expect(el.querySelector<HTMLTextAreaElement>('.typed-answer')!.value).toBe('');
+      expect(el.querySelector('.ai-check')).toBeNull();
+      expect(localStorage.getItem('beacon.study.mode')).toBe('TYPE');
+    });
+
+    it('in Type mode without a key, reveals for self-grading and says how to get suggestions', async () => {
+      const { fixture, el } = await open([aCard()]);
+      await typeAnswer(fixture, el, 'Delegation');
+      expect(el.querySelector('button.reveal')?.textContent).toContain('Show answer');
+
+      el.querySelector<HTMLButtonElement>('button.reveal')!.click();
+      fixture.detectChanges();
+
+      http.expectNone('/api/study/cards/c1/check');
+      expect(el.querySelector('.no-key a')?.getAttribute('href')).toBe('/settings/api-keys');
+      expect(el.querySelector('button.grade.btn-primary')?.textContent).toContain('Good');
+      el.querySelectorAll<HTMLButtonElement>('button.grade')[1].click();
+      expect(http.expectOne('/api/study/cards/c1/review').request.body).toMatchObject({
+        grade: 'HARD',
+        mode: 'TYPE',
+        answer: 'Delegation',
+        suggestedGrade: null,
+      });
+    });
+
+    it('lets the user grade when the check fails', async () => {
+      const { fixture, el } = await open([aCard()], true);
+      await typeAnswer(fixture, el, 'Delegation');
+
+      el.querySelector<HTMLButtonElement>('button.reveal')!.click();
+      http
+        .expectOne('/api/study/cards/c1/check')
+        .flush({ detail: 'The AI returned a reply Beacon couldn\'t read. Try again.' }, { status: 502, statusText: 'Bad Gateway' });
+      fixture.detectChanges();
+
+      expect(el.querySelector('.check-error')?.textContent).toContain("couldn't read");
+      expect(el.querySelectorAll<HTMLButtonElement>('button.grade')[2].disabled).toBe(false);
     });
 
     it('says when nothing is due', async () => {

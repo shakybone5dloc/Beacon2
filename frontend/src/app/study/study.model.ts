@@ -5,6 +5,14 @@ export type Deck = api.DeckResponse;
 export type Card = api.CardResponse;
 export type MadeCards = api.MadeCardsResponse;
 export type Grade = api.ReviewCardRequest['grade'];
+export type AnswerCheck = api.AnswerCheckResponse;
+/** How a card is answered before the reveal. Say mode comes later. */
+export type AnswerMode = 'REVEAL' | 'TYPE';
+
+export const ANSWER_MODES: { mode: AnswerMode; label: string; hint: string }[] = [
+  { mode: 'REVEAL', label: 'Reveal', hint: 'Answer in your head or out loud, then reveal and grade yourself' },
+  { mode: 'TYPE', label: 'Type', hint: 'Write your answer first; with a key, the AI suggests a grade' },
+];
 
 /** The four grades, with the key that gives each in a study session. */
 export const GRADES: { grade: Grade; label: string; key: string; hint: string }[] = [

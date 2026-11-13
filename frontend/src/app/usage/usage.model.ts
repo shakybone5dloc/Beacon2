@@ -13,6 +13,7 @@ export const FEATURE_LABELS: Record<string, string> = {
   STUDY_CARDS: 'Study cards',
   RESUME_TAILORING: 'Resume tailoring',
   CHECK_IN_EMAIL: 'Check-in emails',
+  RECALL_GRADING: 'Recall grading',
 };
 
 /** Warn from here; the meter turns red once the budget is used up. */

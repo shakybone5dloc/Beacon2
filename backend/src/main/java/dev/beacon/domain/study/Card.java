@@ -108,12 +108,12 @@ public class Card {
      * Grades the card and schedules its next review, aimed at the interview when there's one
      * ahead (null when not); returns the grade's record.
      */
-    public Review review(Grade grade, Instant now, Instant interviewAt) {
+    public Review review(Grade grade, Instant now, Instant interviewAt, Review.Answer answer) {
         var current = new Schedule(ease.doubleValue(), intervalDays, repetitions, lapses, dueAt);
         schedule(Scheduler.next(current, grade, now, interviewAt));
         lastReviewedAt = now;
         updatedAt = now;
-        return Review.of(id, grade, intervalDays, now);
+        return Review.of(id, grade, intervalDays, now, answer);
     }
 
     private void schedule(Schedule s) {
