@@ -6,12 +6,13 @@ export type Card = api.CardResponse;
 export type MadeCards = api.MadeCardsResponse;
 export type Grade = api.ReviewCardRequest['grade'];
 export type AnswerCheck = api.AnswerCheckResponse;
-/** How a card is answered before the reveal. Say mode comes later. */
-export type AnswerMode = 'REVEAL' | 'TYPE';
+/** How a card is answered before the reveal. */
+export type AnswerMode = 'REVEAL' | 'TYPE' | 'SAY';
 
 export const ANSWER_MODES: { mode: AnswerMode; label: string; hint: string }[] = [
   { mode: 'REVEAL', label: 'Reveal', hint: 'Answer in your head or out loud, then reveal and grade yourself' },
   { mode: 'TYPE', label: 'Type', hint: 'Write your answer first; with a key, the AI suggests a grade' },
+  { mode: 'SAY', label: 'Say', hint: 'Say your answer out loud; the browser writes it down, then it is checked like a typed one' },
 ];
 
 /** The four grades, with the key that gives each in a study session. */

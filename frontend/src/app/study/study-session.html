@@ -9,8 +9,12 @@
         [class.btn-primary]="mode() === m.mode"
         [attr.aria-checked]="mode() === m.mode"
         [attr.aria-label]="m.label"
-        [disabled]="revealed()"
-        [title]="m.hint"
+        [disabled]="revealed() || (m.mode === 'SAY' && !speech.supported)"
+        [title]="
+          m.mode === 'SAY' && !speech.supported
+            ? 'This browser can\'t turn speech into text. Chrome and Edge can.'
+            : m.hint
+        "
         (click)="setMode(m.mode)"
       >
         {{ m.label }}
@@ -31,22 +35,54 @@
     <article class="session-card card grid gap-space-lg p-space-xl">
       <p class="question m-0 text-headline-md text-on-surface">{{ card.question }}</p>
 
-      @if (mode() === 'TYPE') {
+      @if (mode() === 'SAY' && !revealed()) {
+        <div class="flex flex-wrap items-center gap-space-sm">
+          <button
+            type="button"
+            class="mic btn"
+            [class.btn-primary]="!speech.listening()"
+            [attr.aria-pressed]="speech.listening()"
+            (click)="toggleMic($event)"
+          >
+            <span class="material-symbols-outlined !text-base" aria-hidden="true">{{
+              speech.listening() ? 'stop_circle' : 'mic'
+            }}</span>
+            {{ speech.listening() ? 'Stop' : typed().trim() ? 'Keep talking' : 'Start speaking' }}
+          </button>
+          @if (speech.listening()) {
+            <span class="listening text-body-sm text-error" role="status">● Listening…</span>
+          }
+        </div>
+        @if (speech.error(); as message) {
+          <p class="speech-error m-0 text-body-sm text-error" role="alert">{{ message }}</p>
+        }
+      }
+      @if (writesAnswer()) {
         <label class="grid gap-space-xs">
           <span class="text-body-sm text-on-surface-variant">Your answer</span>
           <textarea
             class="typed-answer"
             rows="5"
-            [ngModel]="typed()"
+            [ngModel]="shownAnswer()"
             (ngModelChange)="typed.set($event)"
-            [readonly]="revealed()"
-            placeholder="Write it as you'd say it in the interview."
+            [readonly]="revealed() || speech.listening()"
+            [placeholder]="
+              mode() === 'SAY'
+                ? 'What you say shows up here. Fix any misheard words before checking.'
+                : 'Write it as you\'d say it in the interview.'
+            "
           ></textarea>
         </label>
+        @if (mode() === 'SAY' && !revealed()) {
+          <p class="speech-note m-0 text-body-sm text-on-surface-variant">
+            Your browser turns your speech into text. Chrome and Edge send the audio to their
+            speech service to do it.
+          </p>
+        }
       }
 
       @if (revealed()) {
-        @if (mode() === 'TYPE') {
+        @if (writesAnswer()) {
           @if (checking()) {
             <p class="checking m-0 text-body-sm text-on-surface-variant" role="status">
               Checking your answer…
@@ -97,7 +133,7 @@
             </button>
           }
         </div>
-      } @else if (mode() === 'TYPE') {
+      } @else if (writesAnswer()) {
         <button type="button" class="reveal btn btn-primary justify-self-start" (click)="reveal()">
           {{ typed().trim() && canCheck() ? 'Check my answer' : 'Show answer' }}
           <span class="kbd">Ctrl+Enter</span>
