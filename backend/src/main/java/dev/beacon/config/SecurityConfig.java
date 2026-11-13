@@ -47,6 +47,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.spa())
                 .securityContext(context -> context.securityContextRepository(contextRepository))
                 .exceptionHandling(errors -> errors.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                // Beacon's own pages may show its files in a frame (the saved posting PDF on the
+                // application page); other sites still can't. Spring's default, DENY, blocks both.
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin())
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors 'self'")))
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 // Signs the user back in from the remember-me cookie when the session is gone; sign-out clears it.

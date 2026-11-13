@@ -79,6 +79,31 @@ class PostingCaptureAndCoverLetterApiTests extends SignedInApiTests {
     }
 
     @Test
+    void aBlockedPageIsReportedAndNotSaved() {
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL + "\"}");
+        // Indeed's page when it turns a headless browser away, behind Cloudflare.
+        printer.pageLines = new String[]{"indeed", "Find jobs", "Company Reviews", "Request Blocked",
+                "You have been blocked. If you believe this in error, please go to support.indeed.com",
+                "Your Ray ID for this request is a5a112d03a978638", "Return home", "Troubleshooting Cloudflare Errors"};
+
+        var result = capture(appId);
+
+        assertThat(result).hasStatus(HttpStatus.BAD_GATEWAY);
+        assertThat(result).bodyJson().extractingPath("$.detail").asString().contains("print it to PDF and upload it");
+        assertThat(mvc.get().uri("/api/applications/{id}/documents", appId).exchange())
+                .bodyJson().extractingPath("$").asArray().isEmpty();
+    }
+
+    @Test
+    void aSavedFileMayBeShownInBeaconsOwnPagesButNotFramedElsewhere() {
+        var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL + "\"}");
+        var result = mvc.get().uri("/api/applications/{id}/documents", appId).exchange();
+
+        assertThat(result).headers().hasValue("X-Frame-Options", "SAMEORIGIN");
+        assertThat(result).headers().hasValue("Content-Security-Policy", "frame-ancestors 'self'");
+    }
+
+    @Test
     void aBotCheckPageIsReportedAndNotSaved() {
         var appId = createApplication("{\"companyName\": \"Acme\", \"role\": \"Engineer\", \"jobUrl\": \"" + JOB_URL + "\"}");
         printer.pageLines = new String[]{"himalayas.app", "Performing security verification",
