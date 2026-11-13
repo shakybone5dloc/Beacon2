@@ -1,9 +1,20 @@
-import { Component, computed, HostListener, inject, input, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  HostListener,
+  inject,
+  input,
+  OnInit,
+  signal,
+  untracked,
+} from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { renderMarkdown } from '../briefs/brief.model';
 import { problemText } from '../documents/application-documents';
+import { SpeechInput } from './speech-input';
 import { StudyApi } from './study-api';
 import {
   ANSWER_MODES,
@@ -21,7 +32,8 @@ const MODE_KEY = 'beacon.study.mode';
 /**
  * Studying a deck's due cards. In Reveal mode: read the question, answer out loud, reveal,
  * grade. In Type mode: write the answer first; on reveal the AI (with the user's key) compares
- * it with the card and suggests a grade and a tighter way to say it. The user confirms or picks
+ * it with the card and suggests a grade and a tighter way to say it. Say mode is Type mode
+ * spoken: the browser turns speech into text, which can be fixed before it's checked. The user confirms or picks
  * another grade, and only that grade schedules the card. A card graded Again goes back in the
  * queue and comes round again before the session ends.
  * Space or Enter reveals; Ctrl+Enter reveals from the answer box; 1 to 4 grade.
@@ -30,10 +42,12 @@ const MODE_KEY = 'beacon.study.mode';
   selector: 'app-study-session',
   imports: [FormsModule, RouterLink],
   templateUrl: './study-session.html',
+  providers: [SpeechInput],
   host: { class: 'block max-w-2xl mx-auto' },
 })
 export class StudySession implements OnInit {
   private readonly api = inject(StudyApi);
+  protected readonly speech = inject(SpeechInput);
 
   /** The deck's id, from the route. */
   readonly id = input.required<string>();
@@ -47,8 +61,8 @@ export class StudySession implements OnInit {
   protected readonly studied = signal<ReadonlySet<string>>(new Set());
   protected readonly missed = signal<ReadonlySet<string>>(new Set());
 
-  protected readonly mode = signal<AnswerMode>(savedMode());
-  /** What the user typed for the current card, in Type mode. */
+  protected readonly mode = signal<AnswerMode>(savedMode(this.speech.supported));
+  /** What the user typed or said for the current card, in Type and Say mode. */
   protected readonly typed = signal('');
   /** Whether the user has a key, so typed answers can be checked. */
   protected readonly canCheck = signal(false);
@@ -63,6 +77,23 @@ export class StudySession implements OnInit {
   protected readonly feedbackHtml = computed(() => renderMarkdown(this.check()?.feedback ?? ''));
   /** The grade to highlight: the AI's suggestion when there is one, otherwise Good. */
   protected readonly highlighted = computed<Grade>(() => this.check()?.suggestedGrade ?? 'GOOD');
+  /** Type and Say both write an answer before the reveal. */
+  protected readonly writesAnswer = computed(() => this.mode() !== 'REVEAL');
+  /** The answer box: what's been said, plus the words still being recognized. */
+  protected readonly shownAnswer = computed(() => {
+    const pending = this.speech.interim();
+    return pending ? `${this.typed()} ${pending}`.trim() : this.typed();
+  });
+
+  constructor() {
+    // What's been said lands in the answer box, where it can be fixed by hand.
+    effect(() => {
+      const said = this.speech.text();
+      untracked(() => {
+        if (this.mode() === 'SAY') this.typed.set(said);
+      });
+    });
+  }
 
   ngOnInit(): void {
     this.api.deck(this.id()).subscribe((deck) => this.deck.set(deck));
@@ -102,6 +133,8 @@ export class StudySession implements OnInit {
   }
 
   protected setMode(mode: AnswerMode): void {
+    if (mode === 'SAY' && !this.speech.supported) return;
+    if (this.mode() === 'SAY') this.speech.stop();
     this.mode.set(mode);
     try {
       localStorage.setItem(MODE_KEY, mode);
@@ -110,14 +143,31 @@ export class StudySession implements OnInit {
     }
   }
 
-  /** Shows the answer; in Type mode with something typed, also asks the AI for a grade. */
+  /** Starts or stops listening; speaking again adds to what's already there. */
+  protected toggleMic(event: Event): void {
+    // Leave the button, so Space reveals instead of pressing it again.
+    (event.currentTarget as HTMLElement | null)?.blur?.();
+    if (this.speech.listening()) {
+      this.speech.stop();
+    } else {
+      this.speech.text.set(this.typed());
+      this.speech.start();
+    }
+  }
+
+  /** Shows the answer; in Type or Say mode with an answer, also asks the AI for a grade. */
   protected reveal(): void {
+    if (this.speech.listening()) {
+      // Words still being recognized count as said.
+      this.typed.set(this.shownAnswer());
+      this.speech.stop();
+    }
     this.revealed.set(true);
     // Leave the answer box so 1 to 4 grade straight away.
     (document.activeElement as HTMLElement | null)?.blur?.();
     const card = this.current();
     const answer = this.typed().trim();
-    if (!card || this.mode() !== 'TYPE' || !answer || !this.canCheck()) return;
+    if (!card || !this.writesAnswer() || !answer || !this.canCheck()) return;
     this.checking.set(true);
     this.api.check(card.id, answer).subscribe({
       next: (check) => {
@@ -136,15 +186,17 @@ export class StudySession implements OnInit {
     const card = this.current();
     if (!card) return;
     this.grading.set(true);
+    const mode = this.mode();
     const answer =
-      this.mode() === 'TYPE'
-        ? { mode: 'TYPE' as const, text: this.typed().trim(), check: this.check() }
-        : { mode: 'REVEAL' as const };
+      mode === 'REVEAL'
+        ? { mode }
+        : { mode, text: this.typed().trim(), check: this.check() };
     this.api.review(card.id, grade, answer).subscribe({
       next: (graded) => {
         this.grading.set(false);
         this.revealed.set(false);
         this.typed.set('');
+        this.speech.reset();
         this.check.set(null);
         this.checkError.set(null);
         this.studied.update((ids) => new Set(ids).add(card.id));
@@ -167,9 +219,12 @@ export class StudySession implements OnInit {
   }
 }
 
-function savedMode(): AnswerMode {
+/** The mode picked last time; Say falls back to Type where the browser can't listen. */
+function savedMode(canListen: boolean): AnswerMode {
   try {
-    return localStorage.getItem(MODE_KEY) === 'TYPE' ? 'TYPE' : 'REVEAL';
+    const saved = localStorage.getItem(MODE_KEY);
+    if (saved === 'SAY') return canListen ? 'SAY' : 'TYPE';
+    return saved === 'TYPE' ? 'TYPE' : 'REVEAL';
   } catch {
     return 'REVEAL';
   }

@@ -159,6 +159,10 @@ describe('study pages', () => {
     }
 
     beforeEach(() => localStorage.removeItem('beacon.study.mode'));
+    afterEach(() => {
+      delete (globalThis as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
+      FakeRecognizer.last = null;
+    });
 
     /** Switches to Type mode and types an answer. */
     async function typeAnswer(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }, el: HTMLElement, text: string) {
@@ -301,6 +305,104 @@ describe('study pages', () => {
       expect(el.querySelectorAll<HTMLButtonElement>('button.grade')[2].disabled).toBe(false);
     });
 
+    it('in Say mode, writes down what is said, lets it be fixed, and checks it like a typed answer', async () => {
+      (globalThis as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition = FakeRecognizer;
+      const { fixture, el } = await open([aCard()], true);
+      Array.from(el.querySelectorAll<HTMLButtonElement>('.modes .mode'))
+        .find((b) => b.textContent?.trim() === 'Say')!
+        .click();
+      fixture.detectChanges();
+      expect(el.querySelector('.mic')?.textContent).toContain('Start speaking');
+
+      el.querySelector<HTMLButtonElement>('.mic')!.click();
+      fixture.detectChanges();
+      const recognizer = FakeRecognizer.last!;
+      expect(recognizer.started).toBe(true);
+      expect(recognizer.continuous).toBe(true);
+      expect(el.querySelector('.listening')).not.toBeNull();
+
+      recognizer.say([{ text: 'it lets an app', final: true }, { text: ' act for', final: false }]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const box = el.querySelector<HTMLTextAreaElement>('.typed-answer')!;
+      expect(box.value).toBe('it lets an app act for');
+      expect(box.readOnly).toBe(true);
+
+      el.querySelector<HTMLButtonElement>('.mic')!.click();
+      recognizer.say([{ text: 'it lets an app act for you', final: true }]);
+      recognizer.end();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(box.readOnly).toBe(false);
+      expect(el.querySelector('.mic')?.textContent).toContain('Keep talking');
+
+      // A misheard word fixed by hand.
+      box.value = 'It lets an app act for you, with scopes';
+      box.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('button.reveal')!.click();
+      const check = http.expectOne('/api/study/cards/c1/check');
+      expect(check.request.body).toEqual({ answer: 'It lets an app act for you, with scopes' });
+      check.flush({ suggestedGrade: 'GOOD', feedback: '- Right', tighter: 'OAuth delegates access.' });
+      fixture.detectChanges();
+
+      press('3');
+      expect(http.expectOne('/api/study/cards/c1/review').request.body).toMatchObject({
+        grade: 'GOOD',
+        mode: 'SAY',
+        answer: 'It lets an app act for you, with scopes',
+        suggestedGrade: 'GOOD',
+      });
+      expect(localStorage.getItem('beacon.study.mode')).toBe('SAY');
+    });
+
+    it('revealing while still listening keeps the last words', async () => {
+      (globalThis as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition = FakeRecognizer;
+      localStorage.setItem('beacon.study.mode', 'SAY');
+      const { fixture, el } = await open([aCard()]);
+
+      el.querySelector<HTMLButtonElement>('.mic')!.click();
+      FakeRecognizer.last!.say([{ text: 'delegated', final: true }, { text: ' access', final: false }]);
+      fixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('button.reveal')!.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(FakeRecognizer.last!.stopped).toBe(true);
+      expect(el.querySelector<HTMLTextAreaElement>('.typed-answer')!.value).toBe('delegated access');
+      el.querySelectorAll<HTMLButtonElement>('button.grade')[2].click();
+      expect(http.expectOne('/api/study/cards/c1/review').request.body).toMatchObject({
+        mode: 'SAY',
+        answer: 'delegated access',
+      });
+    });
+
+    it('explains a blocked microphone', async () => {
+      (globalThis as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition = FakeRecognizer;
+      localStorage.setItem('beacon.study.mode', 'SAY');
+      const { fixture, el } = await open([aCard()]);
+
+      el.querySelector<HTMLButtonElement>('.mic')!.click();
+      FakeRecognizer.last!.fail('not-allowed');
+      fixture.detectChanges();
+
+      expect(el.querySelector('.speech-error')?.textContent).toContain('Microphone access is blocked');
+      expect(el.querySelector('.listening')).toBeNull();
+    });
+
+    it('offers no Say mode where the browser cannot listen, falling back to Type', async () => {
+      localStorage.setItem('beacon.study.mode', 'SAY');
+      const { el } = await open([aCard()]);
+
+      const say = Array.from(el.querySelectorAll<HTMLButtonElement>('.modes .mode')).find(
+        (b) => b.textContent?.trim() === 'Say',
+      )!;
+      expect(say.disabled).toBe(true);
+      expect(say.title).toContain('Chrome and Edge');
+      expect(el.querySelector('.modes .mode.btn-primary')?.textContent?.trim()).toBe('Type');
+      expect(el.querySelector('.mic')).toBeNull();
+    });
+
     it('says when nothing is due', async () => {
       const { el } = await open([]);
 
@@ -308,3 +410,50 @@ describe('study pages', () => {
     });
   });
 });
+
+/** Stands in for the browser's speech recognition, driven by the test. */
+class FakeRecognizer {
+  static last: FakeRecognizer | null = null;
+  lang = '';
+  continuous = false;
+  interimResults = false;
+  started = false;
+  stopped = false;
+  onresult: ((event: unknown) => void) | null = null;
+  onerror: ((event: { error: string }) => void) | null = null;
+  onend: (() => void) | null = null;
+
+  constructor() {
+    FakeRecognizer.last = this;
+  }
+
+  start() {
+    this.started = true;
+  }
+
+  stop() {
+    this.stopped = true;
+    this.end();
+  }
+
+  abort() {
+    this.stopped = true;
+  }
+
+  /** Everything recognized so far in this run, as the browser reports it each time. */
+  say(results: { text: string; final: boolean }[]) {
+    this.onresult?.({
+      resultIndex: 0,
+      results: results.map((r) => ({ isFinal: r.final, 0: { transcript: r.text } })),
+    });
+  }
+
+  fail(error: string) {
+    this.onerror?.({ error });
+    this.end();
+  }
+
+  end() {
+    this.onend?.();
+  }
+}
