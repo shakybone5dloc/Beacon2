@@ -5,6 +5,7 @@ import dev.beacon.application.documents.PostingCaptureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -22,8 +23,12 @@ import java.util.stream.Stream;
 /**
  * Prints pages with an installed Chrome or Edge running headless, the same as
  * the browser's own Print → Save as PDF. No extra browser download needed.
+ * For running Beacon on your own machine; the deployed stack sets
+ * {@code beacon.capture.url} and prints with the isolated capture service instead
+ * ({@link RemotePdfPrinter}), as a page opened here can reach this machine's network.
  */
 @Component
+@ConditionalOnExpression("'${beacon.capture.url:}' == ''")
 public class HeadlessBrowserPdfPrinter implements PdfPrinter {
 
     private static final Logger log = LoggerFactory.getLogger(HeadlessBrowserPdfPrinter.class);

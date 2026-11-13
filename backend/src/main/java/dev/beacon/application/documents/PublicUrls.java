@@ -1,5 +1,7 @@
 package dev.beacon.application.documents;
 
+import dev.beacon.domain.net.NetworkAddresses;
+
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -32,8 +34,7 @@ final class PublicUrls {
 
         try {
             for (var address : InetAddress.getAllByName(uri.getHost())) {
-                if (address.isLoopbackAddress() || address.isSiteLocalAddress() || address.isLinkLocalAddress()
-                        || address.isAnyLocalAddress() || address.isMulticastAddress()) {
+                if (NetworkAddresses.isPrivate(address)) {
                     throw new PostingCaptureException("That URL points at a private network address.", false);
                 }
             }

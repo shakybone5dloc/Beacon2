@@ -58,6 +58,9 @@ else
     log "New version found; restarting"
 fi
 
+# Beacon's own services (built by CI), as opposed to Postgres and the backups.
+beacon_services="api web capture capture-proxy"
+
 run() {
     if $auto; then "$@" > /dev/null 2>&1; else "$@"; fi
 }
@@ -65,9 +68,9 @@ run() {
 # Starts anything that isn't running (and applies compose.yaml changes).
 run docker compose up -d --quiet-pull
 if [ "$before" != "$after" ]; then
-    # Compose doesn't always notice that a pulled "latest" is a different image, so the
-    # API and web app are recreated explicitly; the database and backups keep running.
-    run docker compose up -d --force-recreate --no-deps api web
+    # Compose doesn't always notice that a pulled "latest" is a different image, so Beacon's
+    # own containers are recreated explicitly; the database and backups keep running.
+    run docker compose up -d --force-recreate --no-deps $beacon_services
 fi
 docker image prune -f > /dev/null
 
@@ -80,9 +83,9 @@ if [ "$before" != "$after" ]; then
     done
     # Check the containers really run the images just pulled.
     stale=""
-    for service in api web; do
+    for service in $beacon_services; do
         running=$(docker inspect --format '{{.Image}}' "$(docker compose ps -q "$service")" 2>/dev/null || echo none)
-        wanted=$(docker image inspect --format '{{.Id}}' "$(docker compose config --images | grep "beacon2-$service")" 2>/dev/null || echo unknown)
+        wanted=$(docker image inspect --format '{{.Id}}' "$(docker compose config --images | grep "beacon2-$service:")" 2>/dev/null || echo unknown)
         [ "$running" = "$wanted" ] || stale="$stale $service"
     done
     if [ -n "$stale" ]; then

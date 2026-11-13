@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import dev.beacon.domain.net.NetworkAddresses;
+
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -96,8 +98,7 @@ public class CareersPageFinder {
             throw new IOException("Not a web page: " + uri);
         }
         for (var address : InetAddress.getAllByName(uri.getHost())) {
-            if (address.isLoopbackAddress() || address.isSiteLocalAddress() || address.isLinkLocalAddress()
-                    || address.isAnyLocalAddress() || address.isMulticastAddress()) {
+            if (NetworkAddresses.isPrivate(address)) {
                 throw new IOException("Private network address: " + uri.getHost());
             }
         }

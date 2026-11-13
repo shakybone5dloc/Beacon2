@@ -1,5 +1,6 @@
-# Tests on every push and pull request; on main, also builds the two images the home server
-# runs and pushes them to GitHub's container registry (ghcr.io).
+# Tests on every push and pull request; on main, also builds the images the home server runs
+# (api, web, and the page printer and its proxy) and pushes them to GitHub's container registry
+# (ghcr.io).
 name: CI
 
 on:
@@ -64,6 +65,10 @@ jobs:
             context: backend
           - name: web
             context: frontend
+          - name: capture
+            context: capture
+          - name: capture-proxy
+            context: capture/proxy
     steps:
       - uses: actions/checkout@v5
       - uses: docker/setup-buildx-action@v3
