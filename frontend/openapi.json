@@ -2362,15 +2362,15 @@
         "tags" : [ "Digest" ]
       }
     },
-    "/api/me/mail-client" : {
+    "/api/me/send-from" : {
       "get" : {
-        "operationId" : "getMailClient",
+        "operationId" : "getSendFrom",
         "responses" : {
           "200" : {
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/MailClientResponse"
+                  "$ref" : "#/components/schemas/SendFromResponse"
                 }
               }
             },
@@ -2380,12 +2380,12 @@
         "tags" : [ "Check-in emails" ]
       },
       "put" : {
-        "operationId" : "saveMailClient",
+        "operationId" : "saveSendFrom",
         "requestBody" : {
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/MailClientRequest"
+                "$ref" : "#/components/schemas/SendFromRequest"
               }
             }
           },
@@ -2396,7 +2396,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/MailClientResponse"
+                  "$ref" : "#/components/schemas/SendFromResponse"
                 }
               }
             },
@@ -4085,9 +4085,8 @@
           "defaultTeam" : {
             "type" : "string"
           },
-          "mailClient" : {
-            "type" : "string",
-            "enum" : [ "GMAIL", "MAIL_APP" ]
+          "gmail" : {
+            "type" : "boolean"
           },
           "recipients" : {
             "type" : "array",
@@ -4095,11 +4094,14 @@
               "$ref" : "#/components/schemas/CheckInRecipient"
             }
           },
+          "sendFrom" : {
+            "type" : "string"
+          },
           "subject" : {
             "type" : "string"
           }
         },
-        "required" : [ "aiAvailable", "body", "defaultTeam", "mailClient", "recipients", "subject" ]
+        "required" : [ "aiAvailable", "body", "defaultTeam", "gmail", "recipients", "sendFrom", "subject" ]
       },
       "ChooseBriefResumeRequest" : {
         "type" : "object",
@@ -5033,26 +5035,6 @@
         },
         "required" : [ "added", "deck", "skipped" ]
       },
-      "MailClientRequest" : {
-        "type" : "object",
-        "properties" : {
-          "mailClient" : {
-            "type" : "string",
-            "enum" : [ "GMAIL", "MAIL_APP" ]
-          }
-        },
-        "required" : [ "mailClient" ]
-      },
-      "MailClientResponse" : {
-        "type" : "object",
-        "properties" : {
-          "mailClient" : {
-            "type" : "string",
-            "enum" : [ "GMAIL", "MAIL_APP" ]
-          }
-        },
-        "required" : [ "mailClient" ]
-      },
       "MarkSuggestionRequest" : {
         "type" : "object",
         "properties" : {
@@ -5922,6 +5904,32 @@
           }
         },
         "required" : [ "finishedAt", "gathered", "newMatches", "notes", "scored", "startedAt" ]
+      },
+      "SendFromRequest" : {
+        "type" : "object",
+        "properties" : {
+          "sendFrom" : {
+            "type" : [ "string", "null" ],
+            "format" : "email",
+            "maxLength" : 320,
+            "minLength" : 0
+          }
+        }
+      },
+      "SendFromResponse" : {
+        "type" : "object",
+        "properties" : {
+          "gmail" : {
+            "type" : "boolean"
+          },
+          "sendFrom" : {
+            "type" : "string"
+          },
+          "signInEmail" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "gmail", "sendFrom", "signInEmail" ]
       },
       "SentResumeRequest" : {
         "type" : "object",

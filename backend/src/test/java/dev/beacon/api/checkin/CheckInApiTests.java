@@ -58,7 +58,7 @@ class CheckInApiTests extends SignedInApiTests {
         assertThat(body).startsWith("Hello,\n\n")
                 .contains("the Staff Engineer position at Elevance Health")
                 .contains("any update on my application");
-        assertThat(start).bodyJson().extractingPath("$.mailClient").isEqualTo("GMAIL");
+        assertThat(start).bodyJson().extractingPath("$.sendFrom").isEqualTo(signedIn.email());
         assertThat(start).bodyJson().extractingPath("$.aiAvailable").isEqualTo(false);
     }
 
@@ -117,18 +117,38 @@ class CheckInApiTests extends SignedInApiTests {
     }
 
     @Test
-    void remembersWhereEmailOpens() {
-        assertThat(mvc.get().uri("/api/me/mail-client").exchange())
-                .bodyJson().extractingPath("$.mailClient").isEqualTo("GMAIL");
+    void sendsFromTheSignInAddressUntilAnotherIsSet() {
+        var appId = application();
+        var start = mvc.get().uri("/api/me/send-from").exchange();
+        assertThat(start).bodyJson().extractingPath("$.sendFrom").isEqualTo(signedIn.email());
+        assertThat(start).bodyJson().extractingPath("$.signInEmail").isEqualTo(signedIn.email());
+        assertThat(start).bodyJson().extractingPath("$.gmail").isEqualTo(false);
+        assertThat(mvc.get().uri("/api/applications/{id}/check-in", appId).exchange())
+                .bodyJson().extractingPath("$.gmail").isEqualTo(false);
 
-        var saved = mvc.put().uri("/api/me/mail-client").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"mailClient\": \"MAIL_APP\"}").exchange();
+        var saved = put("/api/me/send-from", "{\"sendFrom\": \"Job.Hunt@GMail.com\"}");
 
         assertThat(saved).hasStatus(HttpStatus.OK);
-        assertThat(mvc.get().uri("/api/me/mail-client").exchange())
-                .bodyJson().extractingPath("$.mailClient").isEqualTo("MAIL_APP");
-        assertThat(mvc.put().uri("/api/me/mail-client").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"mailClient\": \"PIGEON\"}").exchange()).hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(saved).bodyJson().extractingPath("$.sendFrom").isEqualTo("job.hunt@gmail.com");
+        assertThat(saved).bodyJson().extractingPath("$.gmail").isEqualTo(true);
+        // The check-in form gets it, to open Gmail as that account.
+        var checkIn = mvc.get().uri("/api/applications/{id}/check-in", appId).exchange();
+        assertThat(checkIn).bodyJson().extractingPath("$.sendFrom").isEqualTo("job.hunt@gmail.com");
+        assertThat(checkIn).bodyJson().extractingPath("$.gmail").isEqualTo(true);
+
+        // A work address isn't Gmail, so it opens in the mail app.
+        assertThat(put("/api/me/send-from", "{\"sendFrom\": \"me@work.example\"}"))
+                .bodyJson().extractingPath("$.gmail").isEqualTo(false);
+        // Not an address.
+        assertThat(put("/api/me/send-from", "{\"sendFrom\": \"not an address\"}"))
+                .hasStatus(HttpStatus.BAD_REQUEST);
+        // Blank goes back to the sign-in address.
+        assertThat(put("/api/me/send-from", "{\"sendFrom\": \"\"}"))
+                .bodyJson().extractingPath("$.sendFrom").isEqualTo(signedIn.email());
+    }
+
+    private MvcTestResult put(String uri, String json) {
+        return mvc.put().uri(uri).contentType(MediaType.APPLICATION_JSON).content(json).exchange();
     }
 
     private String application() {

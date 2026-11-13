@@ -1,11 +1,11 @@
 import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { BeaconApi } from '../api/beacon-api';
-import { draftCheckIn, getMailClient, saveMailClient, startCheckIn } from '../api/functions';
+import { draftCheckIn, getSendFrom, saveSendFrom, startCheckIn } from '../api/functions';
 import { browserTimeZone } from '../interviews/interview.model';
-import { CheckIn, CheckInDraft, MailClient } from './check-in.model';
+import { CheckIn, CheckInDraft, SendFrom } from './check-in.model';
 
-/** Check-in emails: the filled-in template, an AI draft, and where the user's email opens. */
+/** Check-in emails: the filled-in template, an AI draft, and the address they're sent from. */
 @Injectable({ providedIn: 'root' })
 export class CheckInApi {
   private readonly api = inject(BeaconApi);
@@ -23,11 +23,12 @@ export class CheckInApi {
     });
   }
 
-  mailClient(): Observable<MailClient> {
-    return this.api.invoke(getMailClient).pipe(map((r) => r.mailClient));
+  sendFrom(): Observable<SendFrom> {
+    return this.api.invoke(getSendFrom);
   }
 
-  saveMailClient(mailClient: MailClient): Observable<MailClient> {
-    return this.api.invoke(saveMailClient, { body: { mailClient } }).pipe(map((r) => r.mailClient));
+  /** @param address null to send from the sign-in address */
+  saveSendFrom(address: string | null): Observable<SendFrom> {
+    return this.api.invoke(saveSendFrom, { body: { sendFrom: address } });
   }
 }
