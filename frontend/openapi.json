@@ -3212,6 +3212,43 @@
         "tags" : [ "Study cards" ]
       }
     },
+    "/api/study/cards/{id}/check" : {
+      "post" : {
+        "operationId" : "checkAnswer",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CheckAnswerRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnswerCheckResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
+    },
     "/api/study/cards/{id}/keep" : {
       "post" : {
         "operationId" : "keepCard",
@@ -3525,6 +3562,24 @@
         "tags" : [ "Study cards" ]
       }
     },
+    "/api/study/recall-grading" : {
+      "get" : {
+        "operationId" : "getRecallGrading",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecallGradingResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Study cards" ]
+      }
+    },
     "/api/study/stories" : {
       "post" : {
         "operationId" : "drillStories",
@@ -3636,6 +3691,22 @@
           }
         },
         "required" : [ "budgetUsd", "byFeature", "byModel", "calls", "month", "recentMonths", "totalUsd", "unpricedCalls" ]
+      },
+      "AnswerCheckResponse" : {
+        "type" : "object",
+        "properties" : {
+          "feedback" : {
+            "type" : "string"
+          },
+          "suggestedGrade" : {
+            "type" : "string",
+            "enum" : [ "AGAIN", "HARD", "GOOD", "EASY" ]
+          },
+          "tighter" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "feedback", "suggestedGrade", "tighter" ]
       },
       "ApiKeyResponse" : {
         "type" : "object",
@@ -3944,6 +4015,17 @@
           }
         },
         "required" : [ "status", "version" ]
+      },
+      "CheckAnswerRequest" : {
+        "type" : "object",
+        "properties" : {
+          "answer" : {
+            "type" : "string",
+            "maxLength" : 10000,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "answer" ]
       },
       "CheckInDraftRequest" : {
         "type" : "object",
@@ -5215,6 +5297,15 @@
         },
         "required" : [ "cost", "coverage", "fields", "id", "kind", "name", "needsKey", "pricing", "signUpUrl", "steps", "turnedOff" ]
       },
+      "RecallGradingResponse" : {
+        "type" : "object",
+        "properties" : {
+          "available" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "available" ]
+      },
       "RegisterRequest" : {
         "type" : "object",
         "properties" : {
@@ -5341,8 +5432,26 @@
       "ReviewCardRequest" : {
         "type" : "object",
         "properties" : {
+          "answer" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 10000,
+            "minLength" : 0
+          },
+          "feedback" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 4000,
+            "minLength" : 0
+          },
           "grade" : {
             "type" : "string",
+            "enum" : [ "AGAIN", "HARD", "GOOD", "EASY" ]
+          },
+          "mode" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "REVEAL", "TYPE", "SAY" ]
+          },
+          "suggestedGrade" : {
+            "type" : [ "string", "null" ],
             "enum" : [ "AGAIN", "HARD", "GOOD", "EASY" ]
           }
         },

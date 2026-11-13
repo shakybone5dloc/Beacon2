@@ -32,12 +32,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class StudyApiTests extends SignedInApiTests {
 
     @Autowired FakeCardWriter writer;
+    @Autowired dev.beacon.DocumentTestDoubles.FakeAnswerGrader grader;
     @Autowired ApiKeyService keys;
     @Autowired JdbcTemplate jdbc;
 
     @BeforeEach
     void setUp() {
         writer.reset();
+        grader.reset();
         keys.save(signedIn.id(), "openai", Map.of("apiKey", "sk-test-users-own"));
     }
 
@@ -321,6 +323,67 @@ class StudyApiTests extends SignedInApiTests {
 
         assertThat(drilled).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(drilled).bodyText().contains("Write a story first");
+    }
+
+    @Test
+    void checksATypedAnswerAgainstTheCardAndSavesNothingUntilGraded() {
+        String deckId = read(post("/api/study/decks", "{\"name\": \"OAuth\"}"), "$.id");
+        String cardId = read(post("/api/study/decks/" + deckId + "/cards",
+                "{\"question\": \"What does PKCE protect against?\", \"answer\": \"Code interception.\"}"), "$.id");
+        assertThat(mvc.get().uri("/api/study/recall-grading").exchange())
+                .bodyJson().extractingPath("$.available").isEqualTo(true);
+
+        var checked = post("/api/study/cards/" + cardId + "/check", "{\"answer\": \"  Someone stealing the code  \"}");
+
+        assertThat(checked).hasStatus(HttpStatus.OK);
+        assertThat(checked).bodyJson().extractingPath("$.suggestedGrade").isEqualTo("HARD");
+        assertThat(checked).bodyJson().extractingPath("$.feedback").isEqualTo("- Right idea\n- Missed the redirect");
+        assertThat(checked).bodyJson().extractingPath("$.tighter").asString().contains("PKCE");
+        var input = grader.inputs.getFirst();
+        assertThat(input.question()).isEqualTo("What does PKCE protect against?");
+        assertThat(input.expected()).isEqualTo("Code interception.");
+        assertThat(input.given()).isEqualTo("Someone stealing the code");
+        assertThat(jdbc.queryForObject("select count(*) from ai_usage where feature = 'RECALL_GRADING'", Integer.class))
+                .isEqualTo(1);
+        // Checking schedules nothing.
+        assertThat(jdbc.queryForObject("select count(*) from study_reviews where card_id = ?::uuid", Integer.class, cardId))
+                .isZero();
+
+        // The user goes with Good, not the suggested Hard: Good schedules it, and both are kept.
+        var graded = post("/api/study/cards/" + cardId + "/review", """
+                {"grade": "GOOD", "mode": "TYPE", "answer": "Someone stealing the code",
+                 "suggestedGrade": "HARD", "feedback": "- Right idea"}
+                """);
+        assertThat(graded).bodyJson().extractingPath("$.intervalDays").isEqualTo(1);
+        var review = jdbc.queryForMap("select grade, mode, answer_text, suggested_grade, feedback from study_reviews "
+                + "where card_id = ?::uuid", cardId);
+        assertThat(review).containsEntry("grade", "GOOD").containsEntry("mode", "TYPE")
+                .containsEntry("answer_text", "Someone stealing the code")
+                .containsEntry("suggested_grade", "HARD").containsEntry("feedback", "- Right idea");
+    }
+
+    @Test
+    void aRevealedCardIsRecordedAsRevealAndCheckingNeedsAKeyAndAnAnswer() {
+        String deckId = read(post("/api/study/decks", "{\"name\": \"OAuth\"}"), "$.id");
+        String cardId = read(post("/api/study/decks/" + deckId + "/cards",
+                "{\"question\": \"What is OIDC?\", \"answer\": \"Identity on top of OAuth.\"}"), "$.id");
+
+        post("/api/study/cards/" + cardId + "/review", "{\"grade\": \"GOOD\"}");
+        assertThat(jdbc.queryForObject("select mode from study_reviews where card_id = ?::uuid", String.class, cardId))
+                .isEqualTo("REVEAL");
+
+        assertThat(post("/api/study/cards/" + cardId + "/check", "{\"answer\": \"  \"}"))
+                .hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(post("/api/study/cards/" + java.util.UUID.randomUUID() + "/check", "{\"answer\": \"x\"}"))
+                .hasStatus(HttpStatus.NOT_FOUND);
+
+        jdbc.update("delete from user_api_keys where user_id = ?", signedIn.id());
+        assertThat(mvc.get().uri("/api/study/recall-grading").exchange())
+                .bodyJson().extractingPath("$.available").isEqualTo(false);
+        var noKey = post("/api/study/cards/" + cardId + "/check", "{\"answer\": \"Identity\"}");
+        assertThat(noKey).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(noKey).bodyText().contains("Add an OpenAI or Anthropic API key");
+        assertThat(grader.inputs).isEmpty();
     }
 
     /** One kept card in the application's own deck, made from its brief. */

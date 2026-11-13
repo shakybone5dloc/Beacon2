@@ -6,6 +6,7 @@ import dev.beacon.domain.interviews.InterviewOutcome;
 import dev.beacon.domain.study.Card;
 import dev.beacon.domain.study.Deck;
 import dev.beacon.domain.study.Grade;
+import dev.beacon.domain.study.Review;
 import dev.beacon.infrastructure.persistence.CardRepository;
 import dev.beacon.infrastructure.persistence.DeckRepository;
 import dev.beacon.infrastructure.persistence.InterviewRepository;
@@ -146,14 +147,14 @@ public class StudyService {
 
     /** Grades a kept card and schedules its next review. Empty when the card doesn't exist. */
     @Transactional
-    public Optional<CardResponse> review(UUID ownerId, UUID cardId, Grade grade) {
+    public Optional<CardResponse> review(UUID ownerId, UUID cardId, Grade grade, Review.Answer answer) {
         return cards.findByIdAndOwnerId(cardId, ownerId).map(card -> {
             if (card.getStatus() != Card.Status.ACTIVE) {
                 throw new StudyException("Keep this draft before studying it.");
             }
             var now = Instant.now(clock);
             var deck = decks.findById(card.getDeckId()).orElseThrow();
-            reviews.save(card.review(grade, now, nextInterview(deck, now)));
+            reviews.save(card.review(grade, now, nextInterview(deck, now), answer));
             deck.touch(now);
             return toResponse(cards.saveAndFlush(card));
         });

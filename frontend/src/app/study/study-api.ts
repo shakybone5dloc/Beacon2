@@ -3,11 +3,13 @@ import { Observable } from 'rxjs';
 import { BeaconApi } from '../api/beacon-api';
 import {
   addCard,
+  checkAnswer,
   createDeck,
   deleteCard,
   deleteDeck,
   drillStories,
   getDeck,
+  getRecallGrading,
   keepCard,
   keepDeckDrafts,
   listDeckCards,
@@ -19,7 +21,8 @@ import {
   reviewCard,
   updateCard,
 } from '../api/functions';
-import { Card, Deck, Grade, MadeCards } from './study.model';
+import { map } from 'rxjs';
+import { AnswerCheck, AnswerMode, Card, Deck, Grade, MadeCards } from './study.model';
 
 /** Study decks and cards: keep them, study what's due, and make drafts from a brief. */
 @Injectable({ providedIn: 'root' })
@@ -79,8 +82,35 @@ export class StudyApi {
     return this.api.invoke(keepDeckDrafts, { id: deckId });
   }
 
-  review(id: string, grade: Grade): Observable<Card> {
-    return this.api.invoke(reviewCard, { id, body: { grade } });
+  /**
+   * Grades a card. In Type mode, what was typed and the AI's suggestion (when it was asked)
+   * are kept with the grade; the grade given here is the one that schedules the card.
+   */
+  review(
+    id: string,
+    grade: Grade,
+    answer: { mode: AnswerMode; text?: string | null; check?: AnswerCheck | null } = { mode: 'REVEAL' },
+  ): Observable<Card> {
+    return this.api.invoke(reviewCard, {
+      id,
+      body: {
+        grade,
+        mode: answer.mode,
+        answer: answer.text || null,
+        suggestedGrade: answer.check?.suggestedGrade ?? null,
+        feedback: answer.check?.feedback ?? null,
+      },
+    });
+  }
+
+  /** The AI's suggested grade and note for a typed answer; saves nothing. */
+  check(id: string, answer: string): Observable<AnswerCheck> {
+    return this.api.invoke(checkAnswer, { id, body: { answer } });
+  }
+
+  /** Whether the user has a key, so typed answers can be checked. */
+  gradingAvailable(): Observable<boolean> {
+    return this.api.invoke(getRecallGrading).pipe(map((r) => r.available));
   }
 
   /** Draft cards from the application's brief and its stories, in the application's deck. */

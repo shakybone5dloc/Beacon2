@@ -1,9 +1,14 @@
 package dev.beacon.api.study;
 
+import dev.beacon.application.study.RecallGrading;
 import dev.beacon.application.study.StudyCardMaker;
 import dev.beacon.application.study.StudyService;
 import dev.beacon.application.users.SignedInUser;
+import dev.beacon.contracts.study.AnswerCheckResponse;
 import dev.beacon.contracts.study.CardResponse;
+import dev.beacon.contracts.study.CheckAnswerRequest;
+import dev.beacon.contracts.study.RecallGradingResponse;
+import dev.beacon.domain.study.Review;
 import dev.beacon.contracts.study.DeckResponse;
 import dev.beacon.contracts.study.DrillStoriesRequest;
 import dev.beacon.contracts.study.MadeCardsResponse;
@@ -29,10 +34,12 @@ public class StudyController {
 
     private final StudyService study;
     private final StudyCardMaker maker;
+    private final RecallGrading grading;
 
-    public StudyController(StudyService study, StudyCardMaker maker) {
+    public StudyController(StudyService study, StudyCardMaker maker, RecallGrading grading) {
         this.study = study;
         this.maker = maker;
+        this.grading = grading;
     }
 
     @Operation(operationId = "listDecks")
@@ -124,7 +131,26 @@ public class StudyController {
     @PostMapping("/api/study/cards/{id}/review")
     public ResponseEntity<CardResponse> review(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID id,
                                                @Valid @RequestBody ReviewCardRequest body) {
-        return ResponseEntity.of(study.review(user.id(), id, body.grade()));
+        return ResponseEntity.of(study.review(user.id(), id, body.grade(),
+                new Review.Answer(body.mode(), body.answer(), body.suggestedGrade(), body.feedback())));
+    }
+
+    /**
+     * Recall practice: the AI reads a typed or spoken answer against the card and suggests a
+     * grade. Nothing is saved; the grade the user then picks is sent to /review.
+     */
+    @Operation(operationId = "checkAnswer")
+    @PostMapping("/api/study/cards/{id}/check")
+    public ResponseEntity<AnswerCheckResponse> check(@AuthenticationPrincipal SignedInUser user, @PathVariable UUID id,
+                                                     @Valid @RequestBody CheckAnswerRequest body) {
+        return ResponseEntity.of(grading.check(user.id(), id, body.answer()));
+    }
+
+    /** Whether typed and spoken answers can be checked by the AI: the user has a key. */
+    @Operation(operationId = "getRecallGrading")
+    @GetMapping("/api/study/recall-grading")
+    public RecallGradingResponse recallGrading(@AuthenticationPrincipal SignedInUser user) {
+        return new RecallGradingResponse(grading.available(user.id()));
     }
 
     /**

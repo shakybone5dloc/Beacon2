@@ -8,5 +8,6 @@ public enum AiFeature {
     STORY_BANK,
     STUDY_CARDS,
     RESUME_TAILORING,
-    CHECK_IN_EMAIL
+    CHECK_IN_EMAIL,
+    RECALL_GRADING
 }
