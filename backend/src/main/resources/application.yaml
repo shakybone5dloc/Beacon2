@@ -63,7 +63,12 @@ beacon:
     adzuna:
       country: ${ADZUNA_COUNTRY:us}
   capture:
-    # Chrome or Edge used to print postings to PDF; found automatically when blank.
+    # The isolated capture service (the capture/ image) that prints pages to PDF, e.g.
+    # http://capture:8090 in the deployed stack. When blank, a Chrome or Edge on this machine
+    # prints instead: fine for running Beacon yourself, not for a server others use.
+    url: ${BEACON_CAPTURE_URL:}
+    # Chrome or Edge used to print postings to PDF when there's no capture service; found
+    # automatically when blank.
     browser: ${CAPTURE_BROWSER:}
   ai:
     # Each user drafts with their own OpenAI or Anthropic key (OpenAI when they have both).

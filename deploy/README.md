@@ -1,17 +1,28 @@
 # Running Beacon on the home server
 
 Beacon runs on the server in Docker: Postgres, the API, the web app (nginx serving Angular and
-passing `/api` to the API) and a nightly backup. Only the web app has a port, `127.0.0.1:8790`,
-and Tailscale puts HTTPS in front of it, so Beacon is reachable from your own devices anywhere
-and from nobody else.
+passing `/api` to the API), the page printer and its proxy, and a nightly backup. Only the web
+app has a port, `127.0.0.1:8790`, and Tailscale puts HTTPS in front of it, so Beacon is reachable
+from your own devices anywhere and from nobody else.
 
 ```
 phone / laptop ──Tailscale (HTTPS)──▶ server:443 ──▶ web (nginx, :8790) ──▶ api (:8080) ──▶ db
-                                                                              backup ──▶ ./backups
+                                                                              │      backup ──▶ ./backups
+                                                      internal network only   ▼
+                                                     capture (Chromium, :8090) ──▶ capture-proxy ──▶ internet
 ```
 
+**The page printer.** "Save posting as PDF" opens whatever URL is on an application in
+Chromium, so Chromium runs walled off in the `capture` container. It holds no secrets (no
+`.env`), it's on an internal Docker network with no route out, and every request it makes,
+including redirects and the page's own scripts, goes through `capture-proxy` (Squid), which
+refuses any address that isn't the public internet: the database and other containers, this
+machine's network and tailnet, and a cloud server's metadata service. `capture-proxy`'s log
+(`docker compose logs capture-proxy`) shows each request and whether it was allowed.
+
 New versions: every push to `main` runs the tests on GitHub Actions and, when they pass, builds
-`ghcr.io/shakybone5dloc/beacon2-api` and `beacon2-web`. Branches and pull requests run the tests
+`ghcr.io/shakybone5dloc/beacon2-api`, `beacon2-web`, `beacon2-capture` and
+`beacon2-capture-proxy`. Branches and pull requests run the tests
 but build nothing, so only what's merged into `main` goes live. The server checks for new images
 every 10 minutes and updates itself (see [Updates](#updates)).
 
@@ -58,8 +69,10 @@ ssh server
 echo YOUR_TOKEN | docker login ghcr.io -u shakybone5dloc --password-stdin
 ```
 
-Or make both packages public under your GitHub profile → Packages → each package → Package
+Or make the packages public under your GitHub profile → Packages → each package → Package
 settings → Change visibility. They hold no secrets; your data and keys live only on the server.
+New packages start private, so after a new image is added (like `beacon2-capture` and
+`beacon2-capture-proxy`), make it public too, or rely on the token above.
 
 ### 4. Start it
 

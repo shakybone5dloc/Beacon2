@@ -1,6 +1,11 @@
-# Beacon on the home server: Postgres, the API, the web app (nginx), and nightly backups.
-# Images come from GitHub's container registry, built by CI from main. Only the web app has a
-# port, on 127.0.0.1, for Tailscale to put HTTPS in front of. See README.md.
+# Beacon on the home server: Postgres, the API, the web app (nginx), the page printer, and
+# nightly backups. Images come from GitHub's container registry, built by CI from main. Only the
+# web app has a port, on 127.0.0.1, for Tailscale to put HTTPS in front of. See README.md.
+#
+# The page printer (capture) opens any URL a user gives it in Chromium, so it's walled off: it
+# holds no secrets, sits on an internal network with no way out, and reaches the internet only
+# through capture-proxy, which refuses every address that isn't the public internet (the
+# database, this machine's network and tailnet, a cloud server's metadata service).
 
 name: beacon
 
@@ -29,8 +34,30 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/beacon
       SPRING_DATASOURCE_USERNAME: postgres
+      BEACON_CAPTURE_URL: http://capture:8090
+    networks: [default, capture]
+
+  # Prints pages to PDF. No env_file: it gets none of the secrets.
+  capture:
+    image: ghcr.io/shakybone5dloc/beacon2-capture:${BEACON_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      CAPTURE_PROXY: http://capture-proxy:3128
+    networks: [capture]
     # Chromium needs more shared memory than Docker's 64 MB default to print some pages.
     shm_size: 256m
+    mem_limit: 1g
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+  # The printer's only way out; refuses private addresses (see capture/proxy/squid.conf).
+  capture-proxy:
+    image: ghcr.io/shakybone5dloc/beacon2-capture-proxy:${BEACON_TAG:-latest}
+    restart: unless-stopped
+    networks: [capture, egress]
+    mem_limit: 256m
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
 
   web:
     image: ghcr.io/shakybone5dloc/beacon2-web:${BEACON_TAG:-latest}
@@ -61,3 +88,12 @@ services:
 
 volumes:
   db-data:
+
+networks:
+  # The database, API, web app and backups.
+  default: {}
+  # The printer, the API that calls it, and its proxy. Internal: no route to anywhere else.
+  capture:
+    internal: true
+  # The proxy's way to the internet, shared with nothing else.
+  egress: {}
