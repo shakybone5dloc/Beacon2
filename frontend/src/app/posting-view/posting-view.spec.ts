@@ -97,7 +97,21 @@ describe('PostingPanel', () => {
     TestBed.resetTestingModule();
     expect(
       tabs((await render(fullPosting, '/api/applications/a1/documents/d1/content')).el),
-    ).toEqual(['Posting', 'Saved PDF', 'Live page']);
+    ).toEqual(['Posting', 'Saved PDF']);
+  });
+
+  it('links out to the live page instead of framing it', async () => {
+    const { el } = await render(fullPosting);
+
+    const link = el.querySelector<HTMLAnchorElement>('a.live-link')!;
+    expect(link.getAttribute('href')).toBe('https://acme.dev/jobs/1');
+    expect(link.target).toBe('_blank');
+    expect(el.querySelector('iframe')).toBeNull();
+    // Not a web address: no link either.
+    TestBed.resetTestingModule();
+    expect(
+      (await render(anApplication({ jobUrl: 'javascript:alert(1)' }))).el.querySelector('a.live-link'),
+    ).toBeNull();
   });
 
   it('shows the saved PDF from Beacon in a frame', async () => {
@@ -111,8 +125,10 @@ describe('PostingPanel', () => {
     );
   });
 
-  it('frames the live page with a way out for sites that refuse', async () => {
+  it('frames the live page with a way out for sites that refuse, when switched on', async () => {
     const { fixture, el } = await render(fullPosting);
+    fixture.componentInstance.showLivePage.set(true);
+    fixture.detectChanges();
 
     clickTab(el, 'Live page');
     await fixture.whenStable();
