@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Recognizes the "checking your browser" pages bot protection shows a headless
- * browser instead of the posting. Beacon reports these rather than saving them;
- * it never tries to get past them.
+ * Recognizes the "checking your browser" and "you have been blocked" pages bot
+ * protection shows a headless browser instead of the posting. Beacon reports these
+ * rather than saving them; it never tries to get past them.
  */
 final class BotChecks {
 
@@ -24,7 +24,17 @@ final class BotChecks {
             "attention required! | cloudflare",
             "pardon our interruption",
             "are you a robot",
-            "request unsuccessful. incapsula");
+            "request unsuccessful. incapsula",
+            // Blocked outright rather than challenged, e.g. Indeed behind Cloudflare.
+            "request blocked",
+            "you have been blocked",
+            "troubleshooting cloudflare errors",
+            "cloudflare ray id",
+            "your ray id for this request",
+            "access denied",
+            "unusual traffic from your computer",
+            "press & hold",
+            "press and hold");
 
     private BotChecks() {}
 
