@@ -7,11 +7,12 @@ import dev.beacon.application.usage.AiUsageService;
 import dev.beacon.contracts.checkin.CheckInDraftResponse;
 import dev.beacon.contracts.checkin.CheckInRecipient;
 import dev.beacon.contracts.checkin.CheckInResponse;
+import dev.beacon.contracts.checkin.SendFromResponse;
 import dev.beacon.domain.applications.JobApplication;
 import dev.beacon.domain.contacts.ContactDirection;
 import dev.beacon.domain.interviews.Interview;
 import dev.beacon.domain.interviews.InterviewOutcome;
-import dev.beacon.domain.users.MailClient;
+import dev.beacon.domain.users.UserAccount;
 import dev.beacon.infrastructure.persistence.ApplicationPersonRepository;
 import dev.beacon.infrastructure.persistence.ContactRepository;
 import dev.beacon.infrastructure.persistence.InterviewRepository;
@@ -82,7 +83,7 @@ public class CheckInService {
 
     /**
      * What the check-in form starts with: who can be written to, the template filled in, and
-     * where the user's email opens. Empty when the application does not exist.
+     * the address it goes out from. Empty when the application does not exist.
      */
     @Transactional(readOnly = true)
     public Optional<CheckInResponse> start(UUID ownerId, UUID applicationId, ZoneId zone) {
@@ -95,7 +96,8 @@ public class CheckInService {
             var now = Instant.now(clock);
             var lastInterview = lastInterview(applicationId, now);
             return new CheckInResponse(recipients, DEFAULT_TEAM, subject(application),
-                    body(application, lastInterview, user.getDisplayName(), zone), user.getMailClient(),
+                    body(application, lastInterview, user.getDisplayName(), zone), user.sendFrom(),
+                    UserAccount.isGmail(user.sendFrom()),
                     aiProvider(ownerId).isPresent());
         });
     }
@@ -212,13 +214,19 @@ public class CheckInService {
     }
 
     @Transactional(readOnly = true)
-    public MailClient mailClient(UUID ownerId) {
-        return users.findById(ownerId).orElseThrow().getMailClient();
+    public SendFromResponse sendFrom(UUID ownerId) {
+        return toResponse(users.findById(ownerId).orElseThrow());
     }
 
+    /** @param address null or blank to send from the sign-in address */
     @Transactional
-    public MailClient setMailClient(UUID ownerId, MailClient mailClient) {
-        users.findById(ownerId).orElseThrow().setMailClient(mailClient);
-        return mailClient;
+    public SendFromResponse setSendFrom(UUID ownerId, String address) {
+        var user = users.findById(ownerId).orElseThrow();
+        user.setSendFromEmail(address);
+        return toResponse(user);
+    }
+
+    private static SendFromResponse toResponse(UserAccount user) {
+        return new SendFromResponse(user.sendFrom(), user.getEmail(), UserAccount.isGmail(user.sendFrom()));
     }
 }

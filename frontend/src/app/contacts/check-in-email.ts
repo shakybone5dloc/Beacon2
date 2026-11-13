@@ -11,7 +11,7 @@ import {
   composeUrl,
   daysFromNow,
   greet,
-  MAIL_CLIENT_LABELS,
+  MailClient,
   TEAM_SUGGESTIONS,
 } from './check-in.model';
 import { ContactsApi } from './contacts-api';
@@ -51,7 +51,6 @@ export class CheckInEmail implements OnInit {
 
   protected readonly team = TEAM;
   protected readonly teamSuggestions = TEAM_SUGGESTIONS;
-  protected readonly clientLabels = MAIL_CLIENT_LABELS;
 
   protected readonly form = this.fb.group({
     /** A person's id, or TEAM. */
@@ -64,11 +63,8 @@ export class CheckInEmail implements OnInit {
     followUpOn: [daysFromNow(7)],
   });
 
-  /** "Open in Gmail" or "Open in my mail app". */
-  protected readonly openLabel = computed(() => {
-    const client = this.checkIn()?.mailClient;
-    return client ? `Open in ${MAIL_CLIENT_LABELS[client]}` : 'Open';
-  });
+  /** Where it was opened, so "Open it again" opens it the same way. */
+  protected readonly openedIn = signal<MailClient>('GMAIL');
 
   ngOnInit(): void {
     this.api.start(this.applicationId()).subscribe({
@@ -112,18 +108,23 @@ export class CheckInEmail implements OnInit {
       });
   }
 
-  /** The link the Open button follows; the address may be blank, to fill in in the mail itself. */
-  protected url(): string {
+  /**
+   * The link an Open button follows: Gmail as the send-from account, or the mail app. The
+   * recipient may be blank, to fill in in the mail itself.
+   */
+  protected url(client: MailClient): string {
     const value = this.form.getRawValue();
     return composeUrl(
-      this.checkIn()?.mailClient ?? 'GMAIL',
+      client,
       value.address.trim(),
       value.subject.trim(),
       value.body,
+      client === 'GMAIL' ? (this.checkIn()?.sendFrom ?? null) : null,
     );
   }
 
-  protected markOpened(): void {
+  protected markOpened(client: MailClient): void {
+    this.openedIn.set(client);
     this.opened.set(true);
     this.notice.set(null);
   }

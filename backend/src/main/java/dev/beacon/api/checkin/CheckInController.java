@@ -6,8 +6,8 @@ import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.checkin.CheckInDraftRequest;
 import dev.beacon.contracts.checkin.CheckInDraftResponse;
 import dev.beacon.contracts.checkin.CheckInResponse;
-import dev.beacon.contracts.checkin.MailClientRequest;
-import dev.beacon.contracts.checkin.MailClientResponse;
+import dev.beacon.contracts.checkin.SendFromRequest;
+import dev.beacon.contracts.checkin.SendFromResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,7 +21,7 @@ import java.util.UUID;
 
 /**
  * Check-in emails ("any update on my application?"): the filled-in template, an AI draft on
- * request, and where the user's email opens. Beacon never sends the email itself.
+ * request, and the address the user sends from. Beacon never sends the email itself.
  */
 @Tag(name = "Check-in emails")
 @RestController
@@ -59,16 +59,16 @@ public class CheckInController {
         }
     }
 
-    @Operation(operationId = "getMailClient")
-    @GetMapping("/api/me/mail-client")
-    public MailClientResponse mailClient(@AuthenticationPrincipal SignedInUser user) {
-        return new MailClientResponse(service.mailClient(user.id()));
+    @Operation(operationId = "getSendFrom")
+    @GetMapping("/api/me/send-from")
+    public SendFromResponse sendFrom(@AuthenticationPrincipal SignedInUser user) {
+        return service.sendFrom(user.id());
     }
 
-    @Operation(operationId = "saveMailClient")
-    @PutMapping("/api/me/mail-client")
-    public MailClientResponse saveMailClient(@AuthenticationPrincipal SignedInUser user,
-                                             @Valid @RequestBody MailClientRequest body) {
-        return new MailClientResponse(service.setMailClient(user.id(), body.mailClient()));
+    @Operation(operationId = "saveSendFrom")
+    @PutMapping("/api/me/send-from")
+    public SendFromResponse saveSendFrom(@AuthenticationPrincipal SignedInUser user,
+                                         @Valid @RequestBody SendFromRequest body) {
+        return service.setSendFrom(user.id(), body.sendFrom());
     }
 }

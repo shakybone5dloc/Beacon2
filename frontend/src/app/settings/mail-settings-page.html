@@ -14,31 +14,49 @@
 
 @if (loadError()) {
   <p class="notice">Could not load your settings. Try again in a moment.</p>
-} @else if (mailClient(); as current) {
-  <fieldset class="card m-0 grid gap-space-md p-space-lg">
-    <legend class="sr-only">Open emails in</legend>
-    <p class="m-0 font-medium" aria-hidden="true">Open emails in</p>
-    @for (o of options; track o.value) {
-      <label class="flex items-start gap-space-sm font-normal">
-        <input
-          type="radio"
-          name="mailClient"
-          class="mt-1"
-          [value]="o.value"
-          [checked]="current === o.value"
+} @else if (settings(); as s) {
+  <form class="card m-0 grid gap-space-md p-space-lg" (ngSubmit)="save()">
+    <label class="grid gap-space-xs font-medium" for="send-from">Send from</label>
+    <div class="flex flex-wrap gap-space-sm">
+      <input
+        id="send-from"
+        class="send-from grow"
+        type="email"
+        name="sendFrom"
+        autocomplete="email"
+        [ngModel]="draft()"
+        (ngModelChange)="draft.set($event)"
+      />
+      <button type="submit" class="save btn btn-primary" [disabled]="saving() || !changed()">
+        Save
+      </button>
+    </div>
+    <p class="how m-0 text-body-sm text-on-surface-variant">
+      @if (s.gmail) {
+        A Gmail address: emails open in Gmail as <strong>{{ s.sendFrom }}</strong>, even if your
+        browser is signed in to other Google accounts too. If it isn't signed in on this device,
+        Google asks you to sign in to it. "Use my mail app" is there as well.
+      } @else {
+        Not a Gmail address: emails open in this device's mail app, like Outlook, Apple Mail or
+        your phone's mail app. Make sure it sends from <strong>{{ s.sendFrom }}</strong>.
+      }
+    </p>
+    @if (s.sendFrom !== s.signInEmail) {
+      <p class="m-0 text-body-sm">
+        <button
+          type="button"
+          class="use-sign-in min-h-0 border-0 bg-transparent p-0 text-primary-container hover:underline"
           [disabled]="saving()"
-          (change)="choose(o.value)"
-        />
-        <span>
-          <span class="block font-medium">{{ o.label }}</span>
-          <span class="block text-body-sm text-on-surface-variant">{{ o.hint }}</span>
-        </span>
-      </label>
+          (click)="useSignIn()"
+        >
+          Use my sign-in address ({{ s.signInEmail }})
+        </button>
+      </p>
     }
     @if (saved()) {
       <p class="saved m-0 text-body-sm text-success">Saved.</p>
     }
-  </fieldset>
+  </form>
 } @else {
   <p class="text-on-surface-variant">Loading...</p>
 }

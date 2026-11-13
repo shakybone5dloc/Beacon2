@@ -7,9 +7,14 @@
     <p class="notice m-0">{{ message }}</p>
   } @else if (checkIn(); as c) {
     <p class="m-0 text-body-sm text-on-surface-variant">
-      Ask whether there's any update. Beacon fills in the message and opens it in
-      {{ clientLabels[c.mailClient] }} for you to send; it never sends anything itself.
-      <a routerLink="/settings/email">Change where it opens</a>
+      Ask whether there's any update. Beacon fills in the message and opens it
+      @if (c.gmail) {
+        in Gmail as
+      } @else {
+        in your mail app, to send from
+      }
+      <strong class="send-from">{{ c.sendFrom }}</strong>; it never sends anything itself.
+      <a routerLink="/settings/email">Change the address</a>
     </p>
     <div class="grid gap-space-md sm:grid-cols-2">
       <label class="grid gap-space-xs">
@@ -56,15 +61,28 @@
 
     @if (!opened()) {
       <div class="flex flex-wrap items-center gap-space-sm">
+        @if (c.gmail) {
+          <a
+            class="open open-gmail btn btn-primary no-underline"
+            [href]="url('GMAIL')"
+            target="_blank"
+            rel="noopener noreferrer"
+            (click)="markOpened('GMAIL')"
+          >
+            <span class="material-symbols-outlined !text-base" aria-hidden="true">outgoing_mail</span>
+            Open in Gmail
+          </a>
+        }
         <a
-          class="open btn btn-primary no-underline"
-          [href]="url()"
-          target="_blank"
-          rel="noopener noreferrer"
-          (click)="markOpened()"
+          class="open open-mail-app btn no-underline"
+          [class.btn-primary]="!c.gmail"
+          [href]="url('MAIL_APP')"
+          (click)="markOpened('MAIL_APP')"
         >
-          <span class="material-symbols-outlined !text-base" aria-hidden="true">outgoing_mail</span>
-          {{ openLabel() }}
+          @if (!c.gmail) {
+            <span class="material-symbols-outlined !text-base" aria-hidden="true">outgoing_mail</span>
+          }
+          {{ c.gmail ? 'Use my mail app' : 'Open in my mail app' }}
         </a>
         @if (c.aiAvailable) {
           <button type="button" class="draft btn" [disabled]="drafting()" (click)="draft()">
@@ -94,7 +112,11 @@
           <button type="button" class="log btn btn-primary" [disabled]="logging()" (click)="log()">
             {{ logging() ? 'Logging…' : 'Yes, log it' }}
           </button>
-          <a class="reopen btn no-underline" [href]="url()" target="_blank" rel="noopener noreferrer"
+          <a
+            class="reopen btn no-underline"
+            [href]="url(openedIn())"
+            [attr.target]="openedIn() === 'GMAIL' ? '_blank' : null"
+            rel="noopener noreferrer"
             >Open it again</a
           >
           <button type="button" class="not-sent btn" (click)="closed.emit()">I didn't send it</button>

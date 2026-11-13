@@ -172,7 +172,8 @@ describe('contacts', () => {
         defaultTeam: 'Hiring team',
         subject: 'Checking in',
         body: 'Hello,',
-        mailClient: 'GMAIL',
+        sendFrom: 'job.hunt@gmail.com',
+        gmail: true,
         aiAvailable: false,
       });
       await fixture.whenStable();

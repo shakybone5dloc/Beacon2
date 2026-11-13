@@ -31,9 +31,9 @@ public class UserAccount {
     @Column(name = "ai_monthly_budget_usd", precision = 10, scale = 2)
     private BigDecimal aiMonthlyBudgetUsd;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "mail_client", nullable = false, length = 20)
-    private MailClient mailClient = MailClient.GMAIL;
+    /** The address the user sends emails from; null to use the one they sign in with. */
+    @Column(name = "send_from_email", length = 320)
+    private String sendFromEmail;
 
     protected UserAccount() { }
 
@@ -62,12 +62,29 @@ public class UserAccount {
     public String getDisplayName() { return displayName; }
     public Instant getCreatedAt() { return createdAt; }
     public BigDecimal getAiMonthlyBudgetUsd() { return aiMonthlyBudgetUsd; }
-    public MailClient getMailClient() { return mailClient; }
+    /** The address set to send from; null when it's the sign-in address. */
+    public String getSendFromEmail() { return sendFromEmail; }
 
-    public void setMailClient(MailClient mailClient) {
-        if (mailClient == null) throw new IllegalArgumentException("Pick where emails open");
-        this.mailClient = mailClient;
+    /** The address emails are sent from: the one set, or else the one the user signs in with. */
+    public String sendFrom() { return sendFromEmail == null ? email : sendFromEmail; }
+
+    /**
+     * @param address an email address, or null or blank (or the sign-in address itself) to
+     *                send from the sign-in address
+     */
+    public void setSendFromEmail(String address) {
+        var normalized = address == null || address.isBlank() ? null : normalizeEmail(address);
+        this.sendFromEmail = email.equals(normalized) ? null : normalized;
     }
+
+    /** True for a Gmail address, whose emails open in Gmail as that account. */
+    public static boolean isGmail(String address) {
+        var at = address == null ? -1 : address.lastIndexOf('@');
+        if (at < 0) return false;
+        var domain = address.substring(at + 1).toLowerCase(Locale.ROOT);
+        return domain.equals("gmail.com") || domain.equals("googlemail.com");
+    }
+
 
     /** @param budgetUsd null to remove the budget */
     public void setAiMonthlyBudget(BigDecimal budgetUsd) {
