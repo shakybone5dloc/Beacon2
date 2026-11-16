@@ -451,7 +451,11 @@ Most of what's missing isn't features: it's the safety, account and hosting work
 - `AccountData.EXPORTS` lists a query per table; a test checks every table in the database is either exported or listed as not a user's, and another that after deletion every export query finds nothing, so a table added later can't be missed by either.
 - Export everything a user owns, and delete an account with all its data. `ai_usage` has no foreign key to `users` (V14), so deletion removes its rows explicitly.
 
-### L4. Security headers and public surface
+### L4. Security headers and public surface (done, Nov 16)
+- nginx sends, on every page and asset (`frontend/nginx/security-headers.conf`, included per location): a content security policy allowing scripts, styles, fonts, images, requests and frames only from Beacon itself (inline styles allowed for Angular's component styles; inline scripts not), `frame-ancestors 'self'`, HSTS for a year, `X-Frame-Options: SAMEORIGIN`, `nosniff`, `Referrer-Policy: same-origin`, a `Permissions-Policy` allowing only the microphone (Say mode), and `Cross-Origin-Opener-Policy: same-origin`; `server_tokens off`. The theme script moved out of `index.html` into `theme-init.js`, and Angular's critical-CSS inlining is off (it adds an inline `onload`).
+- Swagger UI and `/v3/api-docs` are off unless `BEACON_API_DOCS=true` (tests turn them on to check the committed spec). `/actuator/health` says only UP or DOWN.
+- Uploads were already safe: the stored type comes from an allowlist by extension, never the browser; HTML and SVG are refused (SVG now has a test); only PDFs, PNG/JPEG and plain text open inline, the rest download; `nosniff` on every file.
+- Checked with the production images: the headers on pages and assets, no inline script left, and no policy violations across 18 pages, Markdown rendering, the saved PDF viewer and the weekly-email preview.
 - nginx sends none of the usual protections: a content security policy, HSTS, blocking framing (`frame-ancestors`), `Referrer-Policy`, `X-Content-Type-Options`. Add them for the app and the API.
 - Turn off Swagger UI and `/v3/api-docs` in production (the build keeps generating `openapi.json` for the client).
 - Check how uploaded documents are served back: content type, `Content-Disposition: attachment` where it isn't a PDF shown in the viewer, and no HTML or SVG rendered from Beacon's origin.

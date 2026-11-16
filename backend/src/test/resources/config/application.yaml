@@ -1,4 +1,10 @@
 # Layered over the main application.yaml for tests and the throwaway test-run app.
+springdoc:
+  # OpenApiSpecTests writes the spec the frontend's client is generated from.
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
 beacon:
   # A fixed key for tests only; never use it for real data.
   secret-key: "dGVzdC1vbmx5LXNlY3JldC1rZXktMzItYnl0ZXMhISE="
