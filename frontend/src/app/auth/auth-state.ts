@@ -46,6 +46,11 @@ export class AuthState {
     );
   }
 
+  /** Deletes the account for good; the server signs out, so the user is forgotten here too. */
+  deleteAccount(password: string): Observable<void> {
+    return this.api.deleteAccount(password).pipe(tap(() => this.current.set(null)));
+  }
+
   /** For when the server says the session has ended. */
   clear(): void {
     this.current.set(null);

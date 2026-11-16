@@ -2,12 +2,13 @@ import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthState } from '../auth/auth-state';
 
-export type SettingsPage = 'api-keys' | 'digest' | 'email' | 'invites';
+export type SettingsPage = 'api-keys' | 'digest' | 'email' | 'account' | 'invites';
 
 const PAGES: { page: SettingsPage; label: string; admin?: boolean }[] = [
   { page: 'api-keys', label: 'API keys' },
   { page: 'digest', label: 'Weekly email' },
   { page: 'email', label: 'Sending email' },
+  { page: 'account', label: 'Account' },
   { page: 'invites', label: 'Invites', admin: true },
 ];
 

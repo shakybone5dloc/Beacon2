@@ -403,7 +403,7 @@ A page each user builds in Beacon from their resume and extra details, and share
 - HTTPS, automated Postgres backups with a tested restore.
 - Public on the internet with a real domain once other people use Beacon; portfolio pages (W3) are the first part anyone can open without an account.
 
-### X5. Data export and account deletion (needed for the beta, see L3)
+### X5. Data export and account deletion (done, see L3)
 - Export everything a user owns (JSON + documents as a zip); delete account and all data.
 - Becomes important once mailbox credentials and email snippets are stored.
 
@@ -445,7 +445,10 @@ Most of what's missing isn't features: it's the safety, account and hosting work
 - Invite codes: registration needs a code handed out to testers. A public post reaches more people than intended.
 - Rate limits on login and registration (per IP and per account) and a short lockout after repeated failures. Nothing limits attempts today.
 
-### L3. Account export and deletion (X5)
+### L3. Account export and deletion (X5) (done, Nov 15)
+- Built as Settings · Account. **Download my data** streams a zip (`GET /api/me/export`): a README, one JSON file per kind of data (`data/job_applications.json` and the rest, rows as stored, read in one transaction), and every uploaded or saved file under `documents/`. Left out: the password hash and the API keys themselves (`user_api_keys.json` lists providers only).
+- **Delete my account** (`DELETE /api/me`) takes the current password and a tick-box, deletes the user (every table follows by its foreign key; `ai_usage`, which has none, is deleted first; invite codes the user made stay with no creator), ends the session and clears the remember-me cookie. Wrong passwords count toward the L2 account lockout. The sign-in page then says the account was deleted.
+- `AccountData.EXPORTS` lists a query per table; a test checks every table in the database is either exported or listed as not a user's, and another that after deletion every export query finds nothing, so a table added later can't be missed by either.
 - Export everything a user owns, and delete an account with all its data. `ai_usage` has no foreign key to `users` (V14), so deletion removes its rows explicitly.
 
 ### L4. Security headers and public surface

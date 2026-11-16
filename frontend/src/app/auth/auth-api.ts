@@ -2,7 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { BeaconApi } from '../api/beacon-api';
-import { getCsrfToken, getCurrentUser, getRegistration, login, register } from '../api/functions';
+import {
+  deleteAccount,
+  getCsrfToken,
+  getCurrentUser,
+  getRegistration,
+  login,
+  register,
+} from '../api/functions';
 import { CurrentUser, LoginRequest, RegisterRequest } from './auth.model';
 
 @Injectable({ providedIn: 'root' })
@@ -30,6 +37,11 @@ export class AuthApi {
 
   register(request: RegisterRequest): Observable<CurrentUser> {
     return this.api.invoke(register, { body: request });
+  }
+
+  /** Deletes the account and everything in it, and signs out. */
+  deleteAccount(password: string): Observable<void> {
+    return this.api.invoke(deleteAccount, { body: { password } });
   }
 
   /** Handled by Spring Security's filter rather than a controller, so it isn't in the spec. */

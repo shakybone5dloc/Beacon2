@@ -126,6 +126,11 @@ export const routes: Routes = [
         title: 'Beacon · Weekly email',
       },
       {
+        path: 'settings/account',
+        loadComponent: () => import('./settings/account-page').then((m) => m.AccountPage),
+        title: 'Beacon · Account',
+      },
+      {
         path: 'settings/invites',
         loadComponent: () => import('./settings/invites-page').then((m) => m.InvitesPage),
         title: 'Beacon · Invites',
