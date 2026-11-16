@@ -152,6 +152,16 @@ describe('sign-in pages', () => {
     expect(el.textContent).toContain('Required.');
   });
 
+  it('LoginPage says the account was deleted, after deleting it', async () => {
+    const fixture = TestBed.createComponent(LoginPage);
+    fixture.componentRef.setInput('deleted', '1');
+    await fixture.whenStable();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.deleted')?.textContent).toContain(
+      'Your account and all its data were deleted.',
+    );
+  });
+
   it('LoginPage says when there have been too many attempts', async () => {
     const fixture = TestBed.createComponent(LoginPage);
     await fixture.whenStable();

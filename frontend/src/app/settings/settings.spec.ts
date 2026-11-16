@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { AuthState } from '../auth/auth-state';
+import { AccountPage } from './account-page';
 import { Invite, inviteLink } from './invites-api';
 import { InvitesPage } from './invites-page';
 import { SettingsNav } from './settings-nav';
@@ -53,6 +54,7 @@ describe('settings', () => {
     expect(Array.from(el.querySelectorAll('a')).map((a) => a.textContent)).toEqual([
       'API keys',
       'Sending email',
+      'Account',
     ]);
     expect(el.querySelector('[aria-current=page]')?.textContent).toBe('Weekly email');
 
@@ -68,6 +70,67 @@ describe('settings', () => {
     expect(inviteLink('K7QX-M2PA-9DTR', 'https://beacon.example')).toBe(
       'https://beacon.example/register?invite=K7QX-M2PA-9DTR',
     );
+  });
+
+  describe('AccountPage', () => {
+    async function open() {
+      signIn(false);
+      const fixture = TestBed.createComponent(AccountPage);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      return { fixture, el: fixture.nativeElement as HTMLElement };
+    }
+
+    function fill(fixture: { detectChanges(): void }, el: HTMLElement, password: string, understood: boolean) {
+      const input = el.querySelector<HTMLInputElement>('.password')!;
+      input.value = password;
+      input.dispatchEvent(new Event('input'));
+      if (understood) el.querySelector<HTMLInputElement>('.understood')!.click();
+      fixture.detectChanges();
+    }
+
+    it('links the export download', async () => {
+      const { el } = await open();
+
+      const link = el.querySelector<HTMLAnchorElement>('a.export')!;
+      expect(link.getAttribute('href')).toBe('/api/me/export');
+      expect(link.hasAttribute('download')).toBe(true);
+      expect(el.textContent).toContain('me@example.com');
+    });
+
+    it('deletes only with the password and the box ticked, then signs out', async () => {
+      const { fixture, el } = await open();
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      const button = el.querySelector<HTMLButtonElement>('button.delete')!;
+      expect(button.disabled).toBe(true);
+      fill(fixture, el, 'correct horse battery', false);
+      expect(button.disabled).toBe(true);
+      el.querySelector<HTMLInputElement>('.understood')!.click();
+      fixture.detectChanges();
+      expect(button.disabled).toBe(false);
+
+      button.click();
+      const req = http.expectOne((r) => r.method === 'DELETE' && r.url === '/api/me');
+      expect(req.request.body).toEqual({ password: 'correct horse battery' });
+      req.flush(null, { status: 204, statusText: 'No Content' });
+
+      expect(TestBed.inject(AuthState).user()).toBeNull();
+      expect(navigate).toHaveBeenCalledWith(['/login'], { queryParams: { deleted: 1 } });
+    });
+
+    it('says when the password is wrong', async () => {
+      const { fixture, el } = await open();
+      fill(fixture, el, 'not my password', true);
+
+      el.querySelector<HTMLButtonElement>('button.delete')!.click();
+      http
+        .expectOne('/api/me')
+        .flush({ errors: { password: ["That password isn't right."] } }, { status: 400, statusText: 'Bad Request' });
+      fixture.detectChanges();
+
+      expect(el.querySelector('.password-error')?.textContent).toContain("That password isn't right.");
+      expect(TestBed.inject(AuthState).user()).not.toBeNull();
+    });
   });
 
   describe('InvitesPage', () => {

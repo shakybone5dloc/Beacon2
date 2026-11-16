@@ -20,6 +20,8 @@ export class LoginPage {
 
   /** Where to go after signing in; bound from the query string. */
   readonly returnUrl = input<string>();
+  /** Set after the account was deleted, to say so. */
+  readonly deleted = input<string>();
 
   protected readonly submitting = signal(false);
   protected readonly formError = signal<string | null>(null);

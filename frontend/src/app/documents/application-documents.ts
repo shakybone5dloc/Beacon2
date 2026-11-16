@@ -165,7 +165,8 @@ export function problemText(err: HttpErrorResponse, fallback: string): string {
   return fieldError ?? problem?.detail ?? fallback;
 }
 
-function parseProblem(body: unknown): ProblemDetail | null {
+/** A problem body, whether it arrived parsed or as text (endpoints with no body are read as text). */
+export function parseProblem(body: unknown): ProblemDetail | null {
   if (typeof body !== 'string') return (body as ProblemDetail | null) ?? null;
   try {
     const parsed: unknown = JSON.parse(body);

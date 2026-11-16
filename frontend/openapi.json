@@ -2238,6 +2238,27 @@
         "tags" : [ "Matches" ]
       }
     },
+    "/api/me" : {
+      "delete" : {
+        "operationId" : "deleteAccount",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DeleteAccountRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "Account" ]
+      }
+    },
     "/api/me/ai-usage" : {
       "get" : {
         "operationId" : "getAiUsage",
@@ -2472,6 +2493,25 @@
           }
         },
         "tags" : [ "Digest" ]
+      }
+    },
+    "/api/me/export" : {
+      "get" : {
+        "operationId" : "exportAccount",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/zip" : {
+                "schema" : {
+                  "type" : "string",
+                  "format" : "binary"
+                }
+              }
+            },
+            "description" : "A zip file"
+          }
+        },
+        "tags" : [ "Account" ]
       }
     },
     "/api/me/send-from" : {
@@ -4648,6 +4688,17 @@
           }
         },
         "required" : [ "applicationId", "applicationLabel", "cards", "createdAt", "drafts", "due", "id", "kind", "name", "nextDueAt", "updatedAt", "version" ]
+      },
+      "DeleteAccountRequest" : {
+        "type" : "object",
+        "properties" : {
+          "password" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "password" ]
       },
       "DigestPreviewResponse" : {
         "type" : "object",
