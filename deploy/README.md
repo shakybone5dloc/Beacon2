@@ -129,6 +129,21 @@ When nothing is new, it does nothing and writes nothing. So: merge into `main`, 
 | Restore a backup | `./restore.sh backups/beacon-2026-11-09-0300.dump` |
 | Go back to an earlier version | Set `BEACON_TAG=<commit sha>` in `.env`, then `./update.sh` |
 
+## Invites and sign-in limits
+
+Beacon is invite-only: signing up takes a code. Set your own sign-in email as
+`BEACON_ADMIN_EMAILS` in `.env` and run `./update.sh`; Settings then has an **Invites** page where
+you make a code for each person (with a note to remember who it's for), copy its sign-up link,
+and see who used it. Each code works once, for 7 to 90 days; revoke one that went to the wrong
+place. `BEACON_INVITE_ONLY=false` opens sign-up to anyone.
+
+Sign-in is limited to 30 attempts per address and 8 wrong passwords per account in 15 minutes
+(an account over that can't sign in until the window passes), and sign-up to 10 attempts per
+address per hour. The limits are kept in memory, so restarting the API clears them; that's
+also the way to unlock an account early (`docker compose restart api`). They count per client
+address, as the API sees it through nginx's `X-Forwarded-For`: behind a proxy that doesn't pass
+the visitor's address on, everyone shares one count.
+
 ## Backups
 
 The `backup` container dumps the database when it starts and every night at about 3 AM, into

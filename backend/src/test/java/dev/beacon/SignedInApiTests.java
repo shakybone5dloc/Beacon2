@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 public abstract class SignedInApiTests {
 
     @Autowired WebApplicationContext context;
-    @Autowired AccountService accounts;
+    @Autowired protected AccountService accounts;
 
     protected SignedInUser signedIn;
     protected MockMvcTester mvc;

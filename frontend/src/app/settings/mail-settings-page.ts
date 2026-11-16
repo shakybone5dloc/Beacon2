@@ -1,9 +1,9 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { CheckInApi } from '../contacts/check-in-api';
 import { SendFrom } from '../contacts/check-in.model';
+import { SettingsNav } from './settings-nav';
 
 /**
  * Settings: the address the user sends Beacon-written emails (like a check-in) from. A Gmail
@@ -11,7 +11,7 @@ import { SendFrom } from '../contacts/check-in.model';
  */
 @Component({
   selector: 'app-mail-settings-page',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, SettingsNav],
   templateUrl: './mail-settings-page.html',
   host: { class: 'block max-w-2xl' },
 })

@@ -42,6 +42,17 @@ beacon:
   # Encrypts the API keys users save. 32 random bytes, base64-encoded; Beacon won't start without it.
   # Changing it makes saved keys unreadable, and users have to add them again.
   secret-key: ${BEACON_SECRET_KEY:}
+  registration:
+    # While Beacon is an invite-only beta, signing up takes an invite code (L2). Set to false to
+    # let anyone sign up.
+    invite-only: ${BEACON_INVITE_ONLY:true}
+  # Comma-separated emails of the accounts that can manage Beacon (invite codes, for now).
+  admin-emails: ${BEACON_ADMIN_EMAILS:}
+  # Sign-in and sign-up limits (see AttemptLimiter).
+  limits:
+    login-per-ip: ${BEACON_LOGIN_PER_IP:30}
+    login-failures-per-account: ${BEACON_LOGIN_FAILURES_PER_ACCOUNT:8}
+    register-per-ip: ${BEACON_REGISTER_PER_IP:10}
   # Where users open Beacon; links in emails point here.
   app-url: ${BEACON_APP_URL:http://localhost:4200}
   # The SMTP server the weekly digest is sent through. Any provider's SMTP works: a Gmail

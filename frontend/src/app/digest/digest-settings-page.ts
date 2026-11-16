@@ -2,10 +2,10 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { problemText } from '../documents/application-documents';
 import { browserZone } from '../usage/usage.model';
+import { SettingsNav } from '../settings/settings-nav';
 import { DigestApi } from './digest-api';
 import { DAYS, DigestSettings, HOURS, SaveDigestSettings } from './digest.model';
 
@@ -15,7 +15,7 @@ import { DAYS, DigestSettings, HOURS, SaveDigestSettings } from './digest.model'
  */
 @Component({
   selector: 'app-digest-settings-page',
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, SettingsNav],
   templateUrl: './digest-settings-page.html',
   host: { class: 'block max-w-3xl' },
 })

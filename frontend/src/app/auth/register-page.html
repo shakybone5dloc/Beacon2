@@ -1,11 +1,30 @@
 <section class="auth">
   <h1>Create an account</h1>
+  @if (inviteOnly()) {
+    <p class="intro">Beacon is invite-only for now. Use the code or link you were sent.</p>
+  }
 
   @if (formError(); as message) {
     <p class="notice">{{ message }}</p>
   }
 
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (inviteOnly()) {
+      <label>
+        Invite code
+        <input
+          class="invite-code"
+          formControlName="inviteCode"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          placeholder="XXXX-XXXX-XXXX"
+        />
+        @if (errorFor('inviteCode'); as msg) {
+          <span class="error">{{ msg }}</span>
+        }
+      </label>
+    }
     <label>
       <span>Name <span class="hint">(optional)</span></span>
       <input formControlName="displayName" autocomplete="name" />

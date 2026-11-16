@@ -9,6 +9,80 @@
     "url" : ""
   } ],
   "paths" : {
+    "/api/admin/invites" : {
+      "get" : {
+        "operationId" : "listInvites",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/InviteResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Admin" ]
+      },
+      "post" : {
+        "operationId" : "createInvite",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateInviteRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InviteResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "Admin" ]
+      }
+    },
+    "/api/admin/invites/{id}/revoke" : {
+      "post" : {
+        "operationId" : "revokeInvite",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InviteResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Admin" ]
+      }
+    },
     "/api/applications" : {
       "get" : {
         "operationId" : "listApplications",
@@ -1292,6 +1366,16 @@
               }
             },
             "description" : "Wrong email or password"
+          },
+          "429" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Too many attempts from this address or for this account"
           }
         },
         "tags" : [ "Auth" ]
@@ -1338,6 +1422,34 @@
               }
             },
             "description" : "Created"
+          },
+          "429" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Too many sign-ups from this address"
+          }
+        },
+        "tags" : [ "Auth" ]
+      }
+    },
+    "/api/auth/registration" : {
+      "get" : {
+        "operationId" : "getRegistration",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RegistrationResponse"
+                }
+              }
+            },
+            "description" : "OK"
           }
         },
         "tags" : [ "Auth" ]
@@ -4396,6 +4508,22 @@
         },
         "required" : [ "channel", "direction", "occurredAt" ]
       },
+      "CreateInviteRequest" : {
+        "type" : "object",
+        "properties" : {
+          "days" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32",
+            "maximum" : 90,
+            "minimum" : 1
+          },
+          "note" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 200,
+            "minLength" : 0
+          }
+        }
+      },
       "CreatePersonRequest" : {
         "type" : "object",
         "properties" : {
@@ -4453,6 +4581,9 @@
       "CurrentUserResponse" : {
         "type" : "object",
         "properties" : {
+          "admin" : {
+            "type" : "boolean"
+          },
           "displayName" : {
             "type" : [ "string", "null" ]
           },
@@ -4464,7 +4595,7 @@
             "format" : "uuid"
           }
         },
-        "required" : [ "displayName", "email", "id" ]
+        "required" : [ "admin", "displayName", "email", "id" ]
       },
       "DeckResponse" : {
         "type" : "object",
@@ -4828,6 +4959,45 @@
           }
         },
         "required" : [ "company", "id", "name" ]
+      },
+      "InviteResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "expiresAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "note" : {
+            "type" : [ "string", "null" ]
+          },
+          "revokedAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "state" : {
+            "type" : "string",
+            "enum" : [ "OPEN", "USED", "EXPIRED", "REVOKED" ]
+          },
+          "usedAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "usedBy" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "code", "createdAt", "expiresAt", "id", "note", "revokedAt", "state", "usedAt", "usedBy" ]
       },
       "JobMatchResponse" : {
         "type" : "object",
@@ -5302,6 +5472,11 @@
             "maxLength" : 320,
             "minLength" : 0
           },
+          "inviteCode" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 40,
+            "minLength" : 0
+          },
           "password" : {
             "type" : "string",
             "maxLength" : 200,
@@ -5309,6 +5484,15 @@
           }
         },
         "required" : [ "email", "password" ]
+      },
+      "RegistrationResponse" : {
+        "type" : "object",
+        "properties" : {
+          "inviteOnly" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "inviteOnly" ]
       },
       "ResumeResponse" : {
         "type" : "object",

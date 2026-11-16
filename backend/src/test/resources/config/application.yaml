@@ -2,6 +2,15 @@
 beacon:
   # A fixed key for tests only; never use it for real data.
   secret-key: "dGVzdC1vbmx5LXNlY3JldC1rZXktMzItYnl0ZXMhISE="
+  registration:
+    # Tests and the throwaway test-run app sign up freely; InviteApiTests turns this on.
+    invite-only: false
+  # The throwaway test-run app's browser-check account, so the Invites page can be tried there.
+  admin-emails: "x@example.test"
+  limits:
+    # High enough that tests signing in many times never trip them; LimitApiTests sets its own.
+    login-per-ip: 10000
+    register-per-ip: 10000
   saved-searches:
     # Tests run saved searches themselves, inline, so they can check what a run did.
     scheduler-enabled: false
