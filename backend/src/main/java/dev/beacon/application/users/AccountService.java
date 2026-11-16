@@ -16,11 +16,14 @@ import java.time.Instant;
 public class AccountService implements UserDetailsService {
 
     private final UserAccountRepository users;
+    private final InviteService invites;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
 
-    public AccountService(UserAccountRepository users, PasswordEncoder passwordEncoder, Clock clock) {
+    public AccountService(UserAccountRepository users, InviteService invites, PasswordEncoder passwordEncoder,
+                          Clock clock) {
         this.users = users;
+        this.invites = invites;
         this.passwordEncoder = passwordEncoder;
         this.clock = clock;
     }
@@ -41,6 +44,21 @@ public class AccountService implements UserDetailsService {
         var account = UserAccount.register(normalized, passwordEncoder.encode(password), displayName, Instant.now(clock));
         users.save(account);
         return SignedInUser.of(account);
+    }
+
+    /**
+     * Signs someone up with an invite code: the account and the code's use are saved together, so
+     * a code works exactly once and a failed sign-up leaves it unused. Without invite-only sign-up,
+     * the code is ignored.
+     */
+    @Transactional
+    public SignedInUser register(String email, String password, String displayName, String inviteCode) {
+        var user = register(email, password, displayName);
+        if (invites.inviteOnly()) {
+            users.flush();
+            invites.claim(inviteCode, user.id());
+        }
+        return user;
     }
 
     @Override

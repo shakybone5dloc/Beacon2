@@ -6,6 +6,7 @@ import dev.beacon.application.digest.DigestException;
 import dev.beacon.application.stories.StoryException;
 import dev.beacon.application.checkin.CheckInException;
 import dev.beacon.application.study.StudyException;
+import dev.beacon.application.users.TooManyAttemptsException;
 import dev.beacon.application.tailoring.TailoringException;
 import dev.beacon.application.documents.PostingCaptureException;
 import dev.beacon.application.fit.FitScoreException;
@@ -49,6 +50,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         problem.setProperty("errors", errors);
 
         return handleExceptionInternal(ex, problem, headers, status, request);
+    }
+
+    @ExceptionHandler(TooManyAttemptsException.class)
+    public ResponseEntity<ProblemDetail> handleTooManyAttempts(TooManyAttemptsException ex) {
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+        problem.setTitle("Too many attempts");
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(Math.max(1, ex.retryAfter().toSeconds())))
+                .body(problem);
     }
 
     @ExceptionHandler(RequestValidationException.class)

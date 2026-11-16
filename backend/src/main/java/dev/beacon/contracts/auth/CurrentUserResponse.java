@@ -7,6 +7,8 @@ import java.util.UUID;
 public record CurrentUserResponse(
         UUID id,
         String email,
-        @Nullable String displayName
+        @Nullable String displayName,
+        /** Can manage Beacon itself (invite codes). */
+        boolean admin
 ) {
 }

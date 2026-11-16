@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { BeaconApi } from '../api/beacon-api';
-import { getCsrfToken, getCurrentUser, login, register } from '../api/functions';
+import { getCsrfToken, getCurrentUser, getRegistration, login, register } from '../api/functions';
 import { CurrentUser, LoginRequest, RegisterRequest } from './auth.model';
 
 @Injectable({ providedIn: 'root' })
@@ -21,6 +21,11 @@ export class AuthApi {
 
   login(request: LoginRequest): Observable<CurrentUser> {
     return this.api.invoke(login, { body: request });
+  }
+
+  /** Whether signing up needs an invite code. */
+  registration(): Observable<{ inviteOnly: boolean }> {
+    return this.api.invoke(getRegistration);
   }
 
   register(request: RegisterRequest): Observable<CurrentUser> {

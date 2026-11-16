@@ -2,7 +2,13 @@ package dev.beacon.api.auth;
 
 import dev.beacon.api.errors.RequestValidationException;
 import dev.beacon.application.users.AccountService;
+import dev.beacon.application.users.Admins;
+import dev.beacon.application.users.AttemptLimiter;
+import dev.beacon.application.users.InviteService;
 import dev.beacon.application.users.SignedInUser;
+import dev.beacon.application.users.TooManyAttemptsException;
+import dev.beacon.contracts.auth.RegistrationResponse;
+import dev.beacon.domain.users.UserAccount;
 import dev.beacon.contracts.auth.CurrentUserResponse;
 import dev.beacon.contracts.auth.LoginRequest;
 import dev.beacon.contracts.auth.RegisterRequest;
@@ -36,13 +42,20 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AccountService accounts;
+    private final InviteService invites;
+    private final Admins admins;
+    private final AttemptLimiter limiter;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository contextRepository;
     private final RememberMeServices rememberMe;
 
-    public AuthController(AccountService accounts, AuthenticationManager authenticationManager,
-                          SecurityContextRepository contextRepository, RememberMeServices rememberMe) {
+    public AuthController(AccountService accounts, InviteService invites, Admins admins, AttemptLimiter limiter,
+                          AuthenticationManager authenticationManager, SecurityContextRepository contextRepository,
+                          RememberMeServices rememberMe) {
         this.accounts = accounts;
+        this.invites = invites;
+        this.admins = admins;
+        this.limiter = limiter;
         this.authenticationManager = authenticationManager;
         this.contextRepository = contextRepository;
         this.rememberMe = rememberMe;
@@ -57,16 +70,37 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    /** Whether signing up needs an invite code, for the sign-up page. */
+    @Operation(operationId = "getRegistration")
+    @GetMapping("/registration")
+    public RegistrationResponse registration() {
+        return new RegistrationResponse(invites.inviteOnly());
+    }
+
     @Operation(operationId = "register")
     @ApiResponse(responseCode = "201", useReturnTypeSchema = true)
+    @ApiResponse(responseCode = "429", description = "Too many sign-ups from this address",
+            content = @Content(mediaType = "application/problem+json",
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping("/register")
     public ResponseEntity<CurrentUserResponse> register(@Valid @RequestBody RegisterRequest body,
                                                         HttpServletRequest request, HttpServletResponse response) {
+        var address = request.getRemoteAddr();
+        limiter.blockedFor(AttemptLimiter.Kind.REGISTER_IP, address).ifPresent(wait -> {
+            throw new TooManyAttemptsException(wait);
+        });
+        // Every attempt counts, so invite codes can't be guessed one after another.
+        limiter.record(AttemptLimiter.Kind.REGISTER_IP, address);
+        if (invites.inviteOnly() && (body.inviteCode() == null || body.inviteCode().isBlank())) {
+            throw new RequestValidationException("inviteCode", "Beacon is invite-only for now. Enter your invite code.");
+        }
         SignedInUser user;
         try {
-            user = accounts.register(body.email(), body.password(), body.displayName());
+            user = accounts.register(body.email(), body.password(), body.displayName(), body.inviteCode());
         } catch (AccountService.EmailTakenException ex) {
             throw new RequestValidationException("email", ex.getMessage());
+        } catch (InviteService.InvalidInviteException ex) {
+            throw new RequestValidationException("inviteCode", ex.getMessage());
         }
         user.eraseCredentials();
         signIn(UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities()), request, response);
@@ -79,14 +113,28 @@ public class AuthController {
     @ApiResponse(responseCode = "401", description = "Wrong email or password",
             content = @Content(mediaType = "application/problem+json",
                     schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "429", description = "Too many attempts from this address or for this account",
+            content = @Content(mediaType = "application/problem+json",
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest body,
                                    HttpServletRequest request, HttpServletResponse response) {
+        var address = request.getRemoteAddr();
+        var account = UserAccount.normalizeEmail(body.email());
+        // Checked before the password, so a flood of attempts never reaches the (slow) hash.
+        limiter.blockedFor(AttemptLimiter.Kind.LOGIN_IP, address)
+                .or(() -> limiter.blockedFor(AttemptLimiter.Kind.LOGIN_ACCOUNT, account))
+                .ifPresent(wait -> {
+                    throw new TooManyAttemptsException(wait);
+                });
+        limiter.record(AttemptLimiter.Kind.LOGIN_IP, address);
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(body.email(), body.password()));
+            limiter.clear(AttemptLimiter.Kind.LOGIN_ACCOUNT, account);
         } catch (AuthenticationException ex) {
+            limiter.record(AttemptLimiter.Kind.LOGIN_ACCOUNT, account);
             // Same answer for a wrong password and an unknown email, so emails can't be probed.
             var problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Email or password is incorrect.");
             problem.setTitle("Sign-in failed");
@@ -113,7 +161,7 @@ public class AuthController {
         contextRepository.saveContext(context, request, response);
     }
 
-    private static CurrentUserResponse toResponse(SignedInUser user) {
-        return new CurrentUserResponse(user.id(), user.email(), user.displayName());
+    private CurrentUserResponse toResponse(SignedInUser user) {
+        return new CurrentUserResponse(user.id(), user.email(), user.displayName(), admins.isAdmin(user.email()));
     }
 }

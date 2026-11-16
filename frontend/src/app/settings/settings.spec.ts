@@ -1,0 +1,130 @@
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import { AuthState } from '../auth/auth-state';
+import { Invite, inviteLink } from './invites-api';
+import { InvitesPage } from './invites-page';
+import { SettingsNav } from './settings-nav';
+
+function anInvite(overrides: Partial<Invite> = {}): Invite {
+  return {
+    id: 'i1',
+    code: 'K7QX-M2PA-9DTR',
+    note: 'Pat, from LinkedIn',
+    state: 'OPEN',
+    createdAt: '2026-11-14T12:00:00Z',
+    expiresAt: '2026-11-28T12:00:00Z',
+    usedBy: null,
+    usedAt: null,
+    revokedAt: null,
+    ...overrides,
+  };
+}
+
+describe('settings', () => {
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    });
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    http.verify();
+    vi.restoreAllMocks();
+  });
+
+  /** Signs in as a user who is, or isn't, an admin. */
+  function signIn(admin: boolean): void {
+    TestBed.inject(AuthState).load().subscribe();
+    http.expectOne('/api/auth/csrf').flush(null);
+    http.expectOne('/api/auth/me').flush({ id: 'u1', email: 'me@example.com', displayName: null, admin });
+  }
+
+  it('links Invites only for admins', async () => {
+    signIn(false);
+    let fixture = TestBed.createComponent(SettingsNav);
+    fixture.componentRef.setInput('current', 'digest');
+    fixture.detectChanges();
+    let el = fixture.nativeElement as HTMLElement;
+    expect(Array.from(el.querySelectorAll('a')).map((a) => a.textContent)).toEqual([
+      'API keys',
+      'Sending email',
+    ]);
+    expect(el.querySelector('[aria-current=page]')?.textContent).toBe('Weekly email');
+
+    signIn(true);
+    fixture = TestBed.createComponent(SettingsNav);
+    fixture.componentRef.setInput('current', 'digest');
+    fixture.detectChanges();
+    el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('a[href="/settings/invites"]')?.textContent).toBe('Invites');
+  });
+
+  it('builds the sign-up link for a code', () => {
+    expect(inviteLink('K7QX-M2PA-9DTR', 'https://beacon.example')).toBe(
+      'https://beacon.example/register?invite=K7QX-M2PA-9DTR',
+    );
+  });
+
+  describe('InvitesPage', () => {
+    async function open(invites: Invite[]) {
+      signIn(true);
+      const fixture = TestBed.createComponent(InvitesPage);
+      fixture.detectChanges();
+      http.expectOne('/api/admin/invites').flush(invites);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      return { fixture, el: fixture.nativeElement as HTMLElement };
+    }
+
+    it('lists codes with who they are for and what became of them', async () => {
+      const { el } = await open([
+        anInvite(),
+        anInvite({ id: 'i2', code: 'AAAA-BBBB-CCCC', state: 'USED', usedBy: 'sam@example.com', usedAt: '2026-11-15T12:00:00Z' }),
+      ]);
+
+      const items = el.querySelectorAll('.invite');
+      expect(items[0].querySelector('.code')?.textContent).toBe('K7QX-M2PA-9DTR');
+      expect(items[0].textContent).toContain('Pat, from LinkedIn');
+      expect(items[0].querySelector('.state')?.textContent).toBe('Not used yet');
+      expect(items[0].querySelector<HTMLInputElement>('.link')!.value).toContain('/register?invite=K7QX-M2PA-9DTR');
+      expect(items[1].querySelector('.state')?.textContent).toBe('Used');
+      expect(items[1].textContent).toContain('Made sam@example.com');
+      expect(items[1].querySelector('.revoke')).toBeNull();
+    });
+
+    it('makes a code for someone and puts it first', async () => {
+      const { fixture, el } = await open([anInvite()]);
+      const note = el.querySelector<HTMLInputElement>('.note')!;
+      note.value = ' Sam ';
+      note.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      el.querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
+      const req = http.expectOne((r) => r.method === 'POST' && r.url === '/api/admin/invites');
+      expect(req.request.body).toEqual({ note: 'Sam', days: 14 });
+      req.flush(anInvite({ id: 'i3', code: 'NEWC-ODE2-3456', note: 'Sam' }));
+      fixture.detectChanges();
+
+      expect(el.querySelector('.invite .code')?.textContent).toBe('NEWC-ODE2-3456');
+    });
+
+    it('revokes after asking', async () => {
+      const { fixture, el } = await open([anInvite()]);
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+      el.querySelector<HTMLButtonElement>('.revoke')!.click();
+      http
+        .expectOne((r) => r.method === 'POST' && r.url === '/api/admin/invites/i1/revoke')
+        .flush(anInvite({ state: 'REVOKED', revokedAt: '2026-11-14T13:00:00Z' }));
+      fixture.detectChanges();
+
+      expect(el.querySelector('.state')?.textContent).toBe('Revoked');
+      expect(el.querySelector('.revoke')).toBeNull();
+    });
+  });
+});

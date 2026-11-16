@@ -1,0 +1,96 @@
+<app-settings-nav current="invites" />
+
+<h1>Invites</h1>
+<p class="m-0 mb-space-lg text-body-md text-on-surface-variant">
+  While Beacon is an invite-only beta, signing up takes a code. Each code makes one account. Send
+  the link: it opens the sign-up page with the code filled in.
+</p>
+
+<form class="card mb-space-lg grid gap-space-md p-space-lg" (ngSubmit)="create()">
+  <h2 class="m-0 text-headline-sm">New code</h2>
+  <div class="grid gap-space-md sm:grid-cols-[1fr_auto]">
+    <label class="grid gap-space-xs">
+      Who it's for <span class="text-body-sm font-normal text-on-surface-variant">(only you see this)</span>
+      <input
+        class="note"
+        name="note"
+        maxlength="200"
+        placeholder="Pat, from the LinkedIn post"
+        [ngModel]="note()"
+        (ngModelChange)="note.set($event)"
+      />
+    </label>
+    <label class="grid gap-space-xs">
+      Works for
+      <select class="days" name="days" [ngModel]="days()" (ngModelChange)="days.set(+$event)">
+        <option [value]="7">7 days</option>
+        <option [value]="14">14 days</option>
+        <option [value]="30">30 days</option>
+        <option [value]="90">90 days</option>
+      </select>
+    </label>
+  </div>
+  <button type="submit" class="create btn btn-primary justify-self-start" [disabled]="creating()">
+    {{ creating() ? 'Making…' : 'Make a code' }}
+  </button>
+</form>
+
+@if (notice(); as text) {
+  <p class="notice">{{ text }}</p>
+}
+
+@if (loadError()) {
+  <p class="notice">Could not load the codes. Try again in a moment.</p>
+} @else if (invites(); as list) {
+  @if (list.length === 0) {
+    <p class="empty text-on-surface-variant">No codes yet.</p>
+  } @else {
+    <ul class="invites m-0 grid list-none gap-space-sm p-0">
+      @for (i of list; track i.id) {
+        <li class="invite card grid gap-space-xs p-space-md" [class.opacity-70]="i.state !== 'OPEN'">
+          <div class="flex flex-wrap items-center gap-space-sm">
+            <code class="code font-mono text-body-md">{{ i.code }}</code>
+            <span class="state pill" [class.pill-blue]="i.state === 'OPEN'">{{ stateLabels[i.state] }}</span>
+            @if (i.note) {
+              <span class="text-body-sm">{{ i.note }}</span>
+            }
+          </div>
+          <p class="m-0 text-body-sm text-on-surface-variant">
+            @switch (i.state) {
+              @case ('USED') {
+                Made {{ i.usedBy ?? 'an account since deleted' }} on {{ i.usedAt | date: 'MMM d' }}.
+              }
+              @case ('REVOKED') {
+                Revoked {{ i.revokedAt | date: 'MMM d' }}.
+              }
+              @case ('EXPIRED') {
+                Expired {{ i.expiresAt | date: 'MMM d' }}.
+              }
+              @default {
+                Works until {{ i.expiresAt | date: 'MMM d' }}.
+              }
+            }
+          </p>
+          @if (i.state === 'OPEN') {
+            <div class="flex flex-wrap items-center gap-space-sm">
+              <input
+                class="link grow font-mono text-body-sm"
+                readonly
+                [value]="link(i.code)"
+                aria-label="Sign-up link"
+                (focus)="$any($event.target).select()"
+              />
+              <button type="button" class="copy btn btn-sm" (click)="copy(i)">Copy link</button>
+              <button type="button" class="revoke btn btn-sm btn-danger" (click)="revoke(i)">Revoke</button>
+              @if (copied() === i.code) {
+                <span class="copied text-body-sm text-success" role="status">Copied.</span>
+              }
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+} @else {
+  <p class="text-on-surface-variant">Loading...</p>
+}

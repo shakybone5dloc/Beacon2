@@ -438,7 +438,10 @@ Most of what's missing isn't features: it's the safety, account and hosting work
   - widen the address checks in `PublicUrls` and `CareersPageFinder`;
   - on AWS, require IMDSv2 with a hop limit of 1, so containers can't reach the metadata service, and give the instance role the fewest permissions possible.
 
-### L2. Sign-up and login protection
+### L2. Sign-up and login protection (done, Nov 14)
+- Built as invite codes (V26 `invite_codes`): single-use, 7 to 90 days (14 by default), with a note for whom; typed in any case, with or without dashes. Sign-up takes one while `BEACON_INVITE_ONLY` is true (the default), and the code is claimed in the same transaction as the account, with a single conditional update, so a code makes one account and a failed sign-up leaves it unused. A wrong code gets the same answer whether it never existed, was used, expired or was revoked.
+- Admins are the emails in `BEACON_ADMIN_EMAILS`. Settings · Invites (shown only to them; the API answers 404 to anyone else) makes, lists and revokes codes and copies a `/register?invite=` link that fills the code in.
+- Limits (`AttemptLimiter`, in memory): 30 sign-in attempts per address and 8 wrong passwords per account per 15 minutes, after which the account can't sign in until the window passes; 10 sign-ups per address per hour. Checked before the password hash; over a limit is 429 with `Retry-After` and "Try again in N minutes". A successful sign-in clears the account's count. The settings pages now share one nav.
 - Invite codes: registration needs a code handed out to testers. A public post reaches more people than intended.
 - Rate limits on login and registration (per IP and per account) and a short lockout after repeated failures. Nothing limits attempts today.
 

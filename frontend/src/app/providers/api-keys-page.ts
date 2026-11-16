@@ -1,5 +1,6 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { SettingsNav } from '../settings/settings-nav';
 import { forkJoin } from 'rxjs';
 import { AiUsagePanel } from '../usage/ai-usage-panel';
 import { ApiKeyEditor } from './api-key-editor';
@@ -14,7 +15,7 @@ interface Entry {
 /** Settings: the user's own keys for every provider that takes one. */
 @Component({
   selector: 'app-api-keys-page',
-  imports: [RouterLink, ApiKeyEditor, AiUsagePanel],
+  imports: [RouterLink, ApiKeyEditor, AiUsagePanel, SettingsNav],
   templateUrl: './api-keys-page.html',
   styleUrl: './api-keys-page.css',
 })
