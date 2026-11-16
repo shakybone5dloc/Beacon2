@@ -10,6 +10,7 @@ RUN npm run build
 
 FROM nginx:1.29-alpine
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /src/dist/frontend/browser /usr/share/nginx/html
 # The scheme users reach Beacon with; https behind Tailscale. Sets the cookies' Secure flag.
 ENV PUBLIC_SCHEME=https \

@@ -83,6 +83,10 @@ class DocumentsApiTests extends SignedInApiTests {
         var html = upload("/api/applications/" + appId + "/documents", file("page.html", "<p>hi</p>".getBytes()), "other");
         assertThat(html).hasStatus(HttpStatus.BAD_REQUEST);
         assertThat(html).bodyJson().extractingPath("$.errors.file").isNotNull();
+        // SVG can carry script too, so it's refused like HTML.
+        var svg = upload("/api/applications/" + appId + "/documents",
+                file("logo.svg", "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>x</script></svg>".getBytes()), "other");
+        assertThat(svg).hasStatus(HttpStatus.BAD_REQUEST);
 
         var empty = upload("/api/applications/" + appId + "/documents", file("resume.pdf", new byte[0]), "resume");
         assertThat(empty).hasStatus(HttpStatus.BAD_REQUEST);

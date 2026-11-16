@@ -35,7 +35,9 @@ management:
         include: health
   endpoint:
     health:
-      show-details: always
+      # Just UP or DOWN: the health check is public, and its details (database, disk) aren't
+      # anyone else's business. The container health check only needs the status.
+      show-details: never
       probes:
         enabled: true
 beacon:
@@ -97,10 +99,15 @@ beacon:
       - { model: claude-haiku-5-5,  since: 2026-01-01, input: 0.10, cached-input: 0.01, output: 0.50 }
 
 springdoc:
+  # The API description and Swagger UI are for development; off unless BEACON_API_DOCS=true, so a
+  # public server doesn't publish a map of its API. Tests turn them on to check the committed spec.
+  api-docs:
+    enabled: ${BEACON_API_DOCS:false}
   # Sorted output, so the spec committed for the frontend only changes when the API does.
   writer-with-order-by-keys: true
   # Responses are JSON unless an endpoint says otherwise (file downloads do).
   default-produces-media-type: application/json
   swagger-ui:
+    enabled: ${BEACON_API_DOCS:false}
     csrf:
       enabled: true
