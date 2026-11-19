@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { anApplication } from '../applications/testing';
 import { aResume } from '../resumes/testing';
+import { MatchPreview } from './match-preview';
 import { MatchesPage } from './matches-page';
 import { SavedSearchesPage } from './saved-searches-page';
 import { JobMatch, SavedSearch, scheduleLabel } from './search.model';
@@ -301,5 +302,68 @@ describe('saved searches and matches', () => {
         vi.useRealTimers();
       }
     });
+  });
+});
+
+describe('MatchPreview', () => {
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    // jsdom may not implement modal dialogs.
+    HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) {
+      this.open = true;
+    };
+    HTMLDialogElement.prototype.close ??= function (this: HTMLDialogElement) {
+      this.open = false;
+      this.dispatchEvent(new Event('close'));
+    };
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    });
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  async function open(match: JobMatch, description: string | null, actions = true) {
+    const fixture = TestBed.createComponent(MatchPreview);
+    fixture.componentRef.setInput('match', match);
+    fixture.componentRef.setInput('actions', actions);
+    fixture.detectChanges();
+    http.expectOne('/api/matches/m1/posting').flush({ description });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return { fixture, el: fixture.nativeElement as HTMLElement };
+  }
+
+  it('shows the whole posting and saves or dismisses from it', async () => {
+    const { fixture, el } = await open(aMatch(), 'About the role\n\nBuild services with Java.');
+    const save = vi.fn();
+    const dismiss = vi.fn();
+    fixture.componentInstance.save.subscribe(save);
+    fixture.componentInstance.dismiss.subscribe(dismiss);
+
+    expect(el.querySelector('dialog')?.open).toBe(true);
+    expect(el.querySelector('h2')?.textContent).toContain('Java Developer');
+    expect(el.querySelector('.description')?.textContent).toContain('About the role');
+    expect(el.querySelector('a[href="https://jobs.example/1"]')).not.toBeNull();
+
+    el.querySelector<HTMLButtonElement>('button.save')!.click();
+    el.querySelector<HTMLButtonElement>('button.dismiss')!.click();
+    expect(save).toHaveBeenCalled();
+    expect(dismiss).toHaveBeenCalled();
+  });
+
+  it('falls back to the snippet and hides actions when asked', async () => {
+    const { fixture, el } = await open(aMatch(), null, false);
+    const closed = vi.fn();
+    fixture.componentInstance.closed.subscribe(closed);
+
+    expect(el.textContent).toContain('Build services with Java.');
+    expect(el.textContent).toContain('only sent a short summary');
+    expect(el.querySelector('button.save')).toBeNull();
+
+    el.querySelector<HTMLButtonElement>('button.close')!.click();
+    expect(closed).toHaveBeenCalled();
   });
 });

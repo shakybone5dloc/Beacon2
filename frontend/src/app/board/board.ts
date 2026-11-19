@@ -15,6 +15,8 @@ import {
   orderedMoves,
 } from '../applications/application.model';
 import { Attention, attentionFor, byUrgency } from '../applications/attention';
+import { ARCHIVE_AFTER_DAYS, isArchived } from '../applications/archive';
+import { matchesWords, searchWords } from '../applications/search';
 import { formatLocation, formatSalary, withoutRemoteNote } from '../postings/format';
 import { verdict, Verdict } from '../fit/fit.model';
 
@@ -84,6 +86,7 @@ export class Board implements OnInit {
   private readonly route = inject(ActivatedRoute);
   protected readonly employerLabel = employerLabel;
   protected readonly verdict = verdict;
+  protected readonly archiveAfterDays = ARCHIVE_AFTER_DAYS;
   /** The fit bar's fill, in the verdict's colour. */
   protected readonly fitFill: Record<Verdict['pill'], string> = {
     'pill-green': 'bg-success',
@@ -117,11 +120,21 @@ export class Board implements OnInit {
     ].sort((a, b) => a.localeCompare(b)),
   );
 
+  /** Everything but applications closed long enough ago to be archived. */
+  private readonly onBoard = computed(() =>
+    (this.applications() ?? []).filter((app) => !isArchived(app, this.now())),
+  );
+
+  /** Closed applications that have aged off the board; they're listed on the archive page. */
+  protected readonly archivedCount = computed(
+    () => (this.applications() ?? []).length - this.onBoard().length,
+  );
+
   private readonly cards = computed<Card[]>(() => {
     const now = this.now();
     const words = searchWords(this.search());
     const source = this.source();
-    return (this.applications() ?? [])
+    return this.onBoard()
       .map((app) => ({ app, attention: attentionFor(app, now) }))
       .filter(
         (card) =>
@@ -133,7 +146,7 @@ export class Board implements OnInit {
   });
 
   protected readonly shownCount = computed(() => this.cards().length);
-  protected readonly totalCount = computed(() => (this.applications() ?? []).length);
+  protected readonly totalCount = computed(() => this.onBoard().length);
 
   protected readonly columns = computed<Column[]>(() =>
     COLUMNS.map((column) => ({
@@ -141,6 +154,9 @@ export class Board implements OnInit {
       cards: this.cards().filter((card) => column.statuses.includes(card.app.status)),
     })),
   );
+
+  /** The one column shown on narrow screens. */
+  protected readonly stage = signal('Saved');
 
   /** Waiting for the user to say which way to close a card dropped on Closed. */
   protected readonly pendingDrop = signal<PendingDrop | null>(null);
@@ -297,27 +313,4 @@ export class Board implements OnInit {
       error: () => this.error.set('Could not load applications. Is the API running?'),
     });
   }
-}
-
-/** Lower-case words without accents, so "Sr Java" finds "Sr. Java" and "Montréal" finds "montreal". */
-function searchWords(text: string): string[] {
-  return plain(text)
-    .split(/\s+/)
-    .filter((w) => w.length > 0);
-}
-
-function plain(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/\p{M}+/gu, '')
-    .toLowerCase();
-}
-
-/** Every word appears in the employer, role, location, source or notes. */
-function matchesWords(app: ApplicationResponse, words: string[]): boolean {
-  if (words.length === 0) return true;
-  const haystack = plain(
-    [employerLabel(app), app.role, app.location, app.source, app.notes].filter(Boolean).join(' '),
-  );
-  return words.every((word) => haystack.includes(word));
 }

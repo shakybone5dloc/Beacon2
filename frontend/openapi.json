@@ -2184,6 +2184,33 @@
         "tags" : [ "Matches" ]
       }
     },
+    "/api/matches/{id}/posting" : {
+      "get" : {
+        "operationId" : "getMatchPosting",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MatchPostingResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Matches" ]
+      }
+    },
     "/api/matches/{id}/restore" : {
       "post" : {
         "operationId" : "restoreMatch",
@@ -5266,6 +5293,15 @@
           }
         },
         "required" : [ "state" ]
+      },
+      "MatchPostingResponse" : {
+        "type" : "object",
+        "properties" : {
+          "description" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "description" ]
       },
       "MatchSummaryResponse" : {
         "type" : "object",

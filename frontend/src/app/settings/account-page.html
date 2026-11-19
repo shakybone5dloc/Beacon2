@@ -1,16 +1,17 @@
-<app-settings-nav current="account" />
-
 <h1>Account</h1>
 <p class="m-0 mb-space-lg text-body-md text-on-surface-variant">
-  Signed in as <strong>{{ email() }}</strong>.
+  Signed in as <strong>{{ email() }}</strong
+  >.
 </p>
+
+<app-send-from-settings />
 
 <section class="card mb-space-lg grid gap-space-sm p-space-lg" aria-labelledby="export-heading">
   <h2 id="export-heading" class="m-0 text-headline-sm">Download your data</h2>
   <p class="m-0 text-body-md text-on-surface-variant">
     A zip of everything you've put into Beacon: your applications, contacts, interviews, stories,
-    study cards and the rest as JSON files, plus every resume, cover letter and posting PDF.
-    Your password and API keys aren't included.
+    study cards and the rest as JSON files, plus every resume, cover letter and posting PDF. Your
+    password and API keys aren't included.
   </p>
   <a class="export btn justify-self-start no-underline" href="/api/me/export" download>
     <span class="material-symbols-outlined !text-base" aria-hidden="true">download</span>
@@ -18,11 +19,14 @@
   </a>
 </section>
 
-<section class="danger card grid gap-space-sm border-error-border p-space-lg" aria-labelledby="delete-heading">
+<section
+  class="danger card grid gap-space-sm border-error-border p-space-lg"
+  aria-labelledby="delete-heading"
+>
   <h2 id="delete-heading" class="m-0 text-headline-sm">Delete your account</h2>
   <p class="m-0 text-body-md text-on-surface-variant">
-    Deletes your account and everything in it, for good: applications, documents, contacts,
-    saved keys, all of it. It can't be undone. Download your data first if you might want it.
+    Deletes your account and everything in it, for good: applications, documents, contacts, saved
+    keys, all of it. It can't be undone. Download your data first if you might want it.
   </p>
   <form class="grid gap-space-sm" (ngSubmit)="deleteAccount()">
     <label class="grid gap-space-xs">

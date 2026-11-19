@@ -5,6 +5,7 @@ import {
   createSavedSearch,
   deleteSavedSearch,
   dismissMatch,
+  getMatchPosting,
   getMatchSummary,
   getSavedSearch,
   listMatches,
@@ -53,6 +54,11 @@ export class SearchesApi {
 
   newMatchCount(): Observable<number> {
     return this.api.invoke(getMatchSummary).pipe(map((s) => s.newCount));
+  }
+
+  /** The match's full posting text (null when its source sent only a snippet). */
+  matchPosting(id: string): Observable<{ description: string | null }> {
+    return this.api.invoke(getMatchPosting, { id });
   }
 
   saveMatch(id: string): Observable<ApplicationResponse> {

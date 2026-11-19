@@ -239,6 +239,18 @@ class SavedSearchApiTests extends SignedInApiTests {
     }
 
     @Test
+    void aMatchsFullPostingCanBeReadBeforeSavingIt() {
+        FakeBoardConfig.POSTINGS.add(posting("1", "Java Developer", "Initech"));
+        run(id(create(SEARCH.formatted(""))));
+        var matchId = JsonPath.<String>read(body(mvc.get().uri("/api/matches").exchange()), "$[0].id");
+
+        assertThat(mvc.get().uri("/api/matches/{id}/posting", matchId).exchange())
+                .bodyJson().extractingPath("$.description").isEqualTo("Build services with Java.");
+        assertThat(as(register()).get().uri("/api/matches/{id}/posting", matchId).exchange())
+                .hasStatus(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
     void anotherUsersSearchesAndMatchesAreNotFound() {
         FakeBoardConfig.POSTINGS.add(posting("1", "Java Developer", "Initech"));
         var id = id(create(SEARCH.formatted("")));

@@ -6,6 +6,7 @@ import { problemText } from '../documents/application-documents';
 import { verdict, Verdict } from '../fit/fit.model';
 import { shortDurationBetween } from '../applications/durations';
 import { formatLocation, formatSalary } from '../postings/format';
+import { MatchPreview } from './match-preview';
 import { MatchesState } from './matches-state';
 import { SearchesApi } from './searches-api';
 import { JobMatch, MatchStatus } from './search.model';
@@ -19,7 +20,7 @@ const TABS: { status: MatchStatus; label: string }[] = [
 /** Postings your saved searches found, best fit first, to save to the board or dismiss. */
 @Component({
   selector: 'app-matches-page',
-  imports: [RouterLink],
+  imports: [MatchPreview, RouterLink],
   templateUrl: './matches-page.html',
 })
 export class MatchesPage implements OnInit {
@@ -35,6 +36,8 @@ export class MatchesPage implements OnInit {
   /** Application ids for matches saved on this visit, by match id. */
   protected readonly savedAs = signal<ReadonlyMap<string, string>>(new Map());
   protected readonly errors = signal<ReadonlyMap<string, string>>(new Map());
+  /** The match open in the preview dialog. */
+  protected readonly previewing = signal<JobMatch | null>(null);
 
   protected readonly formatSalary = formatSalary;
   protected readonly formatLocation = formatLocation;
@@ -62,6 +65,7 @@ export class MatchesPage implements OnInit {
 
   protected save(match: JobMatch): void {
     this.act(match, this.api.saveMatch(match.id), (app) => {
+      this.previewing.set(null);
       this.savedAs.update((m) => new Map(m).set(match.id, app.id));
       this.state.refresh();
     });
@@ -69,9 +73,15 @@ export class MatchesPage implements OnInit {
 
   protected dismiss(match: JobMatch): void {
     this.act(match, this.api.dismissMatch(match.id), () => {
+      this.previewing.set(null);
       this.matches.update((list) => list?.filter((m) => m.id !== match.id) ?? null);
       this.state.refresh();
     });
+  }
+
+  /** Save and Dismiss belong in the preview only while the match is new and not yet saved. */
+  protected canDecide(match: JobMatch): boolean {
+    return this.status() === 'NEW' && !(this.savedAs().get(match.id) ?? match.applicationId);
   }
 
   protected restore(match: JobMatch): void {

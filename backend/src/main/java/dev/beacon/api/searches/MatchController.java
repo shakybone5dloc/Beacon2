@@ -4,6 +4,7 @@ import dev.beacon.application.searches.MatchService;
 import dev.beacon.application.users.SignedInUser;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.searches.JobMatchResponse;
+import dev.beacon.contracts.searches.MatchPostingResponse;
 import dev.beacon.contracts.searches.MatchSummaryResponse;
 import dev.beacon.domain.searches.JobMatch;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,6 +40,14 @@ public class MatchController {
     @GetMapping("/summary")
     public MatchSummaryResponse summary(@AuthenticationPrincipal SignedInUser user) {
         return matches.summary(user.id());
+    }
+
+    /** The posting's full text, kept apart from the list so the list stays small. */
+    @Operation(operationId = "getMatchPosting")
+    @GetMapping("/{id}/posting")
+    public ResponseEntity<MatchPostingResponse> posting(@AuthenticationPrincipal SignedInUser user,
+                                                        @PathVariable UUID id) {
+        return ResponseEntity.of(matches.posting(user.id(), id));
     }
 
     /** Saves the match to the board and returns the new application. */

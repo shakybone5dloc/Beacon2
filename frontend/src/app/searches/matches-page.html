@@ -111,6 +111,7 @@
           }
 
           <div class="flex flex-wrap items-center gap-space-sm">
+            <button type="button" class="preview" (click)="previewing.set(m)">Preview</button>
             @if (savedAs().get(m.id) ?? m.applicationId; as appId) {
               <a [routerLink]="['/applications', appId]" class="on-board text-body-sm"
                 >On your board →</a
@@ -154,4 +155,15 @@
   }
 } @else {
   <p class="text-on-surface-variant">Loading...</p>
+}
+
+@if (previewing(); as m) {
+  <app-match-preview
+    [match]="m"
+    [actions]="canDecide(m)"
+    [busy]="busy().has(m.id)"
+    (save)="save(m)"
+    (dismiss)="dismiss(m)"
+    (closed)="previewing.set(null)"
+  />
 }

@@ -7,6 +7,11 @@ import { provideRouter, Router } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 
+/** A time this many days back, for statusChangedAt. */
+function closedDaysAgo(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 describe('Board', () => {
   let http: HttpTestingController;
 
@@ -66,13 +71,15 @@ describe('Board', () => {
     const fixture = TestBed.createComponent(Board);
     await fixture.whenStable();
 
-    http
-      .expectOne('/api/applications')
-      .flush([
-        anApplication({ company: 'Acme', status: 'ACCEPTED' }),
-        anApplication({ company: 'Globex', status: 'REJECTED' }),
-        anApplication({ company: 'Initech', status: 'OFFER' }),
-      ]);
+    http.expectOne('/api/applications').flush([
+      anApplication({ company: 'Acme', status: 'ACCEPTED', statusChangedAt: closedDaysAgo(1) }),
+      anApplication({
+        company: 'Globex',
+        status: 'REJECTED',
+        statusChangedAt: closedDaysAgo(13),
+      }),
+      anApplication({ company: 'Initech', status: 'OFFER' }),
+    ]);
     await fixture.whenStable();
 
     const columns: HTMLElement[] = Array.from(
@@ -85,6 +92,68 @@ describe('Board', () => {
     expect(closed.textContent).toContain('Rejected');
     expect(columns[3].textContent).toContain('Initech');
     expect(columns[3].querySelector('.badge')).toBeNull();
+  });
+
+  it('archives cards closed more than 14 days ago, with a link to them', async () => {
+    const fixture = TestBed.createComponent(Board);
+    await fixture.whenStable();
+
+    http.expectOne('/api/applications').flush([
+      anApplication({ company: 'Acme', status: 'REJECTED', statusChangedAt: closedDaysAgo(15) }),
+      anApplication({
+        company: 'Globex',
+        status: 'WITHDRAWN',
+        statusChangedAt: closedDaysAgo(3),
+      }),
+      anApplication({
+        company: 'Initech',
+        status: 'APPLIED',
+        statusChangedAt: closedDaysAgo(40),
+      }),
+    ]);
+    await fixture.whenStable();
+
+    const el = fixture.nativeElement as HTMLElement;
+    const closed = el.querySelectorAll<HTMLElement>('section.column')[4];
+    expect(closed.textContent).toContain('Globex');
+    expect(closed.textContent).not.toContain('Acme');
+    expect(el.textContent).toContain('Initech');
+    const link = closed.querySelector('a.archived-link')!;
+    expect(link.getAttribute('href')).toBe('/archive');
+    expect(link.textContent).toContain('1 archived');
+  });
+
+  it('picks one stage to show on narrow screens', async () => {
+    const fixture = TestBed.createComponent(Board);
+    await fixture.whenStable();
+    http
+      .expectOne('/api/applications')
+      .flush([anApplication({ company: 'Acme', status: 'APPLIED' })]);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    const hiddenOnPhones = () =>
+      Array.from(el.querySelectorAll<HTMLElement>('section.column'))
+        .filter((c) => !c.classList.contains('max-md:hidden'))
+        .map((c) => c.getAttribute('aria-label'));
+
+    expect(hiddenOnPhones()).toEqual(['Saved column']);
+    const applied = Array.from(el.querySelectorAll<HTMLButtonElement>('.stage-picker button')).find(
+      (b) => b.textContent?.includes('Applied'),
+    )!;
+    expect(applied.textContent).toContain('1');
+    applied.click();
+    await fixture.whenStable();
+    expect(hiddenOnPhones()).toEqual(['Applied column']);
+  });
+
+  it('has the New application button', async () => {
+    const fixture = TestBed.createComponent(Board);
+    await fixture.whenStable();
+    http.expectOne('/api/applications').flush([]);
+    await fixture.whenStable();
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector('a.new-application');
+    expect(button?.getAttribute('href')).toBe('/applications/new');
   });
 
   it('links each card to its detail page', async () => {
@@ -233,7 +302,7 @@ describe('Board', () => {
         anApplication({
           company: 'Acme',
           status: 'REJECTED',
-          statusChangedAt: daysAgo(90),
+          statusChangedAt: daysAgo(10),
           followUpOn: dateIn(-5),
         }),
       );
@@ -377,6 +446,7 @@ describe('Board', () => {
     http.expectOne('/api/applications').flush([
       anApplication({
         status: 'WITHDRAWN',
+        statusChangedAt: closedDaysAgo(2),
         location: 'Anywhere in the U.S. (remote job)',
         remote: true,
         salaryMin: 122000,

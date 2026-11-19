@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { anApplication } from '../applications/testing';
-import { MailSettingsPage } from '../settings/mail-settings-page';
+import { SendFromSettings } from '../settings/send-from-settings';
 import { CheckInEmail } from './check-in-email';
 import { CheckIn, composeUrl, daysFromNow, greet } from './check-in.model';
 
@@ -195,7 +195,7 @@ describe('CheckInEmail', () => {
   });
 });
 
-describe('MailSettingsPage', () => {
+describe('SendFromSettings', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
@@ -208,7 +208,7 @@ describe('MailSettingsPage', () => {
   afterEach(() => http.verify());
 
   async function open(sendFrom: string, gmail: boolean) {
-    const fixture = TestBed.createComponent(MailSettingsPage);
+    const fixture = TestBed.createComponent(SendFromSettings);
     fixture.detectChanges();
     http.expectOne('/api/me/send-from').flush({ sendFrom, signInEmail: 'me@example.test', gmail });
     await fixture.whenStable();

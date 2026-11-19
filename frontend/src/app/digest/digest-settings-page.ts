@@ -5,7 +5,6 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { finalize } from 'rxjs';
 import { problemText } from '../documents/application-documents';
 import { browserZone } from '../usage/usage.model';
-import { SettingsNav } from '../settings/settings-nav';
 import { DigestApi } from './digest-api';
 import { DAYS, DigestSettings, HOURS, SaveDigestSettings } from './digest.model';
 
@@ -15,7 +14,7 @@ import { DAYS, DigestSettings, HOURS, SaveDigestSettings } from './digest.model'
  */
 @Component({
   selector: 'app-digest-settings-page',
-  imports: [DatePipe, SettingsNav],
+  imports: [DatePipe],
   templateUrl: './digest-settings-page.html',
   host: { class: 'block max-w-3xl' },
 })

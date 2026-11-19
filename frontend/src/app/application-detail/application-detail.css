@@ -215,3 +215,15 @@ app-application-resume {
 .company-link:hover {
   text-decoration: underline;
 }
+
+/* Phones: the status and actions go under the title instead of squeezing it. */
+@media (max-width: 639px) {
+  .heading {
+    flex-direction: column;
+  }
+  .heading-side {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}

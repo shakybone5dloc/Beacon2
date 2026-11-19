@@ -5,12 +5,12 @@ import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthState } from '../auth/auth-state';
 import { parseProblem, problemText } from '../documents/application-documents';
-import { SettingsNav } from './settings-nav';
+import { SendFromSettings } from './send-from-settings';
 
-/** Settings · Account: download everything, or delete the account and all its data (L3). */
+/** Settings · Account: the send-from address, download everything, or delete the account and all its data (L3). */
 @Component({
   selector: 'app-account-page',
-  imports: [FormsModule, SettingsNav],
+  imports: [SendFromSettings, FormsModule],
   templateUrl: './account-page.html',
   host: { class: 'block max-w-2xl' },
 })

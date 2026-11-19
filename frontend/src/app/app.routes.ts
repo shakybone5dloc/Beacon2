@@ -49,6 +49,11 @@ export const routes: Routes = [
         title: 'Beacon · Board',
       },
       {
+        path: 'archive',
+        loadComponent: () => import('./board/archive-page').then((m) => m.ArchivePage),
+        title: 'Beacon · Archive',
+      },
+      {
         path: 'jobs',
         loadComponent: () => import('./job-search/job-search').then((m) => m.JobSearch),
         title: 'Beacon · Find jobs',
@@ -120,31 +125,34 @@ export const routes: Routes = [
         title: 'Beacon · Getting API keys',
       },
       {
-        path: 'settings/digest',
-        loadComponent: () =>
-          import('./digest/digest-settings-page').then((m) => m.DigestSettingsPage),
-        title: 'Beacon · Weekly email',
-      },
-      {
-        path: 'settings/account',
-        loadComponent: () => import('./settings/account-page').then((m) => m.AccountPage),
-        title: 'Beacon · Account',
-      },
-      {
-        path: 'settings/invites',
-        loadComponent: () => import('./settings/invites-page').then((m) => m.InvitesPage),
-        title: 'Beacon · Invites',
-      },
-      {
-        path: 'settings/email',
-        loadComponent: () =>
-          import('./settings/mail-settings-page').then((m) => m.MailSettingsPage),
-        title: 'Beacon · Sending email',
-      },
-      {
-        path: 'settings/api-keys',
-        loadComponent: () => import('./providers/api-keys-page').then((m) => m.ApiKeysPage),
-        title: 'Beacon · API keys',
+        path: 'settings',
+        loadComponent: () => import('./settings/settings-layout').then((m) => m.SettingsLayout),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'account' },
+          {
+            path: 'account',
+            loadComponent: () => import('./settings/account-page').then((m) => m.AccountPage),
+            title: 'Beacon · Account',
+          },
+          // Sending email moved into Account.
+          { path: 'email', redirectTo: 'account' },
+          {
+            path: 'digest',
+            loadComponent: () =>
+              import('./digest/digest-settings-page').then((m) => m.DigestSettingsPage),
+            title: 'Beacon · Weekly email',
+          },
+          {
+            path: 'api-keys',
+            loadComponent: () => import('./providers/api-keys-page').then((m) => m.ApiKeysPage),
+            title: 'Beacon · API keys',
+          },
+          {
+            path: 'invites',
+            loadComponent: () => import('./settings/invites-page').then((m) => m.InvitesPage),
+            title: 'Beacon · Invites',
+          },
+        ],
       },
       {
         path: 'applications/new',
