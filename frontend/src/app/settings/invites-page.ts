@@ -3,7 +3,6 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { Invite, InvitesApi, inviteLink } from './invites-api';
-import { SettingsNav } from './settings-nav';
 
 const STATE_LABELS: Record<string, string> = {
   OPEN: 'Not used yet',
@@ -18,7 +17,7 @@ const STATE_LABELS: Record<string, string> = {
  */
 @Component({
   selector: 'app-invites-page',
-  imports: [DatePipe, FormsModule, SettingsNav],
+  imports: [DatePipe, FormsModule],
   templateUrl: './invites-page.html',
   host: { class: 'block max-w-3xl' },
 })

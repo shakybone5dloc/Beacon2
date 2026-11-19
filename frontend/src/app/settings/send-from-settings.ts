@@ -3,19 +3,17 @@ import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { CheckInApi } from '../contacts/check-in-api';
 import { SendFrom } from '../contacts/check-in.model';
-import { SettingsNav } from './settings-nav';
 
 /**
- * Settings: the address the user sends Beacon-written emails (like a check-in) from. A Gmail
+ * Account settings: the address the user sends Beacon-written emails (like a check-in) from. A Gmail
  * address opens Gmail as that account; any other opens the device's mail app.
  */
 @Component({
-  selector: 'app-mail-settings-page',
-  imports: [FormsModule, SettingsNav],
-  templateUrl: './mail-settings-page.html',
-  host: { class: 'block max-w-2xl' },
+  selector: 'app-send-from-settings',
+  imports: [FormsModule],
+  templateUrl: './send-from-settings.html',
 })
-export class MailSettingsPage implements OnInit {
+export class SendFromSettings implements OnInit {
   private readonly api = inject(CheckInApi);
 
   protected readonly settings = signal<SendFrom | null>(null);

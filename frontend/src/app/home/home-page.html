@@ -157,7 +157,7 @@
         <li
           class="match flex flex-wrap items-center gap-space-md border-b border-hairline px-space-md py-space-sm last:border-b-0"
         >
-          <div class="min-w-0 flex-1">
+          <div class="min-w-0 flex-1 basis-full sm:basis-0">
             <a
               [href]="m.url"
               target="_blank"
@@ -179,6 +179,9 @@
             >
           }
           <span class="flex shrink-0 gap-space-xs">
+            <button type="button" class="preview btn btn-sm" (click)="previewing.set(m)">
+              Preview
+            </button>
             <button
               type="button"
               class="save btn btn-sm btn-primary"
@@ -200,6 +203,16 @@
       }
     </ul>
   </section>
+}
+
+@if (previewing(); as m) {
+  <app-match-preview
+    [match]="m"
+    [busy]="isBusy(m.id)"
+    (save)="saveMatch(m)"
+    (dismiss)="dismissMatch(m)"
+    (closed)="previewing.set(null)"
+  />
 }
 
 <div class="mt-space-lg grid gap-space-lg md:grid-cols-2">

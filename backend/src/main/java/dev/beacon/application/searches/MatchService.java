@@ -6,6 +6,7 @@ import dev.beacon.application.postings.PostingSearchService;
 import dev.beacon.contracts.applications.ApplicationResponse;
 import dev.beacon.contracts.applications.CreateApplicationRequest;
 import dev.beacon.contracts.searches.JobMatchResponse;
+import dev.beacon.contracts.searches.MatchPostingResponse;
 import dev.beacon.contracts.searches.MatchSummaryResponse;
 import dev.beacon.domain.searches.JobMatch;
 import dev.beacon.infrastructure.persistence.JobMatchRepository;
@@ -110,6 +111,11 @@ public class MatchService {
         if (match.getFitScoreId() != null) fit.link(ownerId, app.id(), match.getFitScoreId());
         match.savedAs(app.id(), Instant.now(clock));
         return applications.getById(ownerId, app.id());
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<MatchPostingResponse> posting(UUID ownerId, UUID matchId) {
+        return matches.findByIdAndOwnerId(matchId, ownerId).map(m -> new MatchPostingResponse(m.getDescription()));
     }
 
     @Transactional

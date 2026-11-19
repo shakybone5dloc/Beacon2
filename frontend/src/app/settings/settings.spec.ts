@@ -6,7 +6,7 @@ import { AuthState } from '../auth/auth-state';
 import { AccountPage } from './account-page';
 import { Invite, inviteLink } from './invites-api';
 import { InvitesPage } from './invites-page';
-import { SettingsNav } from './settings-nav';
+import { SettingsLayout } from './settings-layout';
 
 function anInvite(overrides: Partial<Invite> = {}): Invite {
   return {
@@ -42,28 +42,29 @@ describe('settings', () => {
   function signIn(admin: boolean): void {
     TestBed.inject(AuthState).load().subscribe();
     http.expectOne('/api/auth/csrf').flush(null);
-    http.expectOne('/api/auth/me').flush({ id: 'u1', email: 'me@example.com', displayName: null, admin });
+    http
+      .expectOne('/api/auth/me')
+      .flush({ id: 'u1', email: 'me@example.com', displayName: null, admin });
   }
 
-  it('links Invites only for admins', async () => {
+  it('groups the settings pages and shows Admin only to admins', async () => {
     signIn(false);
-    let fixture = TestBed.createComponent(SettingsNav);
-    fixture.componentRef.setInput('current', 'digest');
+    let fixture = TestBed.createComponent(SettingsLayout);
     fixture.detectChanges();
     let el = fixture.nativeElement as HTMLElement;
-    expect(Array.from(el.querySelectorAll('a')).map((a) => a.textContent)).toEqual([
-      'API keys',
-      'Sending email',
-      'Account',
+    const links = () => Array.from(el.querySelectorAll('nav a')).map((a) => a.getAttribute('href'));
+    expect(links()).toEqual([
+      '/settings/account',
+      '/settings/digest',
+      '/settings/api-keys',
+      '/providers',
     ]);
-    expect(el.querySelector('[aria-current=page]')?.textContent).toBe('Weekly email');
 
     signIn(true);
-    fixture = TestBed.createComponent(SettingsNav);
-    fixture.componentRef.setInput('current', 'digest');
+    fixture = TestBed.createComponent(SettingsLayout);
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('a[href="/settings/invites"]')?.textContent).toBe('Invites');
+    expect(links()).toContain('/settings/invites');
   });
 
   it('builds the sign-up link for a code', () => {
@@ -77,17 +78,32 @@ describe('settings', () => {
       signIn(false);
       const fixture = TestBed.createComponent(AccountPage);
       fixture.detectChanges();
+      http
+        .expectOne('/api/me/send-from')
+        .flush({ sendFrom: 'me@example.com', signInEmail: 'me@example.com', gmail: false });
       await fixture.whenStable();
       return { fixture, el: fixture.nativeElement as HTMLElement };
     }
 
-    function fill(fixture: { detectChanges(): void }, el: HTMLElement, password: string, understood: boolean) {
+    function fill(
+      fixture: { detectChanges(): void },
+      el: HTMLElement,
+      password: string,
+      understood: boolean,
+    ) {
       const input = el.querySelector<HTMLInputElement>('.password')!;
       input.value = password;
       input.dispatchEvent(new Event('input'));
       if (understood) el.querySelector<HTMLInputElement>('.understood')!.click();
       fixture.detectChanges();
     }
+
+    it('holds the send-from address with the rest of the account', async () => {
+      const { fixture, el } = await open();
+      fixture.detectChanges();
+
+      expect(el.querySelector<HTMLInputElement>('input.send-from')!.value).toBe('me@example.com');
+    });
 
     it('links the export download', async () => {
       const { el } = await open();
@@ -125,10 +141,15 @@ describe('settings', () => {
       el.querySelector<HTMLButtonElement>('button.delete')!.click();
       http
         .expectOne('/api/me')
-        .flush({ errors: { password: ["That password isn't right."] } }, { status: 400, statusText: 'Bad Request' });
+        .flush(
+          { errors: { password: ["That password isn't right."] } },
+          { status: 400, statusText: 'Bad Request' },
+        );
       fixture.detectChanges();
 
-      expect(el.querySelector('.password-error')?.textContent).toContain("That password isn't right.");
+      expect(el.querySelector('.password-error')?.textContent).toContain(
+        "That password isn't right.",
+      );
       expect(TestBed.inject(AuthState).user()).not.toBeNull();
     });
   });
@@ -147,14 +168,22 @@ describe('settings', () => {
     it('lists codes with who they are for and what became of them', async () => {
       const { el } = await open([
         anInvite(),
-        anInvite({ id: 'i2', code: 'AAAA-BBBB-CCCC', state: 'USED', usedBy: 'sam@example.com', usedAt: '2026-11-15T12:00:00Z' }),
+        anInvite({
+          id: 'i2',
+          code: 'AAAA-BBBB-CCCC',
+          state: 'USED',
+          usedBy: 'sam@example.com',
+          usedAt: '2026-11-15T12:00:00Z',
+        }),
       ]);
 
       const items = el.querySelectorAll('.invite');
       expect(items[0].querySelector('.code')?.textContent).toBe('K7QX-M2PA-9DTR');
       expect(items[0].textContent).toContain('Pat, from LinkedIn');
       expect(items[0].querySelector('.state')?.textContent).toBe('Not used yet');
-      expect(items[0].querySelector<HTMLInputElement>('.link')!.value).toContain('/register?invite=K7QX-M2PA-9DTR');
+      expect(items[0].querySelector<HTMLInputElement>('.link')!.value).toContain(
+        '/register?invite=K7QX-M2PA-9DTR',
+      );
       expect(items[1].querySelector('.state')?.textContent).toBe('Used');
       expect(items[1].textContent).toContain('Made sam@example.com');
       expect(items[1].querySelector('.revoke')).toBeNull();

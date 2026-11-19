@@ -1,5 +1,3 @@
-<app-settings-nav current="invites" />
-
 <h1>Invites</h1>
 <p class="m-0 mb-space-lg text-body-md text-on-surface-variant">
   While Beacon is an invite-only beta, signing up takes a code. Each code makes one account. Send
@@ -10,7 +8,8 @@
   <h2 class="m-0 text-headline-sm">New code</h2>
   <div class="grid gap-space-md sm:grid-cols-[1fr_auto]">
     <label class="grid gap-space-xs">
-      Who it's for <span class="text-body-sm font-normal text-on-surface-variant">(only you see this)</span>
+      Who it's for
+      <span class="text-body-sm font-normal text-on-surface-variant">(only you see this)</span>
       <input
         class="note"
         name="note"
@@ -47,10 +46,15 @@
   } @else {
     <ul class="invites m-0 grid list-none gap-space-sm p-0">
       @for (i of list; track i.id) {
-        <li class="invite card grid gap-space-xs p-space-md" [class.opacity-70]="i.state !== 'OPEN'">
+        <li
+          class="invite card grid gap-space-xs p-space-md"
+          [class.opacity-70]="i.state !== 'OPEN'"
+        >
           <div class="flex flex-wrap items-center gap-space-sm">
             <code class="code font-mono text-body-md">{{ i.code }}</code>
-            <span class="state pill" [class.pill-blue]="i.state === 'OPEN'">{{ stateLabels[i.state] }}</span>
+            <span class="state pill" [class.pill-blue]="i.state === 'OPEN'">{{
+              stateLabels[i.state]
+            }}</span>
             @if (i.note) {
               <span class="text-body-sm">{{ i.note }}</span>
             }
@@ -81,7 +85,9 @@
                 (focus)="$any($event.target).select()"
               />
               <button type="button" class="copy btn btn-sm" (click)="copy(i)">Copy link</button>
-              <button type="button" class="revoke btn btn-sm btn-danger" (click)="revoke(i)">Revoke</button>
+              <button type="button" class="revoke btn btn-sm btn-danger" (click)="revoke(i)">
+                Revoke
+              </button>
               @if (copied() === i.code) {
                 <span class="copied text-body-sm text-success" role="status">Copied.</span>
               }

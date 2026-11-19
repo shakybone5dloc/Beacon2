@@ -8,6 +8,7 @@ import { ApplicationResponse, employerLabel } from '../applications/application.
 import { problemText } from '../documents/application-documents';
 import { AuthState } from '../auth/auth-state';
 import { MatchesState } from '../searches/matches-state';
+import { MatchPreview } from '../searches/match-preview';
 import { JobMatch } from '../searches/search.model';
 import { SearchesApi } from '../searches/searches-api';
 import { StatsApi } from '../stats/stats-api';
@@ -36,7 +37,7 @@ type Source = 'applications' | 'matches' | 'decks' | 'stats' | 'todos';
  */
 @Component({
   selector: 'app-home-page',
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, MatchPreview, RouterLink],
   templateUrl: './home-page.html',
   host: { class: 'block max-w-5xl' },
 })
@@ -58,6 +59,8 @@ export class HomePage implements OnInit {
   protected readonly failed = signal<ReadonlySet<Source>>(new Set());
   protected readonly busy = signal<ReadonlySet<string>>(new Set());
   protected readonly notice = signal<string | null>(null);
+  /** The queue match open in the preview dialog. */
+  protected readonly previewing = signal<JobMatch | null>(null);
 
   protected readonly employerLabel = employerLabel;
   protected readonly percent = percent;
@@ -117,6 +120,7 @@ export class HomePage implements OnInit {
 
   protected saveMatch(match: JobMatch): void {
     this.act(match.id, this.searchesApi.saveMatch(match.id), (app) => {
+      this.previewing.set(null);
       this.matches.update((list) => list?.filter((m) => m.id !== match.id) ?? null);
       this.applications.update((list) => (list ? [app, ...list] : list));
       this.matchesState.refresh();
@@ -125,6 +129,7 @@ export class HomePage implements OnInit {
 
   protected dismissMatch(match: JobMatch): void {
     this.act(match.id, this.searchesApi.dismissMatch(match.id), () => {
+      this.previewing.set(null);
       this.matches.update((list) => list?.filter((m) => m.id !== match.id) ?? null);
       this.matchesState.refresh();
     });

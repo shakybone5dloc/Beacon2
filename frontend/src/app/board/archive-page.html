@@ -1,0 +1,55 @@
+<a routerLink="/board" class="text-body-sm">← Board</a>
+<h1 class="mt-space-sm mb-space-xs">Archive</h1>
+<p class="m-0 mb-space-lg max-w-2xl text-body-md text-on-surface-variant">
+  Applications closed more than {{ archiveAfterDays }} days ago. They're kept with everything you
+  logged; move one back to an active stage and it returns to the board.
+</p>
+
+@if (failed()) {
+  <p class="notice">Could not load applications. Try again in a moment.</p>
+} @else if (applications() == null) {
+  <p class="text-on-surface-variant">Loading...</p>
+} @else if (total() === 0) {
+  <p class="empty text-on-surface-variant">Nothing archived yet.</p>
+} @else {
+  <div class="mb-space-md flex flex-wrap items-center gap-space-sm" role="search">
+    <input
+      type="search"
+      class="search input min-w-[14rem] flex-1 md:max-w-sm"
+      placeholder="Search company, role, location, notes..."
+      aria-label="Search the archive"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+    <span class="font-mono text-label-code text-on-surface-variant"
+      >{{ shown().length }} of {{ total() }}</span
+    >
+  </div>
+
+  <ul class="archived card m-0 list-none p-0">
+    @for (app of shown(); track app.id) {
+      <li
+        class="flex flex-wrap items-center gap-x-space-md gap-y-space-xs border-b border-hairline px-space-md py-space-sm last:border-b-0"
+      >
+        <div class="min-w-0 flex-1">
+          <a
+            [routerLink]="['/applications', app.id]"
+            class="block truncate font-medium text-on-surface no-underline hover:text-primary-container"
+            >{{ app.role }}</a
+          >
+          <span class="block truncate text-body-sm text-on-surface-variant">{{
+            employerLabel(app)
+          }}</span>
+        </div>
+        <span class="pill shrink-0 {{ outcomePill(app.status) }}">{{
+          app.status | titlecase
+        }}</span>
+        <span class="shrink-0 font-mono text-label-code text-on-surface-variant"
+          >closed {{ app.statusChangedAt | date: 'MMM d, y' }}</span
+        >
+      </li>
+    } @empty {
+      <li class="px-space-md py-space-md text-body-sm text-outline">No matches</li>
+    }
+  </ul>
+}

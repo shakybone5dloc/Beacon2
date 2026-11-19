@@ -22,6 +22,13 @@
       </div>
     }
   </div>
+  <a
+    routerLink="/applications/new"
+    class="new-application btn btn-primary self-start no-underline md:self-auto"
+  >
+    <span class="material-symbols-outlined !text-base" aria-hidden="true">add</span>
+    New application
+  </a>
 </div>
 
 @if (applications(); as apps) {
@@ -105,7 +112,27 @@
 } @else if (applications() == null) {
   <p class="text-on-surface-variant">Loading...</p>
 } @else {
-  <div class="board flex items-start gap-space-lg overflow-x-auto pb-space-sm" cdkDropListGroup>
+  <!-- Below md one stage shows at a time, picked here. -->
+  <div
+    class="stage-picker mb-space-md flex gap-space-xs overflow-x-auto md:hidden"
+    role="tablist"
+    aria-label="Stage"
+  >
+    @for (column of columns(); track column.title) {
+      <button
+        type="button"
+        role="tab"
+        class="btn btn-sm shrink-0"
+        [class.btn-primary]="column.title === stage()"
+        [attr.aria-selected]="column.title === stage()"
+        (click)="stage.set(column.title)"
+      >
+        {{ column.title }} <span class="font-mono">{{ column.cards.length }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="board flex items-start gap-space-lg pb-space-sm md:overflow-x-auto" cdkDropListGroup>
     @for (column of columns(); track column.title) {
       <section
         cdkDropList
@@ -114,7 +141,8 @@
         cdkDropListSortingDisabled
         (cdkDropListDropped)="dropped($event)"
         [attr.aria-label]="column.title + ' column'"
-        class="column flex w-[17rem] min-w-[17rem] shrink-0 flex-col gap-space-sm rounded-md border border-hairline bg-surface-container-low p-space-sm xl:w-auto xl:min-w-0 xl:flex-1"
+        [class.max-md:hidden]="column.title !== stage()"
+        class="column flex w-full min-w-0 shrink-0 flex-col md:w-[17rem] md:min-w-[17rem] gap-space-sm rounded-md border border-hairline bg-surface-container-low p-space-sm xl:w-auto xl:min-w-0 xl:flex-1"
       >
         <h2
           class="m-0 flex items-center gap-space-sm px-space-xs py-space-xs text-headline-sm text-on-surface"
@@ -246,6 +274,14 @@
           <p class="empty m-0 px-space-xs py-space-md text-body-sm text-outline">
             {{ filtering() ? 'No matches' : 'Nothing here' }}
           </p>
+        }
+        @if (column.title === 'Closed' && archivedCount() > 0) {
+          <a
+            routerLink="/archive"
+            class="archived-link px-space-xs py-space-xs text-body-sm"
+            [title]="'Closed more than ' + archiveAfterDays + ' days ago'"
+            >{{ archivedCount() }} archived →</a
+          >
         }
       </section>
     }
