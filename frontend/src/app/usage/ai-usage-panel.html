@@ -13,7 +13,7 @@
       </span>
     </div>
 
-    <div class="grid gap-space-md sm:grid-cols-[1fr_auto] sm:items-end">
+    <div class="grid grid-cols-1 gap-space-md sm:grid-cols-[1fr_auto] sm:items-end">
       <div>
         <p class="total m-0 font-mono text-[2rem] leading-none text-on-surface">
           {{ usd(u.totalUsd) }}
@@ -106,7 +106,7 @@
         the same posting and resume again reuses the saved score and costs nothing.
       </p>
     } @else {
-      <div class="grid gap-space-md sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-space-md sm:grid-cols-2">
         @for (
           table of [
             { title: 'By feature', lines: u.byFeature, label: featureLabel },

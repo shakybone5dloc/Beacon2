@@ -24,7 +24,7 @@
     (ngSubmit)="save()"
   >
     <h3 class="m-0">{{ target === 'new' ? 'Schedule an interview' : 'Edit interview' }}</h3>
-    <div class="grid gap-space-md sm:grid-cols-2">
+    <div class="grid grid-cols-1 gap-space-md sm:grid-cols-2">
       <label class="grid gap-space-xs">
         Type
         <select formControlName="type">
@@ -98,7 +98,7 @@
         placeholder="What to review, questions to ask, stories to tell."
       ></textarea>
     </label>
-    <div class="grid gap-space-md sm:grid-cols-[1fr_12rem]">
+    <div class="grid grid-cols-1 gap-space-md sm:grid-cols-[1fr_12rem]">
       <label class="grid gap-space-xs">
         Debrief
         <textarea
