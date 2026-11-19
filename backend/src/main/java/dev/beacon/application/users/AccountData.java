@@ -34,7 +34,7 @@ public class AccountData {
 
     static {
         EXPORTS.put("users", """
-                select id, email, display_name, created_at, ai_monthly_budget_usd, send_from_email
+                select id, email, display_name, created_at, email_confirmed_at, ai_monthly_budget_usd, send_from_email
                 from users where id = :owner""");
         EXPORTS.put("user_api_keys", """
                 select provider, hint, created_at, updated_at from user_api_keys where user_id = :owner""");
@@ -82,8 +82,12 @@ public class AccountData {
         EXPORTS.put("invite_codes", "select * from invite_codes where created_by = :owner");
     }
 
-    /** Tables that hold nothing of a user's: Flyway's own record of migrations. */
-    static final Set<String> NOT_EXPORTED = Set.of("flyway_schema_history");
+    /**
+     * Tables left out of the export: Flyway's own record of migrations, and the one-time links
+     * emailed for password resets and confirmations, which are security tokens, not the user's
+     * data (they're deleted with the account).
+     */
+    static final Set<String> NOT_EXPORTED = Set.of("flyway_schema_history", "account_links");
 
     private final JdbcTemplate jdbc;
     private final Clock clock;

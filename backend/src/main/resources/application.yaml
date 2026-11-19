@@ -57,12 +57,16 @@ beacon:
     login-per-ip: ${BEACON_LOGIN_PER_IP:30}
     login-failures-per-account: ${BEACON_LOGIN_FAILURES_PER_ACCOUNT:8}
     register-per-ip: ${BEACON_REGISTER_PER_IP:10}
+    # Password-reset requests per address per hour, and reset or confirmation emails per account per hour.
+    email-requests-per-ip: ${BEACON_EMAIL_REQUESTS_PER_IP:10}
+    emails-per-account: ${BEACON_EMAILS_PER_ACCOUNT:3}
   # Where users open Beacon; links in emails point here.
   app-url: ${BEACON_APP_URL:http://localhost:4200}
-  # The SMTP server the weekly digest is sent through. Any provider's SMTP works: a Gmail
-  # app password (smtp.gmail.com, 587, your address and the 16-character app password),
-  # Resend (smtp.resend.com, 587, "resend" and an API key) or Mailgun. With no host or
-  # from address, nothing is sent and the digest settings page says so.
+  # The SMTP server for the weekly digest and for password-reset and confirmation links. Any
+  # provider's SMTP works: a Gmail app password (smtp.gmail.com, 587, your address and the
+  # 16-character app password), Resend (smtp.resend.com, 587, "resend" and an API key) or
+  # Mailgun. With no host or from address, nothing is sent: the digest settings page says so,
+  # and sign-in offers no password reset.
   mail:
     host: ${MAIL_HOST:}
     port: ${MAIL_PORT:587}

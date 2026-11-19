@@ -1,16 +1,21 @@
 package dev.beacon.api.auth;
 
 import dev.beacon.api.errors.RequestValidationException;
+import dev.beacon.application.users.AccountLinks;
 import dev.beacon.application.users.AccountService;
 import dev.beacon.application.users.Admins;
 import dev.beacon.application.users.AttemptLimiter;
 import dev.beacon.application.users.InviteService;
+import dev.beacon.application.users.SessionRevocations;
 import dev.beacon.application.users.SignedInUser;
 import dev.beacon.application.users.TooManyAttemptsException;
 import dev.beacon.contracts.auth.RegistrationResponse;
 import dev.beacon.domain.users.UserAccount;
 import dev.beacon.contracts.auth.CurrentUserResponse;
+import dev.beacon.contracts.auth.ConfirmEmailRequest;
 import dev.beacon.contracts.auth.LoginRequest;
+import dev.beacon.contracts.auth.NewPasswordRequest;
+import dev.beacon.contracts.auth.PasswordResetRequest;
 import dev.beacon.contracts.auth.RegisterRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,6 +39,9 @@ import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Instant;
 
 /** Register, sign in and look up the signed-in user. Sign-out is handled by the security filter chain. */
 @Tag(name = "Auth")
@@ -42,6 +50,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AccountService accounts;
+    private final AccountLinks accountLinks;
     private final InviteService invites;
     private final Admins admins;
     private final AttemptLimiter limiter;
@@ -49,10 +58,11 @@ public class AuthController {
     private final SecurityContextRepository contextRepository;
     private final RememberMeServices rememberMe;
 
-    public AuthController(AccountService accounts, InviteService invites, Admins admins, AttemptLimiter limiter,
-                          AuthenticationManager authenticationManager, SecurityContextRepository contextRepository,
-                          RememberMeServices rememberMe) {
+    public AuthController(AccountService accounts, AccountLinks accountLinks, InviteService invites, Admins admins,
+                          AttemptLimiter limiter, AuthenticationManager authenticationManager,
+                          SecurityContextRepository contextRepository, RememberMeServices rememberMe) {
         this.accounts = accounts;
+        this.accountLinks = accountLinks;
         this.invites = invites;
         this.admins = admins;
         this.limiter = limiter;
@@ -74,7 +84,7 @@ public class AuthController {
     @Operation(operationId = "getRegistration")
     @GetMapping("/registration")
     public RegistrationResponse registration() {
-        return new RegistrationResponse(invites.inviteOnly());
+        return new RegistrationResponse(invites.inviteOnly(), accountLinks.canEmail());
     }
 
     @Operation(operationId = "register")
@@ -104,6 +114,11 @@ public class AuthController {
         }
         user.eraseCredentials();
         signIn(UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities()), request, response);
+        try {
+            accountLinks.sendConfirmation(user.id());
+        } catch (TooManyAttemptsException ignored) {
+            // A brand-new account can't be over the limit; if it somehow is, the banner offers a resend.
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(user));
     }
 
@@ -145,6 +160,59 @@ public class AuthController {
         return ResponseEntity.ok(toResponse((SignedInUser) authentication.getPrincipal()));
     }
 
+    /**
+     * Emails a reset link if the address has an account. Always 202, so it can't be used to find
+     * out who has an account; limited per address.
+     */
+    @Operation(operationId = "requestPasswordReset")
+    @ApiResponse(responseCode = "202", description = "If the address has an account, a link is on its way")
+    @ApiResponse(responseCode = "429", description = "Too many requests from this address",
+            content = @Content(mediaType = "application/problem+json",
+                    schema = @Schema(implementation = ProblemDetail.class)))
+    @PostMapping("/password-reset")
+    public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest body,
+                                                     HttpServletRequest request) {
+        var address = request.getRemoteAddr();
+        limiter.blockedFor(AttemptLimiter.Kind.EMAIL_REQUEST_IP, address).ifPresent(wait -> {
+            throw new TooManyAttemptsException(wait);
+        });
+        limiter.record(AttemptLimiter.Kind.EMAIL_REQUEST_IP, address);
+        accountLinks.requestPasswordReset(body.email());
+        return ResponseEntity.accepted().build();
+    }
+
+    /** Sets a new password from a reset link and signs out every other device. */
+    @Operation(operationId = "resetPassword")
+    @ApiResponse(responseCode = "204")
+    @ApiResponse(responseCode = "400", description = "The link expired, was used, or the password is too short",
+            content = @Content(mediaType = "application/problem+json",
+                    schema = @Schema(implementation = ProblemDetail.class)))
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody NewPasswordRequest body) {
+        try {
+            accountLinks.resetPassword(body.token(), body.password());
+        } catch (AccountLinks.InvalidLinkException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Confirms an email from the link sent to it; works signed in or not. */
+    @Operation(operationId = "confirmEmail")
+    @ApiResponse(responseCode = "204")
+    @ApiResponse(responseCode = "400", description = "The link expired or was already used",
+            content = @Content(mediaType = "application/problem+json",
+                    schema = @Schema(implementation = ProblemDetail.class)))
+    @PostMapping("/confirm-email")
+    public ResponseEntity<Void> confirmEmail(@Valid @RequestBody ConfirmEmailRequest body) {
+        try {
+            accountLinks.confirmEmail(body.token());
+        } catch (AccountLinks.InvalidLinkException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+        return ResponseEntity.noContent().build();
+    }
+
     @Operation(operationId = "getCurrentUser")
     @GetMapping("/me")
     public CurrentUserResponse me(@AuthenticationPrincipal SignedInUser user) {
@@ -155,6 +223,7 @@ public class AuthController {
     private void signIn(Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
         request.getSession(true);
         request.changeSessionId();
+        request.getSession().setAttribute(SessionRevocations.SIGNED_IN_AT, Instant.now());
         var context = SecurityContextHolder.getContextHolderStrategy().createEmptyContext();
         context.setAuthentication(authentication);
         SecurityContextHolder.getContextHolderStrategy().setContext(context);
@@ -162,6 +231,8 @@ public class AuthController {
     }
 
     private CurrentUserResponse toResponse(SignedInUser user) {
-        return new CurrentUserResponse(user.id(), user.email(), user.displayName(), admins.isAdmin(user.email()));
+        var confirmationNeeded = accountLinks.canEmail() && !accountLinks.isEmailConfirmed(user.id());
+        return new CurrentUserResponse(user.id(), user.email(), user.displayName(), admins.isAdmin(user.email()),
+                confirmationNeeded);
     }
 }

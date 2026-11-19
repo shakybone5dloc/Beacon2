@@ -30,6 +30,7 @@ describe('sign-in pages', () => {
     const fixture = TestBed.createComponent(LoginPage);
     fixture.componentRef.setInput('returnUrl', '/jobs');
     await fixture.whenStable();
+    http.expectOne('/api/auth/registration').flush({ inviteOnly: false, passwordReset: false });
     const el: HTMLElement = fixture.nativeElement;
 
     type(el, 'input[type=email]', 'me@example.com');
@@ -52,6 +53,7 @@ describe('sign-in pages', () => {
   it('LoginPage shows the server message when the password is wrong', async () => {
     const fixture = TestBed.createComponent(LoginPage);
     await fixture.whenStable();
+    http.expectOne('/api/auth/registration').flush({ inviteOnly: false, passwordReset: false });
     const el: HTMLElement = fixture.nativeElement;
 
     type(el, 'input[type=email]', 'me@example.com');
@@ -74,7 +76,7 @@ describe('sign-in pages', () => {
     const fixture = TestBed.createComponent(RegisterPage);
     if (invite) fixture.componentRef.setInput('invite', invite);
     fixture.detectChanges();
-    http.expectOne('/api/auth/registration').flush({ inviteOnly });
+    http.expectOne('/api/auth/registration').flush({ inviteOnly, passwordReset: false });
     await fixture.whenStable();
     fixture.detectChanges();
     return fixture;
@@ -156,6 +158,7 @@ describe('sign-in pages', () => {
     const fixture = TestBed.createComponent(LoginPage);
     fixture.componentRef.setInput('deleted', '1');
     await fixture.whenStable();
+    http.expectOne('/api/auth/registration').flush({ inviteOnly: false, passwordReset: false });
 
     expect((fixture.nativeElement as HTMLElement).querySelector('.deleted')?.textContent).toContain(
       'Your account and all its data were deleted.',
@@ -165,6 +168,7 @@ describe('sign-in pages', () => {
   it('LoginPage says when there have been too many attempts', async () => {
     const fixture = TestBed.createComponent(LoginPage);
     await fixture.whenStable();
+    http.expectOne('/api/auth/registration').flush({ inviteOnly: false, passwordReset: false });
     const el: HTMLElement = fixture.nativeElement;
 
     type(el, 'input[type=email]', 'me@example.com');

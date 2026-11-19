@@ -463,7 +463,11 @@ Most of what's missing isn't features: it's the safety, account and hosting work
 ### L5. Name, domain and email
 - Pick the name (P4) before buying the domain.
 - A verified sending domain: Amazon SES (cheap; ask AWS for production access early, as a new account can only send to verified addresses) or Resend (the current account is in sandbox mode and only delivers to its owner, so the weekly digest would fail for other users today).
-- Then password reset (by emailed link) and email verification at sign-up. Neither exists; a tester who forgets their password is locked out.
+- **Password reset and email confirmation (built Nov 19; delivery waits on the sending domain above).** One-time links (V27 `account_links`, only a SHA-256 hash of each token stored), sent through the same SMTP settings as the digest:
+  - **Forgot password** on the sign-in page (shown only when mail is set up). Asking always answers the same, whether or not the address has an account, and the email goes out in the background so the timing doesn't tell either. The link works once, within an hour, and only the newest one works. Setting the new password ends every other sign-in (an in-memory record, like the sessions; remember-me cookies are signed with the password hash, so they stop too), clears a sign-in lockout and confirms the email.
+  - **Confirm your email:** a link sent at sign-up, good for 7 days; a banner asks until it's clicked, with Resend. It reminds rather than blocks. Accounts made before this count as confirmed.
+  - Limits: 10 reset requests per address an hour, and 3 of these emails per account an hour (`BEACON_EMAIL_REQUESTS_PER_IP`, `BEACON_EMAILS_PER_ACCOUNT`).
+  - Until Resend (or SES) has a verified domain, these emails reach only the account owner's own address; testers' links won't arrive.
 
 ### L6. AWS and the database
 - **App server:** one small Lightsail or EC2 instance (about 4 GB for Chromium) running the same compose stack as the home server, minus the database, with `update.sh` and cron as now. Caddy or nginx on the instance for HTTPS rather than a paid load balancer.
@@ -490,7 +494,7 @@ Most of what's missing isn't features: it's the safety, account and hosting work
   | Jobicy | No published terms found; credit and link back to be safe. | Same as above. |
   | Himalayas | Visible credit and link to himalayas.app; Apply must use `applicationLink`; don't pass jobs to other boards; drop closed jobs. Showing them in your own app needs no permission. | Credited and linked; Apply already uses `applicationLink`. Saved matches can outlive a closed job. |
   | USAJOBS | Public data may be reused; credentials must not be shared; credit encouraged. | Each user uses their own key. |
-  | Adzuna | "Adzuna" label linked to their site on every listing; after a 14-day trial, any product that generates revenue or leads needs a licence; one account per person or company. | "Jobs by Adzuna" shown. Fine as each user's own key for their own search; a paid Beacon plan would need Adzuna's agreement. Can be switched off for everyone with `BEACON_DISABLED_SOURCES=adzuna`. |
+  | Adzuna | "Adzuna" label linked to their site on every listing; after a 14-day trial, any product that generates revenue or leads needs a licence; one account per person or company. | "Jobs by Adzuna" shown. Fine as each user's own key for their own search; a paid Beacon plan would need Adzuna's agreement. Off unless the server turns it on: `BEACON_DISABLED_SOURCES` defaults to `adzuna`. |
   | Google Jobs (SerpApi) | No reselling any part of the service without written permission; nothing on users bringing their own key. | Fine with each user's own key; supplying Beacon's key in a paid plan needs SerpApi's permission. |
   | JSearch (OpenWeb Ninja) | Published terms don't cover apps serving others. | Fine with each user's own key; ask support@openwebninja.com before Beacon supplies a key. |
 

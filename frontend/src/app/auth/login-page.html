@@ -5,6 +5,10 @@
     <p class="deleted notice">Your account and all its data were deleted.</p>
   }
 
+  @if (reset()) {
+    <p class="reset-done notice">Your password was changed. Sign in with the new one.</p>
+  }
+
   @if (formError(); as message) {
     <p class="notice">{{ message }}</p>
   }
@@ -23,6 +27,9 @@
       <input formControlName="password" type="password" autocomplete="current-password" />
       @if (errorFor('password'); as msg) {
         <span class="error">{{ msg }}</span>
+      }
+      @if (canReset()) {
+        <a routerLink="/forgot-password" class="forgot hint">Forgot password?</a>
       }
     </label>
 

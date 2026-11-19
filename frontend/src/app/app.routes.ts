@@ -20,7 +20,23 @@ export const oldBoardLinks: CanActivateFn = (route) => {
  * a page's own libraries (the board's drag and drop, the brief's Markdown) come with it.
  */
 export const routes: Routes = [
+  {
+    path: 'forgot-password',
+    loadComponent: () => import('./auth/forgot-password-page').then((m) => m.ForgotPasswordPage),
+    canActivate: [guestGuard],
+    title: 'Beacon · Reset your password',
+  },
   // Open to everyone, signed in or not.
+  {
+    path: 'reset-password',
+    loadComponent: () => import('./auth/reset-password-page').then((m) => m.ResetPasswordPage),
+    title: 'Beacon · Choose a new password',
+  },
+  {
+    path: 'confirm-email',
+    loadComponent: () => import('./auth/confirm-email-page').then((m) => m.ConfirmEmailPage),
+    title: 'Beacon · Confirm your email',
+  },
   {
     path: 'privacy',
     loadComponent: () => import('./site/privacy-page').then((m) => m.PrivacyPage),

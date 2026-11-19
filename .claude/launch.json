@@ -22,6 +22,13 @@
       "autoPort": false
     },
     {
+      "name": "api (testcontainers db, mailpit)",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set BEACON_INVITE_ONLY=false&& set BEACON_ADMIN_EMAILS=x@example.test&& set BEACON_APP_URL=http://localhost:4201&& set MAIL_HOST=localhost&& set MAIL_PORT=1025&& set MAIL_FROM=beacon@example.test&&cd backend && .\\mvnw.cmd spring-boot:test-run -Dspring-boot.run.arguments=--server.port=8081"],
+      "port": 8081,
+      "autoPort": false
+    },
+    {
       "name": "frontend (testcontainers api)",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "frontend", "start", "--", "--port", "4201", "--proxy-config", "proxy.testcontainers.conf.json"],
