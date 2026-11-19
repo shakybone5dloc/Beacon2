@@ -27,7 +27,7 @@
   >
     <h2 class="m-0">{{ current === 'new' ? 'New saved search' : 'Edit ' + current.name }}</h2>
 
-    <div class="grid gap-space-sm sm:grid-cols-2">
+    <div class="grid grid-cols-1 gap-space-sm sm:grid-cols-2">
       <label class="grid content-start gap-space-xs">
         Keywords
         <input formControlName="keywords" placeholder="java spring" maxlength="500" />
@@ -92,7 +92,7 @@
       </div>
     </fieldset>
 
-    <div class="grid gap-space-sm sm:grid-cols-2">
+    <div class="grid grid-cols-1 gap-space-sm sm:grid-cols-2">
       <label class="grid content-start gap-space-xs">
         Fit-check new matches against
         <select formControlName="resumeDocumentId">

@@ -44,7 +44,7 @@
     (ngSubmit)="save()"
   >
     <h3 class="m-0">{{ target === 'new' ? 'Log a contact' : 'Edit contact' }}</h3>
-    <div class="grid gap-space-md sm:grid-cols-2">
+    <div class="grid grid-cols-1 gap-space-md sm:grid-cols-2">
       @if (forPerson()) {
         <label class="grid gap-space-xs">
           About

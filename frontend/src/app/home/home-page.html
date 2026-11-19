@@ -43,13 +43,13 @@
       <span class="material-symbols-outlined !text-[18px]" aria-hidden="true">warning</span>
       Needs attention
     </h2>
-    <ul class="m-0 grid list-none gap-space-sm p-0 md:grid-cols-2 xl:grid-cols-3">
+    <ul class="m-0 grid grid-cols-1 list-none gap-space-sm p-0 md:grid-cols-2 xl:grid-cols-3">
       @for (card of attention(); track card.app.id) {
         <li
           class="flex flex-col gap-space-sm rounded-md border border-hairline bg-surface-container-lowest p-space-md"
         >
-          <div class="flex items-start justify-between gap-space-sm">
-            <div class="min-w-0">
+          <div class="flex flex-wrap items-start justify-between gap-space-sm">
+            <div class="min-w-0 flex-1 basis-[12rem]">
               <a
                 [routerLink]="['/applications', card.app.id]"
                 class="block truncate text-headline-sm text-on-surface no-underline hover:text-primary-container"
@@ -79,7 +79,7 @@
   </section>
 }
 
-<div class="grid gap-space-lg md:grid-cols-2">
+<div class="grid grid-cols-1 gap-space-lg md:grid-cols-2">
   <!-- 2. Coming up -->
   @if (upcoming().length) {
     <section class="upcoming card p-space-lg" aria-labelledby="upcoming-heading">
@@ -215,7 +215,7 @@
   />
 }
 
-<div class="mt-space-lg grid gap-space-lg md:grid-cols-2">
+<div class="mt-space-lg grid grid-cols-1 gap-space-lg md:grid-cols-2">
   <!-- 5. This week -->
   @if (applications() && stats()) {
     @let w = week();
