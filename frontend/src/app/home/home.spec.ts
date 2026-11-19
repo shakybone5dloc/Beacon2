@@ -212,6 +212,17 @@ describe('HomePage', () => {
       ],
     });
 
+    // Collapsed: the count, a summary and only the most urgent item.
+    expect(el.querySelector('#attention-heading')?.textContent).toContain('3 need attention');
+    expect(el.querySelector('.attention-summary')?.textContent).toContain('2 due now · 1 gone quiet');
+    expect(el.querySelectorAll('.attention li').length).toBe(1);
+    expect(el.querySelector('.attention li')?.textContent).toContain('Globex');
+    const toggle = el.querySelector<HTMLButtonElement>('.attention-toggle')!;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    toggle.click();
+    await fixture.whenStable();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
     const items = Array.from(el.querySelectorAll('.attention li')).map((li) =>
       li.textContent!.replace(/\s+/g, ' ').trim(),
     );
@@ -221,7 +232,7 @@ describe('HomePage', () => {
     expect(items[2]).toContain('No movement in 8 days');
     expect(el.querySelector('.caught-up')).toBeNull();
 
-    el.querySelector<HTMLButtonElement>('.attention button')!.click();
+    el.querySelector<HTMLButtonElement>('.attention li button')!.click();
     const req = http.expectOne('/api/applications/a1/follow-up');
     expect(req.request.body).toEqual({ followUpOn: null, version: 2 });
     req.flush({ ...due, followUpOn: null, version: 3 });

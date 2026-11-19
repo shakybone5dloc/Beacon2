@@ -59,6 +59,16 @@ describe('companies', () => {
       ['Globex', 'Recruiting agency', '3 applications'],
     ]);
     expect(el.querySelector('.company-table a')?.getAttribute('href')).toBe('/companies/c1');
+
+    // Phones get a compact entry per company, the whole entry a link.
+    const entries = Array.from(el.querySelectorAll('.company-cards li a')).map((a) => [
+      a.getAttribute('href'),
+      a.textContent!.replace(/\s+/g, ' ').trim(),
+    ]);
+    expect(entries[0][0]).toBe('/companies/c1');
+    expect(entries[1][0]).toBe('/companies/c2');
+    expect(entries[1][1]).toContain('Globex');
+    expect(entries[1][1]).toContain('Recruiting agency · 3 applications');
   });
 
   describe('adding a company', () => {

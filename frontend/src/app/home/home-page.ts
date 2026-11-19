@@ -70,6 +70,21 @@ export class HomePage implements OnInit {
   protected readonly attention = computed(() =>
     needingAttention(this.applications() ?? [], this.now()),
   );
+  /** Collapsed, the section shows only the most urgent item. */
+  protected readonly attentionOpen = signal(false);
+  protected readonly shownAttention = computed(() =>
+    this.attentionOpen() ? this.attention() : this.attention().slice(0, 1),
+  );
+  /** "2 due now · 5 gone quiet": dates that have come due, and applications with no news. */
+  protected readonly attentionSummary = computed(() => {
+    const due = this.attention().filter(
+      (c) => c.attention.followUp?.urgent || c.attention.deadline?.urgent,
+    ).length;
+    const quiet = this.attention().length - due;
+    return [due ? `${due} due now` : null, quiet ? `${quiet} gone quiet` : null]
+      .filter(Boolean)
+      .join(' · ');
+  });
   protected readonly upcoming = computed(() =>
     upcomingInterviews(this.applications() ?? [], this.decks() ?? [], this.now()),
   );

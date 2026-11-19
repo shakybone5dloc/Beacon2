@@ -36,15 +36,39 @@
     class="attention mb-space-lg rounded-md border border-attention-border bg-attention-panel p-space-md"
     aria-labelledby="attention-heading"
   >
-    <h2
-      id="attention-heading"
-      class="m-0 mb-space-md flex items-center gap-space-sm text-headline-sm text-attention"
+    <div class="mb-space-md flex flex-wrap items-center gap-x-space-md gap-y-space-xs">
+      <h2
+        id="attention-heading"
+        class="m-0 flex items-center gap-space-sm text-headline-sm text-attention"
+      >
+        <span class="material-symbols-outlined !text-[18px]" aria-hidden="true">warning</span>
+        {{ attention().length }} need{{ attention().length === 1 ? 's' : '' }} attention
+      </h2>
+      <span class="attention-summary text-body-sm text-on-surface-variant">{{
+        attentionSummary()
+      }}</span>
+      @if (attention().length > 1) {
+        <button
+          type="button"
+          class="attention-toggle btn btn-sm ml-auto"
+          [attr.aria-expanded]="attentionOpen()"
+          aria-controls="attention-list"
+          (click)="attentionOpen.set(!attentionOpen())"
+        >
+          {{ attentionOpen() ? 'Show less' : 'Show all ' + attention().length }}
+          <span class="material-symbols-outlined !text-[18px]" aria-hidden="true">{{
+            attentionOpen() ? 'expand_less' : 'expand_more'
+          }}</span>
+        </button>
+      }
+    </div>
+    <ul
+      id="attention-list"
+      class="m-0 grid grid-cols-1 list-none gap-space-sm p-0"
+      [class.md:grid-cols-2]="attentionOpen()"
+      [class.xl:grid-cols-3]="attentionOpen()"
     >
-      <span class="material-symbols-outlined !text-[18px]" aria-hidden="true">warning</span>
-      Needs attention
-    </h2>
-    <ul class="m-0 grid grid-cols-1 list-none gap-space-sm p-0 md:grid-cols-2 xl:grid-cols-3">
-      @for (card of attention(); track card.app.id) {
+      @for (card of shownAttention(); track card.app.id) {
         <li
           class="flex flex-col gap-space-sm rounded-md border border-hairline bg-surface-container-lowest p-space-md"
         >
