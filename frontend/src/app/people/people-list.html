@@ -27,7 +27,37 @@
   @if (list.length === 0) {
     <p class="empty">No one yet.</p>
   } @else {
-    <div class="card overflow-x-auto">
+    <!-- Phones: one compact entry per person instead of a table to scroll sideways. -->
+    <ul class="people-cards card m-0 list-none p-0 md:hidden">
+      @for (p of list; track p.id) {
+        <li class="border-b border-hairline last:border-b-0">
+          <a
+            [routerLink]="['/people', p.id]"
+            class="flex items-center gap-space-md px-space-md py-space-sm text-on-surface no-underline hover:bg-subtle"
+          >
+            <span
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-fixed font-mono text-label-code text-primary"
+              aria-hidden="true"
+              >{{ initials(p.name) }}</span
+            >
+            <span class="min-w-0 flex-1">
+              <span class="name block truncate text-headline-sm">{{ p.name }}</span>
+              <span class="block truncate text-body-sm text-on-surface-variant">
+                {{ roleLabels[p.role] }}
+                @if (where(p); as at) {
+                  · {{ at }}
+                }
+              </span>
+            </span>
+            <span class="material-symbols-outlined text-outline" aria-hidden="true"
+              >chevron_right</span
+            >
+          </a>
+        </li>
+      }
+    </ul>
+
+    <div class="card hidden overflow-x-auto md:block">
       <table class="people-table w-full border-collapse text-left">
         <thead>
           <tr

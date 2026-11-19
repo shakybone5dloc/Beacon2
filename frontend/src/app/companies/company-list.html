@@ -63,7 +63,41 @@
       No companies yet. They appear here once you add an application, or add one with New company.
     </p>
   } @else {
-    <div class="card overflow-x-auto">
+    <!-- Phones: one compact entry per company instead of a table to scroll sideways. -->
+    <ul class="company-cards card m-0 list-none p-0 md:hidden">
+      @for (c of list; track c.id) {
+        <li class="border-b border-hairline last:border-b-0">
+          <a
+            [routerLink]="['/companies', c.id]"
+            class="flex items-center gap-space-md px-space-md py-space-sm text-on-surface no-underline hover:bg-subtle"
+          >
+            <span
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm font-mono text-label-code"
+              [class]="
+                c.type === 'EMPLOYER'
+                  ? 'bg-primary-fixed text-primary'
+                  : 'bg-attention-bg text-attention'
+              "
+              aria-hidden="true"
+              >{{ initials(c.name) }}</span
+            >
+            <span class="min-w-0 flex-1">
+              <span class="name block truncate text-headline-sm">{{ c.name }}</span>
+              <span class="block truncate text-body-sm text-on-surface-variant">
+                {{ typeLabels[c.type] }} · {{ c.applicationCount }}
+                {{ c.applicationCount === 1 ? 'application' : 'applications' }} ·
+                {{ c.updatedAt | date: 'MMM d' }}
+              </span>
+            </span>
+            <span class="material-symbols-outlined text-outline" aria-hidden="true"
+              >chevron_right</span
+            >
+          </a>
+        </li>
+      }
+    </ul>
+
+    <div class="card hidden overflow-x-auto md:block">
       <table class="company-table w-full border-collapse text-left">
         <thead>
           <tr

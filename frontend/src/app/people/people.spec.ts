@@ -99,6 +99,16 @@ describe('people', () => {
       ['Pat Lee', 'Recruiter', 'Senior Recruiter, Robert Half'],
       ['Sam', 'Other', ''],
     ]);
+
+    // Phones get a compact entry per person, the whole entry a link.
+    const entries = Array.from(el.querySelectorAll('.people-cards li a')).map((a) =>
+      a.textContent!.replace(/\s+/g, ' ').trim(),
+    );
+    expect(entries[0]).toContain('Pat Lee');
+    expect(entries[0]).toContain('Recruiter · Senior Recruiter, Robert Half');
+    expect(entries[1]).toContain('Other');
+    expect(entries[1]).not.toContain('·');
+    expect(el.querySelector('.people-cards a')?.getAttribute('href')).toBe('/people/p1');
   });
 
   it('PersonDetail lists their applications and deletes after confirming', async () => {
