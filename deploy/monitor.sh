@@ -9,7 +9,8 @@
 # the alerts), and subscribe to that topic in the ntfy app. Checks:
 #   web      the web app answers on this machine
 #   api      the API answers through the web app (/api/site)
-#   public   BEACON_APP_URL answers from outside the containers (Tailscale or the domain)
+#   public   BEACON_MONITOR_URL (BEACON_APP_URL by default) answers; set it to "none" where the
+#            server can't reach its own public address (Tailscale's HTTPS, from the same machine)
 #   disk     the disk holding Beacon is under BEACON_DISK_ALERT_PERCENT full (85 by default)
 #   backup   the newest nightly backup is under 26 hours old
 # A check alerts after failing twice in a row, so a restart during an update doesn't page you.
@@ -23,7 +24,7 @@ setting() {
 topic=$(setting BEACON_NTFY_TOPIC)
 server=$(setting BEACON_NTFY_SERVER); server=${server:-https://ntfy.sh}
 port=$(setting BEACON_PORT); port=${port:-8790}
-app_url=$(setting BEACON_APP_URL)
+app_url=$(setting BEACON_MONITOR_URL); app_url=${app_url:-$(setting BEACON_APP_URL)}
 disk_limit=$(setting BEACON_DISK_ALERT_PERCENT); disk_limit=${disk_limit:-85}
 state=.monitor
 mkdir -p "$state"
@@ -80,7 +81,7 @@ else
     record api fail "The API isn't answering through the web app. Try: docker compose logs --tail 50 api"
 fi
 
-if [ -n "$app_url" ]; then
+if [ -n "$app_url" ] && [ "$app_url" != none ]; then
     if answers "$app_url/"; then
         record public ok "$app_url answers."
     else

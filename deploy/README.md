@@ -122,7 +122,8 @@ pushes an alert through [ntfy](https://ntfy.sh), and another when it's fixed.
    ssh server '(crontab -l 2>/dev/null; echo "*/5 * * * * $HOME/beacon/monitor.sh > /dev/null 2>&1") | crontab -'
    ```
 
-Run `./monitor.sh` by hand to see every check's result. It can't tell you the whole machine is
+On a Tailscale-only server, add `BEACON_MONITOR_URL=none` too: Tailscale's HTTPS doesn't answer
+requests the machine makes to itself, so that check would always fail. Run `./monitor.sh` by hand to see every check's result. It can't tell you the whole machine is
 off; a free outside check (like UptimeRobot on the public URL) covers that once Beacon has one.
 
 ## Updates
