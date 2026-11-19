@@ -98,6 +98,9 @@ export class HomePage implements OnInit {
     return t ? t.missingSentResume.length + t.openSuggestions.length : 0;
   });
 
+  /** Nothing tracked yet: Home shows how Beacon works instead of an empty dashboard. */
+  protected readonly firstRun = computed(() => this.applications()?.length === 0);
+
   /** Everything loaded and nothing is waiting on the user. */
   protected readonly caughtUp = computed(
     () =>

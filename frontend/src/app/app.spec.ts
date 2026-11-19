@@ -18,13 +18,30 @@ describe('App', () => {
 
   afterEach(() => http.verify());
 
-  it('shows only the brand when signed out', async () => {
+  it('shows only the brand when signed out, with the policy links in the footer', async () => {
     const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    http.expectOne('/api/site').flush({ contactEmail: 'hello@example.test' });
     await fixture.whenStable();
     const el: HTMLElement = fixture.nativeElement;
 
     expect(el.querySelector('.brand')?.textContent).toContain('Beacon');
     expect(el.querySelector('nav')).toBeNull();
+    const footer = el.querySelector('.site-footer')!;
+    expect(footer.querySelector('a[href="/privacy"]')).not.toBeNull();
+    expect(footer.querySelector('a[href="/terms"]')).not.toBeNull();
+    expect(footer.querySelector('a.feedback')?.getAttribute('href')).toBe(
+      'mailto:hello@example.test?subject=Beacon%20feedback',
+    );
+  });
+
+  it('leaves out Send feedback when the server has no contact address', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    http.expectOne('/api/site').flush({ contactEmail: null });
+    await fixture.whenStable();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.feedback')).toBeNull();
   });
 
   it('shows the nav and who is signed in', async () => {
@@ -34,6 +51,7 @@ describe('App', () => {
 
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
+    http.expectOne('/api/site').flush({ contactEmail: null });
     http.expectOne('/api/matches/summary').flush({ newCount: 3 });
     await fixture.whenStable();
     const el: HTMLElement = fixture.nativeElement;
@@ -56,6 +74,7 @@ describe('App', () => {
     http.expectOne('/api/auth/me').flush({ id: 'u1', email: 'me@example.com', displayName: null });
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
+    http.expectOne('/api/site').flush({ contactEmail: null });
     http.expectOne('/api/matches/summary').flush({ newCount: 2 });
     await fixture.whenStable();
 

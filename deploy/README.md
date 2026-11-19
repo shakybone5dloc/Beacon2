@@ -47,7 +47,7 @@ From the repo on your PC:
 
 ```bash
 ssh server mkdir -p beacon/backups
-scp deploy/compose.yaml deploy/backup.sh deploy/restore.sh deploy/update.sh deploy/.env.example server:beacon/
+scp deploy/compose.yaml deploy/backup.sh deploy/restore.sh deploy/update.sh deploy/monitor.sh deploy/.env.example server:beacon/
 ssh server 'cd beacon && chmod +x *.sh && cp .env.example .env'
 ```
 
@@ -102,6 +102,29 @@ Beacon, not the one on your PC.
 ssh server '(crontab -l 2>/dev/null; echo "*/10 * * * * $HOME/beacon/update.sh --auto > /dev/null 2>&1") | crontab -'
 ```
 
+### 7. Alerts on your phone
+
+`monitor.sh` checks every 5 minutes that the web app, the API and `BEACON_APP_URL` answer, that
+the disk is under 85% full and that last night's backup ran. When a check fails twice in a row it
+pushes an alert through [ntfy](https://ntfy.sh), and another when it's fixed.
+
+1. Install the ntfy app on your phone and subscribe to a topic with a long, random name (anyone
+   who knows the name can read the alerts), for example `beacon-` plus 20 random letters.
+2. Add `BEACON_NTFY_TOPIC=<that name>` to `.env`, then send a test:
+
+   ```bash
+   ssh server 'cd ~/beacon && ./monitor.sh --test'
+   ```
+
+3. Run it every 5 minutes:
+
+   ```bash
+   ssh server '(crontab -l 2>/dev/null; echo "*/5 * * * * $HOME/beacon/monitor.sh > /dev/null 2>&1") | crontab -'
+   ```
+
+Run `./monitor.sh` by hand to see every check's result. It can't tell you the whole machine is
+off; a free outside check (like UptimeRobot on the public URL) covers that once Beacon has one.
+
 ## Updates
 
 Cron runs `./update.sh --auto` every 10 minutes. When CI has published a new version, it:
@@ -122,6 +145,7 @@ When nothing is new, it does nothing and writes nothing. So: merge into `main`, 
 |---|---|
 | Update right now, without waiting for cron | `./update.sh` |
 | See when it last updated | `tail update.log` |
+| Check that everything's healthy | `./monitor.sh` |
 | See what's running | `docker compose ps` |
 | Read the API's log | `docker compose logs -f api` |
 | List backups | `ls -lh backups` |
