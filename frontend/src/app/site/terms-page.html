@@ -1,0 +1,84 @@
+<article class="policy mx-auto max-w-3xl">
+  <h1 class="mb-space-xs">Terms of use</h1>
+  <p class="m-0 mb-space-lg text-body-sm text-on-surface-variant">Last updated November 19, 2026</p>
+
+  <p>
+    These terms cover using Beacon, a job-search tracker run by one person. By creating an account
+    you agree to them, and to the <a routerLink="/privacy">privacy policy</a>.
+  </p>
+
+  <h2>It's a beta</h2>
+  <ul>
+    <li>Beacon is invite-only and still being built. Features may change, move or be removed.</li>
+    <li>
+      It may be down at times, and things may go wrong. Download your data now and then (Settings ·
+      Account) if losing it would hurt.
+    </li>
+    <li>
+      Beacon is free during the beta. If that changes, you'll be told before anything costs money.
+    </li>
+  </ul>
+
+  <h2>Your account</h2>
+  <ul>
+    <li>Use your own invite and your own account, and keep your password to yourself.</li>
+    <li>You can delete your account at any time, which deletes everything in it.</li>
+  </ul>
+
+  <h2>Your content</h2>
+  <p>
+    What you put into Beacon stays yours. Beacon keeps and processes it only to provide the features
+    you use, as the privacy policy describes.
+  </p>
+
+  <h2>Your API keys and their costs</h2>
+  <p>
+    AI features and some job sources use keys you add from your own accounts with those providers.
+    Their charges are between you and them, and their terms apply to what you do through Beacon.
+    Beacon shows the requests it makes with your keys, but you're responsible for your providers'
+    bills and limits.
+  </p>
+
+  <h2>Fair use</h2>
+  <p>Please don't:</p>
+  <ul>
+    <li>use Beacon for anything unlawful, or to harass anyone;</li>
+    <li>
+      store details about other people beyond what your job search needs, or in a way the law
+      doesn't allow;
+    </li>
+    <li>
+      try to get into other people's accounts or data, overload Beacon, or get around its limits;
+    </li>
+    <li>use Beacon to break the terms of the job sites and services it connects to.</li>
+  </ul>
+  <p>An account that breaks these terms may be suspended or closed.</p>
+
+  <h2>No guarantees</h2>
+  <p>
+    Beacon is provided as it is, with no promise that it will always work, keep your data, or that
+    AI suggestions, fit scores and job listings are accurate. Check anything important yourself,
+    like deadlines and what you send to employers. As far as the law allows, Beacon's operator isn't
+    responsible for losses from using it, or from not being able to.
+  </p>
+
+  <h2>Changes</h2>
+  <p>
+    When these terms change, the date at the top changes too, and anything significant will be
+    announced in the app. Keeping on using Beacon after that means you accept the new terms.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    @if (site.contactEmail(); as email) {
+      Write to <a [href]="'mailto:' + email">{{ email }}</a
+      >.
+    } @else {
+      Use the feedback link in the app.
+    }
+  </p>
+
+  <p class="mt-space-xl text-body-sm">
+    <a routerLink="/privacy">Privacy policy</a>
+  </p>
+</article>

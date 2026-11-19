@@ -21,7 +21,74 @@
   <p class="notice">{{ text }}</p>
 }
 
-@if (caughtUp()) {
+@if (firstRun()) {
+  <!-- First run: nothing tracked yet, so say how Beacon works and what's free. -->
+  <section class="first-run card mb-space-lg p-space-lg" aria-labelledby="first-run-heading">
+    <h2 id="first-run-heading" class="m-0 mb-space-xs text-headline-md">Welcome to Beacon</h2>
+    <p class="m-0 mb-space-md max-w-2xl text-body-md text-on-surface-variant">
+      Beacon keeps your job search in one place. Everything below works without any keys; the AI
+      extras use a key of your own.
+    </p>
+    <ol class="m-0 grid grid-cols-1 list-none gap-space-md p-0 md:grid-cols-2">
+      <li class="flex gap-space-md">
+        <span
+          class="step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-fixed font-mono text-label-code text-primary"
+          aria-hidden="true"
+          >1</span
+        >
+        <span>
+          <strong class="block">Add what you've applied to</strong>
+          <span class="text-body-sm text-on-surface-variant">
+            One at a time with <a routerLink="/applications/new">New application</a>: the company,
+            the role, and the posting's link if you have it.
+          </span>
+        </span>
+      </li>
+      <li class="flex gap-space-md">
+        <span
+          class="step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-fixed font-mono text-label-code text-primary"
+          aria-hidden="true"
+          >2</span
+        >
+        <span>
+          <strong class="block">Find new jobs, free</strong>
+          <span class="text-body-sm text-on-surface-variant">
+            <a routerLink="/jobs">Find jobs</a> searches Remotive, Remote OK, Jobicy and Himalayas
+            with no keys. Save a search and new matches wait for you here.
+          </span>
+        </span>
+      </li>
+      <li class="flex gap-space-md">
+        <span
+          class="step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-fixed font-mono text-label-code text-primary"
+          aria-hidden="true"
+          >3</span
+        >
+        <span>
+          <strong class="block">Move them along the board</strong>
+          <span class="text-body-sm text-on-surface-variant">
+            The <a routerLink="/board">Board</a> shows every application by stage. Beacon flags the
+            ones that have gone quiet or have a follow-up due.
+          </span>
+        </span>
+      </li>
+      <li class="flex gap-space-md">
+        <span
+          class="step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-fixed font-mono text-label-code text-primary"
+          aria-hidden="true"
+          >4</span
+        >
+        <span>
+          <strong class="block">Turn on the AI extras, if you like</strong>
+          <span class="text-body-sm text-on-surface-variant">
+            Fit scores, cover letters, interview briefs and study cards use your own OpenAI or
+            Anthropic key, billed to you by them. <a routerLink="/providers">How to get a key</a>.
+          </span>
+        </span>
+      </li>
+    </ol>
+  </section>
+} @else if (caughtUp()) {
   <p
     class="caught-up mb-space-lg flex items-center gap-space-sm rounded-md border border-hairline p-space-md text-body-md"
   >

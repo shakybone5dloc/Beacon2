@@ -477,12 +477,24 @@ Most of what's missing isn't features: it's the safety, account and hosting work
 - **Alternatives** if Supabase stops fitting: RDS on the smallest instance (no public address at all, often free for a new account's first year), or Postgres on the app server (cheapest, but backups and upgrades are ours, as on the home server).
 - **Staging:** the home server keeps following `main`. Production only moves when promoted, by setting `BEACON_TAG` to a commit already running on staging. Migrations can't be undone (V25 drops a column), so nothing reaches testers' data untried.
 
-### L7. Before the post
-- Uptime check and alerts: site down, API unhealthy, disk filling. Error tracking can follow (X2).
-- A first-run guide on an empty board: tracking, the board and the free job sources work with no keys; the AI features need the tester's own key, billed to them (link to the provider guide).
-- A "Send feedback" link (an email to start with).
-- A privacy policy and terms: Beacon stores resumes, encrypted API keys, and personal details about recruiters and interviewers. Say it's a beta and that features may change.
-- Check each keyed job source's terms for use by others through Beacon (P1).
+### L7. Before the post (done, Nov 19, except turning on the alerts)
+- **Alerts:** `deploy/monitor.sh`, run by cron every 5 minutes, checks that the web app and the API (through nginx, `/api/site`) answer, that `BEACON_APP_URL` answers, that the disk is under 85% full and that a backup ran in the last 26 hours. A check that fails twice in a row pushes an alert through ntfy to the topic in `BEACON_NTFY_TOPIC`, and another when it passes again; `./monitor.sh --test` sends a test. Setup is step 7 of `deploy/README.md`. It can't report the whole machine being off; an outside check on the public URL covers that once there is one (L6). Error tracking can follow (X2).
+- **First-run guide:** Home shows "Welcome to Beacon" instead of an empty dashboard until the first application: adding applications, Find jobs on the free sources with no keys, the board, and the AI extras on the user's own key, billed to them, with a link to the provider guide.
+- **Send feedback:** in the avatar menu and the footer, a `mailto:` to the contact address. That's `BEACON_CONTACT_EMAIL`, or the first admin email, served by the public `GET /api/site` so it stays out of the repo.
+- **Privacy policy and terms:** `/privacy` and `/terms`, open without signing in, linked from the footer and the sign-up page ("By creating an account you agree..."). They say what's stored (including people the user adds and encrypted keys), what goes to AI providers and job sources, cookies, the 14-day backups, export and deletion, and that it's a beta run by one person, with no guarantees. Not reviewed by a lawyer; worth one before paid plans.
+- **Job source terms (P1), checked Nov 19:**
+
+  | Source | What its terms ask | Beacon today |
+  |---|---|---|
+  | Remotive, Remote OK | Credit them and link back to the job on their site; don't republish to other job boards. Remotive asks for few fetches a day. | Results show "via ..." linked to the source and open the job on the source's site. Search results are cached. |
+  | Jobicy | No published terms found; credit and link back to be safe. | Same as above. |
+  | Himalayas | Visible credit and link to himalayas.app; Apply must use `applicationLink`; don't pass jobs to other boards; drop closed jobs. Showing them in your own app needs no permission. | Credited and linked; Apply already uses `applicationLink`. Saved matches can outlive a closed job. |
+  | USAJOBS | Public data may be reused; credentials must not be shared; credit encouraged. | Each user uses their own key. |
+  | Adzuna | "Adzuna" label linked to their site on every listing; after a 14-day trial, any product that generates revenue or leads needs a licence; one account per person or company. | "Jobs by Adzuna" shown. Fine as each user's own key for their own search; a paid Beacon plan would need Adzuna's agreement. Can be switched off for everyone with `BEACON_DISABLED_SOURCES=adzuna`. |
+  | Google Jobs (SerpApi) | No reselling any part of the service without written permission; nothing on users bringing their own key. | Fine with each user's own key; supplying Beacon's key in a paid plan needs SerpApi's permission. |
+  | JSearch (OpenWeb Ninja) | Published terms don't cover apps serving others. | Fine with each user's own key; ask support@openwebninja.com before Beacon supplies a key. |
+
+  Decision: the beta runs as the "Open" plan, where every keyed source uses the tester's own key, which every source above allows. Before the "All-included" plan (P1), get written agreement from Adzuna, SerpApi and OpenWeb Ninja, or leave those sources out of it.
 
 ### Soon after the beta starts
 - End-to-end tests of the main flows in CI (X3).

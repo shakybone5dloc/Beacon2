@@ -52,6 +52,10 @@
       }
     </label>
 
+    <p class="agree m-0 text-body-sm text-on-surface-variant">
+      By creating an account you agree to the <a routerLink="/terms">terms of use</a> and the
+      <a routerLink="/privacy">privacy policy</a>.
+    </p>
     <button type="submit" [disabled]="submitting()">
       {{ submitting() ? 'Creating account...' : 'Create account' }}
     </button>

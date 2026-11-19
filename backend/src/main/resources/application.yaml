@@ -50,6 +50,8 @@ beacon:
     invite-only: ${BEACON_INVITE_ONLY:true}
   # Comma-separated emails of the accounts that can manage Beacon (invite codes, for now).
   admin-emails: ${BEACON_ADMIN_EMAILS:}
+  # Where Send feedback and the privacy and terms pages point. Falls back to the first admin email.
+  contact-email: ${BEACON_CONTACT_EMAIL:}
   # Sign-in and sign-up limits (see AttemptLimiter).
   limits:
     login-per-ip: ${BEACON_LOGIN_PER_IP:30}

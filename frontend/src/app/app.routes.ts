@@ -20,6 +20,17 @@ export const oldBoardLinks: CanActivateFn = (route) => {
  * a page's own libraries (the board's drag and drop, the brief's Markdown) come with it.
  */
 export const routes: Routes = [
+  // Open to everyone, signed in or not.
+  {
+    path: 'privacy',
+    loadComponent: () => import('./site/privacy-page').then((m) => m.PrivacyPage),
+    title: 'Beacon · Privacy policy',
+  },
+  {
+    path: 'terms',
+    loadComponent: () => import('./site/terms-page').then((m) => m.TermsPage),
+    title: 'Beacon · Terms of use',
+  },
   {
     path: 'login',
     loadComponent: () => import('./auth/login-page').then((m) => m.LoginPage),

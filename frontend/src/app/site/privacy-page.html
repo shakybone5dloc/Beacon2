@@ -1,0 +1,118 @@
+<article class="policy mx-auto max-w-3xl">
+  <h1 class="mb-space-xs">Privacy policy</h1>
+  <p class="m-0 mb-space-lg text-body-sm text-on-surface-variant">Last updated November 19, 2026</p>
+
+  <p>
+    Beacon is a job-search tracker in an invite-only beta, run by one person. This page says what
+    Beacon keeps about you, why, who else sees it, and how to get it out or delete it.
+  </p>
+
+  <h2>What Beacon keeps</h2>
+  <ul>
+    <li>
+      <strong>Your account:</strong> your email address, the name you give, and your password,
+      stored only as a one-way hash that can't be turned back into the password.
+    </li>
+    <li>
+      <strong>What you put in:</strong> applications and their notes, statuses and dates, companies,
+      interviews, stories, study cards, saved searches and the postings they find, and the files you
+      upload or save, such as resumes, cover letters and copies of job postings.
+    </li>
+    <li>
+      <strong>People you add:</strong> recruiters, hiring managers, interviewers and other contacts,
+      with whatever you record about them (a name, a title, an email address, a phone number,
+      notes).
+    </li>
+    <li>
+      <strong>Your API keys:</strong> keys you add for AI providers and job sources, encrypted
+      before they're stored. Beacon never shows them back to you in full.
+    </li>
+    <li>
+      <strong>Settings and usage:</strong> your preferences, such as the address you send email from
+      and the weekly email, and a count of AI requests made with your keys so you can see your
+      spending.
+    </li>
+  </ul>
+
+  <h2>Why</h2>
+  <p>
+    Only to run the features you use. Beacon has no ads, sells nothing about you, and doesn't use
+    your data to train anything.
+  </p>
+
+  <h2>Who else sees it</h2>
+  <ul>
+    <li>
+      <strong>AI providers, when you use an AI feature:</strong> fit scores, cover letters,
+      interview briefs, study cards, resume tailoring, check-in emails and answer grading send the
+      text they need (for example a posting and your resume) to OpenAI or Anthropic, using your own
+      key and under that provider's own terms and privacy policy.
+    </li>
+    <li>
+      <strong>Job sources, when you search:</strong> your search words and filters go to the job
+      sources you search. Saving a posting fetches the page you link to.
+    </li>
+    <li>
+      <strong>Email, when you turn it on:</strong> the weekly email is sent through an email
+      service. Emails you write in Beacon, like a check-in, open in your own mail app or Gmail for
+      you to send; Beacon doesn't send them.
+    </li>
+    <li>
+      <strong>The person running Beacon</strong> can reach the server and its database to keep it
+      running, and looks at your data only when needed to fix a problem or when you ask for help.
+    </li>
+  </ul>
+  <p>Nothing else is shared, unless the law requires it.</p>
+
+  <h2>Cookies and your browser</h2>
+  <p>
+    Beacon uses cookies only to keep you signed in and to protect forms from forgery. Your browser
+    also remembers a few preferences on your device, like light or dark mode and your last job
+    search. There are no analytics or tracking cookies.
+  </p>
+
+  <h2>Where it's kept and for how long</h2>
+  <p>
+    Your data is stored on Beacon's server and kept until you delete it or your account. The server
+    makes a backup every night; backups are kept for 14 days and then deleted.
+  </p>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li>
+      <strong>Download everything:</strong> Settings · Account · Download my data gives you a zip of
+      everything you've put in, including your files.
+    </li>
+    <li>
+      <strong>Delete your account:</strong> Settings · Account · Delete your account removes your
+      account and everything in it straight away. Copies in backups are gone within 14 days.
+    </li>
+    <li><strong>Change or remove anything</strong> you've added, at any time.</li>
+  </ul>
+
+  <h2>People you add</h2>
+  <p>
+    When you record details about other people, keep to what you need for your job search, and
+    delete them when you no longer do.
+  </p>
+
+  <h2>A beta</h2>
+  <p>
+    Beacon is still being built. When this policy changes, the date at the top changes too, and
+    anything significant will be announced in the app.
+  </p>
+
+  <h2>Questions</h2>
+  <p>
+    @if (site.contactEmail(); as email) {
+      Write to <a [href]="'mailto:' + email">{{ email }}</a
+      >.
+    } @else {
+      Use the feedback link in the app.
+    }
+  </p>
+
+  <p class="mt-space-xl text-body-sm">
+    <a routerLink="/terms">Terms of use</a>
+  </p>
+</article>

@@ -196,6 +196,15 @@ describe('HomePage', () => {
     expect(el.querySelector('.this-week .response')?.textContent?.trim()).toBe('25%');
   });
 
+  it('greets a new account with how Beacon works instead of an empty dashboard', async () => {
+    const { el } = await open({ apps: [] });
+
+    expect(el.querySelector('.first-run h2')?.textContent).toContain('Welcome to Beacon');
+    expect(el.querySelectorAll('.first-run li').length).toBe(4);
+    expect(el.querySelector('.first-run a[href="/providers"]')).not.toBeNull();
+    expect(el.querySelector('.caught-up')).toBeNull();
+  });
+
   it('lists what needs attention, most urgent first, and clears a follow-up with Done', async () => {
     const due = quiet({
       id: 'a1',
@@ -214,7 +223,9 @@ describe('HomePage', () => {
 
     // Collapsed: the count, a summary and only the most urgent item.
     expect(el.querySelector('#attention-heading')?.textContent).toContain('3 need attention');
-    expect(el.querySelector('.attention-summary')?.textContent).toContain('2 due now · 1 gone quiet');
+    expect(el.querySelector('.attention-summary')?.textContent).toContain(
+      '2 due now · 1 gone quiet',
+    );
     expect(el.querySelectorAll('.attention li').length).toBe(1);
     expect(el.querySelector('.attention li')?.textContent).toContain('Globex');
     const toggle = el.querySelector<HTMLButtonElement>('.attention-toggle')!;

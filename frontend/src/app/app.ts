@@ -12,6 +12,7 @@ import {
 import { filter, map } from 'rxjs';
 import { AuthState } from './auth/auth-state';
 import { MatchesState } from './searches/matches-state';
+import { SiteState } from './site/site-state';
 import { ThemeChoice, ThemeService } from './theme/theme';
 
 const THEME_ICONS: Record<ThemeChoice, string> = {
@@ -88,8 +89,11 @@ export class App {
   protected readonly auth = inject(AuthState);
   protected readonly theme = inject(ThemeService);
   protected readonly matches = inject(MatchesState);
+  protected readonly site = inject(SiteState);
 
   constructor() {
+    // The contact address for Send feedback and the footer.
+    this.site.load();
     // The Matches badge: counted once on sign-in, then again as matches are saved, dismissed or found.
     effect(() => {
       if (this.auth.user()) this.matches.refresh();

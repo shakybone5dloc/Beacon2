@@ -3143,6 +3143,24 @@
         "tags" : [ "Saved Searches" ]
       }
     },
+    "/api/site" : {
+      "get" : {
+        "operationId" : "getSite",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SiteResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Site" ]
+      }
+    },
     "/api/stats" : {
       "get" : {
         "operationId" : "getStats",
@@ -6210,6 +6228,15 @@
             "format" : "uuid"
           }
         }
+      },
+      "SiteResponse" : {
+        "type" : "object",
+        "properties" : {
+          "contactEmail" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "contactEmail" ]
       },
       "SourceResultResponse" : {
         "type" : "object",

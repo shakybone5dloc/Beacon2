@@ -14,7 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * What anyone can reach without signing in, with production's settings (L4): the API
- * description and Swagger UI are off, and the health check says only UP or DOWN.
+ * description and Swagger UI are off, the health check says only UP or DOWN, and the contact
+ * address is there for the feedback link and the privacy and terms pages.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -40,5 +41,13 @@ class PublicSurfaceTests {
         assertThat(health).bodyJson().doesNotHavePath("$.components");
         // The container's health check still works.
         assertThat(mvc.get().uri("/actuator/health/readiness").exchange()).hasStatus(HttpStatus.OK);
+    }
+
+    @Test
+    void theContactAddressIsPublicAndFallsBackToTheFirstAdmin() {
+        // The test configuration lists x@example.test as the admin and sets no contact address.
+        assertThat(mvc.get().uri("/api/site").exchange())
+                .hasStatus(HttpStatus.OK)
+                .bodyJson().extractingPath("$.contactEmail").isEqualTo("x@example.test");
     }
 }
