@@ -7,7 +7,13 @@ import { authGuard, guestGuard, safeReturnUrl } from './auth.guards';
 import { authInterceptor } from './auth.interceptor';
 import { CurrentUser } from './auth.model';
 
-const USER: CurrentUser = { id: 'u1', email: 'me@example.com', displayName: null, admin: false };
+const USER: CurrentUser = {
+  id: 'u1',
+  email: 'me@example.com',
+  displayName: null,
+  admin: false,
+  emailConfirmationNeeded: false,
+};
 
 describe('auth', () => {
   let auth: AuthState;

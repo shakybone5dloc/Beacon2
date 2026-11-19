@@ -23,6 +23,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *       per 15 minutes; after that the account can't sign in until the oldest ages out. A
  *       successful sign-in clears its count.</li>
  *   <li>Sign-up, per address: {@code beacon.limits.register-per-ip} attempts per hour.</li>
+ *   <li>Password-reset requests, per address: {@code beacon.limits.email-requests-per-ip} per hour.</li>
+ *   <li>Emails sent to one account (reset and confirmation links):
+ *       {@code beacon.limits.emails-per-account} per hour, so no one can flood an inbox.</li>
  * </ul>
  */
 @Component
@@ -31,7 +34,9 @@ public class AttemptLimiter {
     public enum Kind {
         LOGIN_IP(Duration.ofMinutes(15)),
         LOGIN_ACCOUNT(Duration.ofMinutes(15)),
-        REGISTER_IP(Duration.ofHours(1));
+        REGISTER_IP(Duration.ofHours(1)),
+        EMAIL_REQUEST_IP(Duration.ofHours(1)),
+        EMAIL_ACCOUNT(Duration.ofHours(1));
 
         final Duration window;
 
@@ -50,9 +55,12 @@ public class AttemptLimiter {
     public AttemptLimiter(@Value("${beacon.limits.login-per-ip:30}") int loginPerIp,
                           @Value("${beacon.limits.login-failures-per-account:8}") int failuresPerAccount,
                           @Value("${beacon.limits.register-per-ip:10}") int registerPerIp,
+                          @Value("${beacon.limits.email-requests-per-ip:10}") int emailRequestsPerIp,
+                          @Value("${beacon.limits.emails-per-account:3}") int emailsPerAccount,
                           Clock clock) {
         this.limits = Map.of(Kind.LOGIN_IP, loginPerIp, Kind.LOGIN_ACCOUNT, failuresPerAccount,
-                Kind.REGISTER_IP, registerPerIp);
+                Kind.REGISTER_IP, registerPerIp, Kind.EMAIL_REQUEST_IP, emailRequestsPerIp,
+                Kind.EMAIL_ACCOUNT, emailsPerAccount);
         this.clock = clock;
     }
 

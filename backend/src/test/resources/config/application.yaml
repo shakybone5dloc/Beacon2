@@ -17,7 +17,11 @@ beacon:
     # High enough that tests signing in many times never trip them; LimitApiTests sets its own.
     login-per-ip: 10000
     register-per-ip: 10000
+    email-requests-per-ip: 10000
   saved-searches:
     # Tests run saved searches themselves, inline, so they can check what a run did.
     scheduler-enabled: false
     run-in-background: false
+  mail:
+    # Tests read what was "sent" right after the request, so emails go out inline.
+    send-in-background: false

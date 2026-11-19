@@ -35,6 +35,10 @@ public class UserAccount {
     @Column(name = "send_from_email", length = 320)
     private String sendFromEmail;
 
+    /** When the email was confirmed by a link sent to it; null until then. */
+    @Column(name = "email_confirmed_at")
+    private Instant emailConfirmedAt;
+
     protected UserAccount() { }
 
     /** @param passwordHash already encoded; the domain never sees a plain password */
@@ -64,6 +68,20 @@ public class UserAccount {
     public BigDecimal getAiMonthlyBudgetUsd() { return aiMonthlyBudgetUsd; }
     /** The address set to send from; null when it's the sign-in address. */
     public String getSendFromEmail() { return sendFromEmail; }
+    public Instant getEmailConfirmedAt() { return emailConfirmedAt; }
+    public boolean isEmailConfirmed() { return emailConfirmedAt != null; }
+
+    public void confirmEmail(Instant now) {
+        if (emailConfirmedAt == null) emailConfirmedAt = now;
+    }
+
+    /** @param passwordHash already encoded */
+    public void changePassword(String passwordHash) {
+        if (passwordHash == null || passwordHash.isBlank()) {
+            throw new IllegalArgumentException("A password hash is required");
+        }
+        this.passwordHash = passwordHash;
+    }
 
     /** The address emails are sent from: the one set, or else the one the user signs in with. */
     public String sendFrom() { return sendFromEmail == null ? email : sendFromEmail; }

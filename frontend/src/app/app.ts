@@ -11,6 +11,7 @@ import {
 } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AuthState } from './auth/auth-state';
+import { ConfirmEmailBanner } from './auth/confirm-email-banner';
 import { MatchesState } from './searches/matches-state';
 import { SiteState } from './site/site-state';
 import { ThemeChoice, ThemeService } from './theme/theme';
@@ -81,7 +82,15 @@ const PREFIX_ACTIVE = { exact: false };
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CdkMenu, CdkMenuItem, CdkMenuTrigger],
+  imports: [
+    ConfirmEmailBanner,
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    CdkMenu,
+    CdkMenuItem,
+    CdkMenuTrigger,
+  ],
   templateUrl: './app.html',
 })
 export class App {

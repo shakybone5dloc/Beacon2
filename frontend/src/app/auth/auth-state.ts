@@ -51,6 +51,11 @@ export class AuthState {
     return this.api.deleteAccount(password).pipe(tap(() => this.current.set(null)));
   }
 
+  /** After a confirmation link worked: stop asking for it. */
+  markEmailConfirmed(): void {
+    this.current.update((user) => (user ? { ...user, emailConfirmationNeeded: false } : user));
+  }
+
   /** For when the server says the session has ended. */
   clear(): void {
     this.current.set(null);

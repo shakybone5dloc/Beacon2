@@ -1322,6 +1322,37 @@
         "tags" : [ "Applications" ]
       }
     },
+    "/api/auth/confirm-email" : {
+      "post" : {
+        "operationId" : "confirmEmail",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConfirmEmailRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "The link expired or was already used"
+          }
+        },
+        "tags" : [ "Auth" ]
+      }
+    },
     "/api/auth/csrf" : {
       "get" : {
         "operationId" : "getCsrfToken",
@@ -1394,6 +1425,68 @@
               }
             },
             "description" : "OK"
+          }
+        },
+        "tags" : [ "Auth" ]
+      }
+    },
+    "/api/auth/password-reset" : {
+      "post" : {
+        "operationId" : "requestPasswordReset",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "202" : {
+            "description" : "If the address has an account, a link is on its way"
+          },
+          "429" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Too many requests from this address"
+          }
+        },
+        "tags" : [ "Auth" ]
+      }
+    },
+    "/api/auth/password-reset/confirm" : {
+      "post" : {
+        "operationId" : "resetPassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewPasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "The link expired, was used, or the password is too short"
           }
         },
         "tags" : [ "Auth" ]
@@ -2420,6 +2513,27 @@
           }
         },
         "tags" : [ "API Keys" ]
+      }
+    },
+    "/api/me/confirm-email" : {
+      "post" : {
+        "operationId" : "resendEmailConfirmation",
+        "responses" : {
+          "202" : {
+            "description" : "A new link is on its way"
+          },
+          "429" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "Too many emails to this account this hour"
+          }
+        },
+        "tags" : [ "Account" ]
       }
     },
     "/api/me/digest" : {
@@ -4362,6 +4476,17 @@
         },
         "required" : [ "applicationCount", "careersBoardId", "careersPlatform", "createdAt", "emailDomains", "id", "name", "notes", "type", "updatedAt", "version", "website" ]
       },
+      "ConfirmEmailRequest" : {
+        "type" : "object",
+        "properties" : {
+          "token" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "token" ]
+      },
       "ContactResponse" : {
         "type" : "object",
         "properties" : {
@@ -4675,12 +4800,15 @@
           "email" : {
             "type" : "string"
           },
+          "emailConfirmationNeeded" : {
+            "type" : "boolean"
+          },
           "id" : {
             "type" : "string",
             "format" : "uuid"
           }
         },
-        "required" : [ "admin", "displayName", "email", "id" ]
+        "required" : [ "admin", "displayName", "email", "emailConfirmationNeeded", "id" ]
       },
       "DeckResponse" : {
         "type" : "object",
@@ -5331,6 +5459,34 @@
         },
         "required" : [ "newCount" ]
       },
+      "NewPasswordRequest" : {
+        "type" : "object",
+        "properties" : {
+          "password" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 12
+          },
+          "token" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "password", "token" ]
+      },
+      "PasswordResetRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "format" : "email",
+            "maxLength" : 320,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "email" ]
+      },
       "PersonApplicationResponse" : {
         "type" : "object",
         "properties" : {
@@ -5595,9 +5751,12 @@
         "properties" : {
           "inviteOnly" : {
             "type" : "boolean"
+          },
+          "passwordReset" : {
+            "type" : "boolean"
           }
         },
-        "required" : [ "inviteOnly" ]
+        "required" : [ "inviteOnly", "passwordReset" ]
       },
       "ResumeResponse" : {
         "type" : "object",

@@ -1,9 +1,10 @@
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { problemText } from '../documents/application-documents';
+import { AuthApi } from './auth-api';
 import { AuthState } from './auth-state';
 import { safeReturnUrl } from './auth.guards';
 
@@ -13,8 +14,9 @@ import { safeReturnUrl } from './auth.guards';
   templateUrl: './login-page.html',
   styleUrl: './auth-page.css',
 })
-export class LoginPage {
+export class LoginPage implements OnInit {
   private readonly auth = inject(AuthState);
+  private readonly api = inject(AuthApi);
   private readonly router = inject(Router);
   private readonly fb = inject(NonNullableFormBuilder);
 
@@ -22,6 +24,11 @@ export class LoginPage {
   readonly returnUrl = input<string>();
   /** Set after the account was deleted, to say so. */
   readonly deleted = input<string>();
+  /** Set after a password reset, to say so. */
+  readonly reset = input<string>();
+
+  /** Shown only when the server can email reset links. */
+  protected readonly canReset = signal(false);
 
   protected readonly submitting = signal(false);
   protected readonly formError = signal<string | null>(null);
@@ -31,6 +38,13 @@ export class LoginPage {
     password: ['', [Validators.required]],
     rememberMe: [false],
   });
+
+  ngOnInit(): void {
+    this.api.registration().subscribe({
+      next: (r) => this.canReset.set(r.passwordReset),
+      error: () => this.canReset.set(false),
+    });
+  }
 
   protected submit(): void {
     if (this.form.invalid) {
