@@ -108,7 +108,7 @@
   @if (upcoming().length) {
     <section class="upcoming card p-space-lg" aria-labelledby="upcoming-heading">
       <h2 id="upcoming-heading" class="m-0 mb-space-md text-headline-sm">Coming up</h2>
-      <ul class="m-0 grid list-none gap-space-md p-0">
+      <ul class="m-0 grid grid-cols-1 list-none gap-space-md p-0">
         @for (u of upcoming(); track u.app.id) {
           <li class="interview flex gap-space-md">
             <div
@@ -150,10 +150,10 @@
       <p class="m-0 mb-space-md text-body-sm text-on-surface-variant">
         {{ cardsDue() }} {{ cardsDue() === 1 ? 'card is' : 'cards are' }} due.
       </p>
-      <ul class="m-0 grid list-none gap-space-sm p-0">
+      <ul class="m-0 grid grid-cols-1 list-none gap-space-sm p-0">
         @for (deck of dueDecks(); track deck.id) {
-          <li class="deck flex items-center justify-between gap-space-sm">
-            <span class="min-w-0 truncate">
+          <li class="deck flex flex-wrap items-center justify-between gap-space-sm">
+            <span class="min-w-0 flex-1 basis-[12rem] truncate">
               {{ deck.name }}
               <span class="font-mono text-body-sm text-on-surface-variant">· {{ deck.due }}</span>
             </span>
