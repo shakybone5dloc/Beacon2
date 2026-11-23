@@ -87,7 +87,7 @@ public class AccountLinks {
     public void requestPasswordReset(String email) {
         if (!mailer.isConfigured()) return;
         var normalized = UserAccount.normalizeEmail(email);
-        users.findByEmail(normalized).ifPresent(user -> {
+        users.findByEmail(normalized).filter(user -> !user.isDisabled()).ifPresent(user -> {
             if (limiter.blockedFor(AttemptLimiter.Kind.EMAIL_ACCOUNT, user.getEmail()).isPresent()) return;
             limiter.record(AttemptLimiter.Kind.EMAIL_ACCOUNT, user.getEmail());
             var token = issue(user, Purpose.RESET_PASSWORD, RESET_FOR);

@@ -6,6 +6,8 @@ import { AuthState } from '../auth/auth-state';
 import { AccountPage } from './account-page';
 import { Invite, inviteLink } from './invites-api';
 import { InvitesPage } from './invites-page';
+import { AdminUser } from './users-api';
+import { UsersPage } from './users-page';
 import { SettingsLayout } from './settings-layout';
 
 function anInvite(overrides: Partial<Invite> = {}): Invite {
@@ -65,6 +67,7 @@ describe('settings', () => {
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;
     expect(links()).toContain('/settings/invites');
+    expect(links()).toContain('/settings/users');
   });
 
   it('builds the sign-up link for a code', () => {
@@ -217,6 +220,75 @@ describe('settings', () => {
 
       expect(el.querySelector('.state')?.textContent).toBe('Revoked');
       expect(el.querySelector('.revoke')).toBeNull();
+    });
+  });
+  describe('UsersPage', () => {
+    function aUser(overrides: Partial<AdminUser> = {}): AdminUser {
+      return {
+        id: 'u2',
+        email: 'pat@example.com',
+        displayName: 'Pat',
+        createdAt: '2026-11-20T12:00:00Z',
+        emailConfirmed: true,
+        lastActiveAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        disabledAt: null,
+        admin: false,
+        applicationCount: 4,
+        ...overrides,
+      };
+    }
+
+    async function open(users: AdminUser[]) {
+      signIn(true);
+      const fixture = TestBed.createComponent(UsersPage);
+      fixture.detectChanges();
+      http.expectOne('/api/admin/users').flush(users);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      return { fixture, el: fixture.nativeElement as HTMLElement };
+    }
+
+    it('lists each account with its activity, and admins without a switch', async () => {
+      const { el } = await open([
+        aUser(),
+        aUser({ id: 'u3', email: 'new@example.com', emailConfirmed: false, lastActiveAt: null }),
+        aUser({ id: 'u1', email: 'me@example.com', admin: true }),
+      ]);
+      const rows = Array.from(el.querySelectorAll('li.user'));
+
+      expect(el.querySelector('.summary')?.textContent).toContain('3 accounts');
+      expect(rows[0].textContent).toContain('4 applications');
+      expect(rows[0].querySelector('.active')?.textContent).toContain('active 3d ago');
+      expect(rows[1].textContent).toContain('Email not confirmed');
+      expect(rows[1].querySelector('.active')?.textContent).toContain('not seen yet');
+      expect(rows[2].textContent).toContain('Admin');
+      expect(rows[2].querySelector('button')).toBeNull();
+    });
+
+    it('switches an account off after asking, and back on', async () => {
+      const ask = vi.spyOn(window, 'confirm').mockReturnValue(false);
+      const { fixture, el } = await open([aUser()]);
+
+      el.querySelector<HTMLButtonElement>('button.disable')!.click();
+      expect(ask).toHaveBeenCalled();
+
+      ask.mockReturnValue(true);
+      el.querySelector<HTMLButtonElement>('button.disable')!.click();
+      http
+        .expectOne((r) => r.method === 'POST' && r.url === '/api/admin/users/u2/disable')
+        .flush(aUser({ disabledAt: '2026-11-23T10:00:00Z' }));
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(el.textContent).toContain('Switched off');
+      expect(el.querySelector('.summary')?.textContent).toContain('1 switched off');
+
+      el.querySelector<HTMLButtonElement>('button.enable')!.click();
+      http
+        .expectOne((r) => r.method === 'POST' && r.url === '/api/admin/users/u2/enable')
+        .flush(aUser());
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(el.querySelector('button.disable')).not.toBeNull();
     });
   });
 });

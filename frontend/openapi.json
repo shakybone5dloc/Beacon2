@@ -83,6 +83,91 @@
         "tags" : [ "Admin" ]
       }
     },
+    "/api/admin/users" : {
+      "get" : {
+        "operationId" : "listUsers",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminUserResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Admin" ]
+      }
+    },
+    "/api/admin/users/{id}/disable" : {
+      "post" : {
+        "operationId" : "disableUser",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminUserResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "An admin can't be switched off here"
+          }
+        },
+        "tags" : [ "Admin" ]
+      }
+    },
+    "/api/admin/users/{id}/enable" : {
+      "post" : {
+        "operationId" : "enableUser",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminUserResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Admin" ]
+      }
+    },
     "/api/applications" : {
       "get" : {
         "operationId" : "listApplications",
@@ -1397,6 +1482,16 @@
               }
             },
             "description" : "Wrong email or password"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description" : "The password was right, but the account is switched off"
           },
           "429" : {
             "content" : {
@@ -3922,6 +4017,44 @@
   },
   "components" : {
     "schemas" : {
+      "AdminUserResponse" : {
+        "type" : "object",
+        "properties" : {
+          "admin" : {
+            "type" : "boolean"
+          },
+          "applicationCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "disabledAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "displayName" : {
+            "type" : [ "string", "null" ]
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "emailConfirmed" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "lastActiveAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "admin", "applicationCount", "createdAt", "disabledAt", "displayName", "email", "emailConfirmed", "id", "lastActiveAt" ]
+      },
       "AiUsageLineResponse" : {
         "type" : "object",
         "properties" : {

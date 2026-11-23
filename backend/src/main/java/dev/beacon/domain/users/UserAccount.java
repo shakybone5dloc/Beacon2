@@ -35,6 +35,10 @@ public class UserAccount {
     @Column(name = "send_from_email", length = 320)
     private String sendFromEmail;
 
+    /** Set while an admin has switched the account off. */
+    @Column(name = "disabled_at")
+    private Instant disabledAt;
+
     /** When the email was confirmed by a link sent to it; null until then. */
     @Column(name = "email_confirmed_at")
     private Instant emailConfirmedAt;
@@ -69,6 +73,15 @@ public class UserAccount {
     /** The address set to send from; null when it's the sign-in address. */
     public String getSendFromEmail() { return sendFromEmail; }
     public Instant getEmailConfirmedAt() { return emailConfirmedAt; }
+    public boolean isDisabled() { return disabledAt != null; }
+
+    public void disable(Instant now) {
+        if (disabledAt == null) disabledAt = now;
+    }
+
+    public void enable() {
+        disabledAt = null;
+    }
     public boolean isEmailConfirmed() { return emailConfirmedAt != null; }
 
     public void confirmEmail(Instant now) {

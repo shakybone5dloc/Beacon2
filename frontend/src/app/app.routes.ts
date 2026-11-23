@@ -175,6 +175,11 @@ export const routes: Routes = [
             title: 'Beacon · API keys',
           },
           {
+            path: 'users',
+            loadComponent: () => import('./settings/users-page').then((m) => m.UsersPage),
+            title: 'Beacon · Users',
+          },
+          {
             path: 'invites',
             loadComponent: () => import('./settings/invites-page').then((m) => m.InvitesPage),
             title: 'Beacon · Invites',

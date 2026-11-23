@@ -24,17 +24,24 @@ public final class SignedInUser implements UserDetails, CredentialsContainer, Se
     private final UUID id;
     private final String email;
     private final String displayName;
+    private final boolean enabled;
     private String passwordHash;
 
     public SignedInUser(UUID id, String email, String displayName, String passwordHash) {
+        this(id, email, displayName, passwordHash, true);
+    }
+
+    public SignedInUser(UUID id, String email, String displayName, String passwordHash, boolean enabled) {
         this.id = id;
         this.email = email;
         this.displayName = displayName;
         this.passwordHash = passwordHash;
+        this.enabled = enabled;
     }
 
     public static SignedInUser of(UserAccount account) {
-        return new SignedInUser(account.getId(), account.getEmail(), account.getDisplayName(), account.getPasswordHash());
+        return new SignedInUser(account.getId(), account.getEmail(), account.getDisplayName(),
+                account.getPasswordHash(), !account.isDisabled());
     }
 
     public UUID id() { return id; }
@@ -44,5 +51,7 @@ public final class SignedInUser implements UserDetails, CredentialsContainer, Se
     @Override public String getUsername() { return email; }
     @Override public String getPassword() { return passwordHash; }
     @Override public Collection<? extends GrantedAuthority> getAuthorities() { return List.of(); }
+    /** False while an admin has switched the account off; sign-in and remember-me refuse it. */
+    @Override public boolean isEnabled() { return enabled; }
     @Override public void eraseCredentials() { passwordHash = null; }
 }
