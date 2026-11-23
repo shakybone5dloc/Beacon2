@@ -30,6 +30,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -128,6 +129,9 @@ public class AuthController {
     @ApiResponse(responseCode = "401", description = "Wrong email or password",
             content = @Content(mediaType = "application/problem+json",
                     schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "403", description = "The password was right, but the account is switched off",
+            content = @Content(mediaType = "application/problem+json",
+                    schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "429", description = "Too many attempts from this address or for this account",
             content = @Content(mediaType = "application/problem+json",
                     schema = @Schema(implementation = ProblemDetail.class)))
@@ -148,6 +152,12 @@ public class AuthController {
             authentication = authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(body.email(), body.password()));
             limiter.clear(AttemptLimiter.Kind.LOGIN_ACCOUNT, account);
+        } catch (DisabledException ex) {
+            // Reached only with the right password, so saying why gives nothing away.
+            var problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN,
+                    "This account has been switched off. Use Send feedback to ask about it.");
+            problem.setTitle("Account switched off");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
         } catch (AuthenticationException ex) {
             limiter.record(AttemptLimiter.Kind.LOGIN_ACCOUNT, account);
             // Same answer for a wrong password and an unknown email, so emails can't be probed.

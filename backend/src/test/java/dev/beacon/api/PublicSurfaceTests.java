@@ -1,6 +1,7 @@
 package dev.beacon.api;
 
 import dev.beacon.TestcontainersConfiguration;
+import dev.beacon.application.digest.Mailer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PublicSurfaceTests {
 
     @Autowired MockMvcTester mvc;
+    @Autowired Mailer mailer;
 
     @Test
     void theApiDescriptionAndSwaggerUiAreOff() {
@@ -49,5 +51,11 @@ class PublicSurfaceTests {
         assertThat(mvc.get().uri("/api/site").exchange())
                 .hasStatus(HttpStatus.OK)
                 .bodyJson().extractingPath("$.contactEmail").isEqualTo("x@example.test");
+    }
+
+    /** The developer's ../.env holds the real mail server; tests must never send through it. */
+    @Test
+    void testsNeverUseTheRealMailServer() {
+        assertThat(mailer.isConfigured()).isFalse();
     }
 }

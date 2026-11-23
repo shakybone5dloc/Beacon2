@@ -34,7 +34,8 @@ public class AccountData {
 
     static {
         EXPORTS.put("users", """
-                select id, email, display_name, created_at, email_confirmed_at, ai_monthly_budget_usd, send_from_email
+                select id, email, display_name, created_at, email_confirmed_at, last_active_at, ai_monthly_budget_usd,
+                       send_from_email
                 from users where id = :owner""");
         EXPORTS.put("user_api_keys", """
                 select provider, hint, created_at, updated_at from user_api_keys where user_id = :owner""");

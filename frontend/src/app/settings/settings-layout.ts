@@ -33,7 +33,10 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     label: 'Admin',
     admin: true,
-    links: [{ path: '/settings/invites', label: 'Invites', icon: 'confirmation_number' }],
+    links: [
+      { path: '/settings/users', label: 'Users', icon: 'group' },
+      { path: '/settings/invites', label: 'Invites', icon: 'confirmation_number' },
+    ],
   },
 ];
 

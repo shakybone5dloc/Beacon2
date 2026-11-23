@@ -1,6 +1,7 @@
 package dev.beacon.config;
 
 import dev.beacon.application.users.AccountService;
+import dev.beacon.application.users.ActivityTracker;
 import dev.beacon.application.users.SessionRevocations;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -8,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices.RememberMeTokenAlgorithm;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -38,10 +41,13 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository contextRepository,
                                             TokenBasedRememberMeServices rememberMe,
-                                            SessionRevocations revocations) throws Exception {
+                                            SessionRevocations revocations,
+                                            ActivityTracker activity) throws Exception {
         http
-                // Ends sessions that signed in before a password reset (L5).
+                // Ends sessions that signed in before a password reset or the account was switched off.
                 .addFilterAfter(new RevokedSessionFilter(revocations), SecurityContextHolderFilter.class)
+                // Notes when each account was last used, for the admin's user list.
+                .addFilterAfter(new ActivityFilter(activity), RememberMeAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/password-reset",
                                 "/api/auth/password-reset/confirm", "/api/auth/confirm-email").permitAll()
@@ -95,6 +101,12 @@ public class SecurityConfig {
     @Bean
     AuthenticationManager authenticationManager(AccountService accounts, PasswordEncoder passwordEncoder) {
         var provider = new DaoAuthenticationProvider(accounts);
+        // A switched-off account is refused only after its password checks out, so the refusal
+        // tells nothing to someone guessing; the default checks it first.
+        provider.setPreAuthenticationChecks(user -> { });
+        provider.setPostAuthenticationChecks(user -> {
+            if (!user.isEnabled()) throw new DisabledException("This account has been switched off.");
+        });
         provider.setPasswordEncoder(passwordEncoder);
         return new ProviderManager(provider);
     }

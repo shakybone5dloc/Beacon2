@@ -23,5 +23,12 @@ beacon:
     scheduler-enabled: false
     run-in-background: false
   mail:
+    # Never the real mail server from ../.env: nothing is sent unless TEST_MAIL_HOST points at a
+    # local catcher, as the "api (testcontainers db, mailpit)" launch entry does.
+    host: ${TEST_MAIL_HOST:}
+    port: ${TEST_MAIL_PORT:1025}
+    username: ""
+    password: ""
+    from: beacon@example.test
     # Tests read what was "sent" right after the request, so emails go out inline.
     send-in-background: false

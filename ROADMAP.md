@@ -502,7 +502,7 @@ Most of what's missing isn't features: it's the safety, account and hosting work
 
 ### Soon after the beta starts
 - End-to-end tests of the main flows in CI (X3).
-- Admin basics: list users, disable an account.
+- ~~Admin basics: list users, disable an account.~~ Done Nov 23: Settings · Users (admins only; 404 to anyone else) lists every account newest first, with when it joined, its application count, whether its email is confirmed and when it was last active (V28 `last_active_at`, written at most once an hour per user). **Switch off** (V28 `disabled_at`) stops sign-in and remember-me and ends the account's sessions straight away; its data stays, and **Switch on** undoes it. The "switched off" answer comes only after the right password, so it tells a guesser nothing. Admins can't be switched off there.
 - Error tracking (X2).
 - A phone and accessibility pass on the main pages.
 
