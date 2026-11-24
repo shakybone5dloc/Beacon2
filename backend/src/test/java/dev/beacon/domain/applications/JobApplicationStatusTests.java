@@ -145,4 +145,61 @@ class JobApplicationStatusTests {
         assertThat(app.getStatusChangedAt()).isEqualTo(NOW);
         assertThat(app.getStatusHistory()).hasSize(1);
     }
+
+    // BJAVA-1: the source of each change.
+
+    @Test
+    void plainChangeStatusRecordsUserWithNoEmailId() {
+        var app = newApp();
+
+        app.changeStatus(ApplicationStatus.APPLIED, LATER);
+
+        assertThat(app.getStatusHistory()).allSatisfy(change -> {
+            assertThat(change.getSource()).isEqualTo(StatusChangeSource.USER);
+            assertThat(change.getSourceEmailId()).isNull();
+        });
+    }
+
+    @Test
+    void emailChangeRecordsSourceAndEmailId() {
+        var app = newApp();
+
+        app.changeStatus(ApplicationStatus.APPLIED, LATER, StatusChangeSource.EMAIL, "<abc@mail>");
+
+        var last = app.getStatusHistory().getLast();
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.APPLIED);
+        assertThat(last.getSource()).isEqualTo(StatusChangeSource.EMAIL);
+        assertThat(last.getSourceEmailId()).isEqualTo("<abc@mail>");
+    }
+
+    @Test
+    void emailChangeWithNullOrBlankEmailIdThrowsAndRecordsNothing() {
+        var app = newApp();
+
+        for (String bad : new String[] {null, "", "   "}) {
+            assertThatThrownBy(() -> app.changeStatus(ApplicationStatus.APPLIED, LATER, StatusChangeSource.EMAIL, bad))
+                    .isInstanceOf(DomainException.class);
+        }
+
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.SAVED);
+        assertThat(app.getStatusHistory()).hasSize(1);
+    }
+
+    @Test
+    void userChangeWithAnEmailIdThrowsAndRecordsNothing() {
+        var app = newApp();
+
+        assertThatThrownBy(() -> app.changeStatus(ApplicationStatus.APPLIED, LATER, StatusChangeSource.USER, "<abc@mail>"))
+                .isInstanceOf(DomainException.class);
+
+        assertThat(app.getStatus()).isEqualTo(ApplicationStatus.SAVED);
+        assertThat(app.getStatusHistory()).hasSize(1);
+    }
+
+    @Test
+    void initialSavedEntryIsRecordedAsUser() {
+        var app = newApp();
+
+        assertThat(app.getStatusHistory().getFirst().getSource()).isEqualTo(StatusChangeSource.USER);
+    }
 }

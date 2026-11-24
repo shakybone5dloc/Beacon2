@@ -175,6 +175,18 @@ public class JobApplication {
         recordStatus(newStatus, now);
     }
 
+    // TODO(BJAVA-1): add the overload changeStatus(newStatus, now, source, sourceEmailId).
+    //   Validate first (same-status and transition checks, as in the method above), then:
+    //   EMAIL needs a non-blank sourceEmailId, USER needs sourceEmailId == null, else throw DomainException
+    //   (message e.g. "An email-caused change needs the email id."). Validate BEFORE touching state so a failure records nothing.
+    //   Finally make the two-argument changeStatus delegate here with (USER, null) so the rules live in one place.
+    //   Concept: overloads plus a domain rule that keeps the aggregate consistent; look at how DomainException is used above.
+    public void changeStatus(ApplicationStatus newStatus, Instant now, StatusChangeSource source, String sourceEmailId) {
+        throw new UnsupportedOperationException("TODO(BJAVA-1)");
+    }
+
+    // TODO(BJAVA-1): pass source and sourceEmailId through to the StatusChange constructor. create() above
+    //   records the initial SAVED entry, which must be USER with a null email id.
     private void recordStatus(ApplicationStatus newStatus, Instant now) {
         statusHistory.add(new StatusChange(this, status, newStatus, now));
         this.status = newStatus;

@@ -157,6 +157,33 @@ class MigrationTests {
                         "bob@example.com bob true PENDING");
     }
 
+    @Test
+    void v29BackfillsStatusChangeSourceAsUser() {
+        var dataSource = schema("v29_backfill");
+        var jdbc = new JdbcTemplate(dataSource);
+        flyway(dataSource, "v29_backfill", "28").migrate();
+
+        var owner = user(jdbc, "carol@example.com");
+        var app = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO job_applications (id, owner_id, role, status, version, created_at, updated_at, status_changed_at)
+                VALUES (?, ?, 'Engineer', 'APPLIED', 1, now(), now(), now())
+                """, app, owner);
+        jdbc.update("""
+                INSERT INTO application_status_changes (application_id, from_status, to_status, changed_at)
+                VALUES (?::uuid, NULL, 'SAVED', '2026-10-01T12:00:00Z'), (?::uuid, 'SAVED', 'APPLIED', '2026-10-02T12:00:00Z')
+                """, app, app);
+
+        flyway(dataSource, "v29_backfill", "29").migrate();
+
+        assertThat(jdbc.queryForList("SELECT source, source_email_id FROM application_status_changes"))
+                .hasSize(2)
+                .allSatisfy(row -> {
+                    assertThat(row.get("source")).isEqualTo("USER");
+                    assertThat(row.get("source_email_id")).isNull();
+                });
+    }
+
     private static void document(JdbcTemplate jdbc, UUID owner, UUID application, String kind, String filename, String createdAt) {
         jdbc.update("""
                 INSERT INTO documents (id, application_id, owner_id, kind, filename, content_type, size_bytes, content, created_at)

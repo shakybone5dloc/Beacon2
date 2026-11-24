@@ -83,10 +83,14 @@ public final class ApplicationMappings {
     }
 
     public static StatusChangeResponse toResponse(StatusChange c) {
+        // TODO(BJAVA-1): once StatusChange has the real fields, source must come from c.getSource().name().
         return new StatusChangeResponse(
+                c.getId(),
                 c.getFromStatus() == null ? null : c.getFromStatus().name(),
                 c.getToStatus().name(),
-                c.getChangedAt()
+                c.getChangedAt(),
+                c.getSource() == null ? null : c.getSource().name(),
+                c.getSourceEmailId()
         );
     }
 }
