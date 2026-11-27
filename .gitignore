@@ -13,3 +13,8 @@
 # Deployment: backups and dumps stay on the machine that made them
 /deploy/backups/
 *.dump
+
+# Claude Code: personal settings and agent worktrees stay local
+/.claude/settings.local.json
+/.claude/worktrees/
+/.playwright-mcp/
