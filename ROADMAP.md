@@ -387,6 +387,7 @@ A page each user builds in Beacon from their resume and extra details, and share
 - Micrometer metrics, structured JSON logs, tracing (OpenTelemetry).
 - Prometheus + Grafana in Docker Compose; dashboards for API latency, AI call cost/latency, job-source errors.
 - Concepts carry over to Datadog.
+- Done so far: JSON logs and request ids (BJAVA-6). The API logs one ECS-format JSON object per line when `BEACON_JSON_LOGS=true` or the `prod` profile is on (the deploy compose file sets it); local runs keep the readable format. A filter gives every request an id (the caller's `X-Request-Id` if it is plain text, else a new UUID), puts it in the log MDC as `requestId` with the signed-in `userId` (never the email), returns it in the `X-Request-Id` header and adds it as `requestId` to every error body. Still to do: metrics, tracing, dashboards.
 
 ### X3. End-to-end tests
 - Playwright: log in, add an application, move it, upload a resume, accept an inbox item.

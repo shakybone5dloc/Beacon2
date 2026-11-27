@@ -35,6 +35,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/beacon
       SPRING_DATASOURCE_USERNAME: postgres
       BEACON_CAPTURE_URL: http://capture:8090
+      # One JSON object per log line, each with a requestId (see deploy/README.md).
+      BEACON_JSON_LOGS: "true"
     networks: [default, capture]
 
   # Prints pages to PDF. No env_file: it gets none of the secrets.

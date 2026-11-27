@@ -17,6 +17,19 @@ spring:
     hibernate:
       ddl-auto: validate
 
+logging:
+  structured:
+    format:
+      # One JSON object per log line (ECS format) when BEACON_JSON_LOGS=true; the readable format otherwise.
+      # The prod profile turns it on too (below). Both carry the MDC, so lines logged during a
+      # request have requestId (and userId when someone is signed in).
+      console: ${beacon.log-formats.${BEACON_JSON_LOGS:false}:}
+
+# Resolved by the placeholder above; "false" is blank, which keeps the readable format.
+beacon.log-formats:
+  true: ecs
+  false: ""
+
 server:
   # Behind nginx in Docker: trust its X-Forwarded-* headers (from private addresses only), so
   # cookies are marked Secure when users come in over HTTPS.
@@ -117,3 +130,13 @@ springdoc:
     enabled: ${BEACON_API_DOCS:false}
     csrf:
       enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+logging:
+  structured:
+    format:
+      console: ecs
