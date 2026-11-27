@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex,
@@ -162,6 +164,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
                 ex.getMessage());
         problem.setTitle("Conflict");
+        return problem;
+    }
+
+    /** Last resort: logs while the request id is still in the MDC, and answers with a generic 500. */
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleUnexpected(Exception ex) {
+        log.error("Unhandled exception", ex);
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Something went wrong on our side. Quote the request id if you report it.");
+        problem.setTitle("Unexpected error");
         return problem;
     }
 
