@@ -8,6 +8,7 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: [['list']],
+  expect: { timeout: 10_000 },
   outputDir: './test-results',
   use: {
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:4201',

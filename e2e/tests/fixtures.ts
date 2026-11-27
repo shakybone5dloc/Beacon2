@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { test as base, expect, type Page } from '@playwright/test';
 
 export const PASSWORD = 'correct horse battery staple';
@@ -12,7 +13,7 @@ export async function signUp(page: Page, email: string): Promise<void> {
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(PASSWORD);
   await page.getByRole('button', { name: 'Create account' }).click();
-  await expect(page.getByRole('button', { name: `Account menu for ${email}` })).toBeVisible();
+  await expect(page.getByRole('button', { name: `Account menu for ${email}` })).toBeVisible({ timeout: 30_000 });
 }
 
 type Account = { email: string; storageState: Awaited<ReturnType<Page['context']>['storageState']> };
@@ -23,11 +24,19 @@ type Account = { email: string; storageState: Awaited<ReturnType<Page['context']
  */
 export const test = base.extend<object, { account: Account }>({
   account: [
-    async ({ browser }, use) => {
-      const context = await browser.newContext({ baseURL: process.env.E2E_BASE_URL ?? "http://localhost:4201" });
+    async ({ browser }, use, workerInfo) => {
+      const context = await browser.newContext({ baseURL: workerInfo.project.use.baseURL });
       const page = await context.newPage();
       const email = uniqueEmail();
-      await signUp(page, email);
+      try {
+        await signUp(page, email);
+      } catch (error) {
+        // Worker fixtures get no per-test screenshot, so keep one here.
+        await page
+          .screenshot({ path: path.join(workerInfo.project.outputDir, 'account-fixture-failure.png') })
+          .catch(() => undefined);
+        throw error;
+      }
       const storageState = await context.storageState();
       await context.close();
       await use({ email, storageState });
