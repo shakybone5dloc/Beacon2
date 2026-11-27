@@ -390,6 +390,7 @@ A page each user builds in Beacon from their resume and extra details, and share
 
 ### X3. End-to-end tests
 - Playwright: log in, add an application, move it, upload a resume, accept an inbox item.
+- First slice done Nov 27: `e2e/` (own `package.json`, `playwright.config.ts`, README) runs sign up, sign out, sign in and adding an application against the throwaway Testcontainers stack (`npm --prefix e2e test`; API on 8081, frontend on 4201). Still to do: move, upload, inbox, and CI.
 - Runs in CI against the compose stack.
 
 ### X4. Deploy to the home server (done, except the items below)
