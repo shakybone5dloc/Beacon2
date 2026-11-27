@@ -16,6 +16,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.session.DisableEncodeUrlFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
@@ -44,6 +45,11 @@ public class SecurityConfig {
                                             SessionRevocations revocations,
                                             ActivityTracker activity) throws Exception {
         http
+                // Gives the request an id for the logs, the response header and error bodies; first, so
+                // everything after it logs with the id.
+                .addFilterBefore(new RequestIdFilter(), DisableEncodeUrlFilter.class)
+                // Puts the signed-in user's id in the logs (never the email).
+                .addFilterAfter(new UserIdLogFilter(), RememberMeAuthenticationFilter.class)
                 // Ends sessions that signed in before a password reset or the account was switched off.
                 .addFilterAfter(new RevokedSessionFilter(revocations), SecurityContextHolderFilter.class)
                 // Notes when each account was last used, for the admin's user list.

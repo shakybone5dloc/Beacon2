@@ -148,7 +148,8 @@ When nothing is new, it does nothing and writes nothing. So: merge into `main`, 
 | See when it last updated | `tail update.log` |
 | Check that everything's healthy | `./monitor.sh` |
 | See what's running | `docker compose ps` |
-| Read the API's log | `docker compose logs -f api` |
+| Read the API's log (JSON, one object per line) | `docker compose logs -f api` |
+| Follow one request through the log | `docker compose logs api \| grep <request id>` |
 | List backups | `ls -lh backups` |
 | Back up right now | `docker compose restart backup` |
 | Restore a backup | `./restore.sh backups/beacon-2026-11-09-0300.dump` |
@@ -185,3 +186,9 @@ scp -r server:beacon/backups ./beacon-backups
 
 **Test a restore** after setting up, so you know it works before you need it: restore last
 night's dump with `./restore.sh` and check that your applications are there.
+
+## Logs and request ids
+
+The deploy compose file sets `BEACON_JSON_LOGS=true`, so the API logs one JSON object per line (ECS format). Lines logged during a request have `requestId`, and `userId` when someone is signed in (never an email). Running locally keeps the readable format; set `BEACON_JSON_LOGS=true` (or run with the `prod` profile) to see JSON there too.
+
+Every response has an `X-Request-Id` header, and error responses repeat it as `requestId` in the body. When a tester reports a problem, ask for that id and run `docker compose logs api | grep <id>`.
