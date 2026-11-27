@@ -8,6 +8,7 @@ import {
   getApplication,
   getApplicationHistory,
   listApplications,
+  revertApplicationStatusChange,
   scheduleFollowUp,
   updateApplication,
 } from '../api/functions';
@@ -41,6 +42,11 @@ export class ApplicationsApi {
     version: number,
   ): Observable<ApplicationResponse> {
     return this.api.invoke(changeApplicationStatus, { id, body: { status, version } });
+  }
+
+  /** Undoes the latest status change; a second revert of the new entry redoes it. */
+  revertStatusChange(id: string, changeId: number): Observable<ApplicationResponse> {
+    return this.api.invoke(revertApplicationStatusChange, { id, changeId });
   }
 
   create(request: CreateApplicationRequest): Observable<ApplicationResponse> {

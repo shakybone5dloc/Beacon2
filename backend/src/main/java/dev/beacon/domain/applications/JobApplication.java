@@ -186,6 +186,41 @@ public class JobApplication {
         recordStatus(newStatus, now, source, sourceEmailId);
     }
 
+    /**
+     * Undoes {@code change}, which must be the latest history entry and have a previous status.
+     * Bypasses the transition rules so a move into a terminal status can be undone. The revert is
+     * a new entry, so reverting it again redoes the original move.
+     */
+    public void revert(StatusChange change, Instant now) {
+        if (change == null || !statusHistory.contains(change)) {
+            throw new DomainException("That change does not belong to this application.");
+        }
+        if (change != latestChange()) {
+            throw new DomainException("Only the latest status change can be undone.");
+        }
+        if (change.getFromStatus() == null) {
+            throw new DomainException("The first status change cannot be undone.");
+        }
+        if (change.getId() == null) {
+            throw new DomainException("The change has not been saved yet.");
+        }
+
+        var previous = change.getFromStatus();
+        this.updatedAt = now;
+        statusHistory.add(new StatusChange(this, status, previous, now, change.getId()));
+        this.status = previous;
+        this.statusChangedAt = now;
+    }
+
+    /** Highest changedAt, ties going to the one recorded last. */
+    private StatusChange latestChange() {
+        StatusChange latest = null;
+        for (var c : statusHistory) {
+            if (latest == null || !c.getChangedAt().isBefore(latest.getChangedAt())) latest = c;
+        }
+        return latest;
+    }
+
     private void recordStatus(ApplicationStatus newStatus, Instant now, StatusChangeSource source, String sourceEmailId) {
         statusHistory.add(new StatusChange(this, status, newStatus, now, source, sourceEmailId));
         this.status = newStatus;

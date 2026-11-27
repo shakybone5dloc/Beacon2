@@ -120,6 +120,27 @@ public class ApplicationService {
         return Optional.of(toResponse(application));
     }
 
+    /** Empty when the application or change isn't the owner's, or the change is another application's. */
+    @Transactional
+    public Optional<ApplicationResponse> revertStatusChange(UUID ownerId, UUID id, long changeId) {
+        var found = repository.findByIdAndOwnerId(id, ownerId);
+        if (found.isEmpty()) {
+            return Optional.empty();
+        }
+        var application = found.get();
+        var change = application.getStatusHistory().stream()
+                .filter(c -> c.getId() != null && c.getId() == changeId)
+                .findFirst();
+        if (change.isEmpty()) {
+            return Optional.empty();
+        }
+
+        application.revert(change.get(), Instant.now(clock));
+
+        repository.flush();
+        return Optional.of(toResponse(application));
+    }
+
     @Transactional
     public Optional<ApplicationResponse> update(UUID ownerId, UUID id, UpdateApplicationRequest request) {
         var found = repository.findByIdAndOwnerId(id, ownerId);

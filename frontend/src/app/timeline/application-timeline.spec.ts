@@ -93,13 +93,13 @@ const entries: TimelineEntry[] = [
     ...empty,
     kind: 'STATUS_CHANGE',
     at: '2026-10-20T12:00:00Z',
-    statusChange: { id: 2, fromStatus: 'SAVED', toStatus: 'APPLIED', changedAt: '2026-10-20T12:00:00Z', source: 'USER', sourceEmailId: null },
+    statusChange: { id: 2, fromStatus: 'SAVED', toStatus: 'APPLIED', changedAt: '2026-10-20T12:00:00Z', source: 'USER', sourceEmailId: null, revertsChangeId: null },
   },
   {
     ...empty,
     kind: 'STATUS_CHANGE',
     at: '2026-10-19T12:00:00Z',
-    statusChange: { id: 1, fromStatus: null, toStatus: 'SAVED', changedAt: '2026-10-19T12:00:00Z', source: 'USER', sourceEmailId: null },
+    statusChange: { id: 1, fromStatus: null, toStatus: 'SAVED', changedAt: '2026-10-19T12:00:00Z', source: 'USER', sourceEmailId: null, revertsChangeId: null },
   },
 ];
 

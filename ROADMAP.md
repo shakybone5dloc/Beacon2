@@ -95,9 +95,9 @@ Rebuilt from the .NET Beacon, then extended.
 
 ## Then: Email integration
 
-### E1. Status change source + revert (source done, revert pending)
+### E1. Status change source + revert (done; Undo button is BJAVA-14, stats are BJAVA-13)
 - Done (BJAVA-1): `application_status_changes` has `source` (`USER`, `EMAIL`) and `source_email_id` (V29); `changeStatus` has an overload taking both; history and timeline responses carry them.
-- `revert(changeId)`: may undo an email-caused change even when the reverse isn't a normal transition (e.g. out of `REJECTED`), but only if it's still the latest change.
+- Done (BJAVA-2): `POST /api/applications/{id}/history/{changeId}/revert` undoes any status change, whatever its source, even when the reverse isn't a normal transition (e.g. out of `REJECTED`), but only if it's still the latest change and has a previous status (else 409; another user's application or another application's change is 404). The revert is a new `USER` history entry with `reverts_change_id` (V30; `revertsChangeId` in history and timeline responses), so reverting it again redoes the move.
 - Builds on the existing history table rather than a new one.
 
 ### E2. Email ingestion
