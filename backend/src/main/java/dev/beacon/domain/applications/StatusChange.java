@@ -28,15 +28,29 @@ public class StatusChange {
     @Column(nullable = false, updatable = false)
     private Instant changedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16, updatable = false)
+    private StatusChangeSource source;
+
+    /** The Message-ID of the email that caused this change; null for user changes. */
+    @Column(length = 255, updatable = false)
+    private String sourceEmailId;
+
     protected StatusChange() { }
 
-    StatusChange(JobApplication application, ApplicationStatus fromStatus, ApplicationStatus toStatus, Instant changedAt) {
+    StatusChange(JobApplication application, ApplicationStatus fromStatus, ApplicationStatus toStatus, Instant changedAt,
+                 StatusChangeSource source, String sourceEmailId) {
         this.application = application;
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
         this.changedAt = changedAt;
+        this.source = source;
+        this.sourceEmailId = sourceEmailId;
     }
 
+    public Long getId() { return id; }
+    public StatusChangeSource getSource() { return source; }
+    public String getSourceEmailId() { return sourceEmailId; }
     public ApplicationStatus getFromStatus() { return fromStatus; }
     public ApplicationStatus getToStatus() { return toStatus; }
     public Instant getChangedAt() { return changedAt; }

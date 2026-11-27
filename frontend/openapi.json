@@ -6656,12 +6656,23 @@
             "type" : [ "string", "null" ],
             "enum" : [ "SAVED", "APPLIED", "INTERVIEWING", "OFFER", "ACCEPTED", "DECLINED", "REJECTED", "WITHDRAWN" ]
           },
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "source" : {
+            "type" : "string",
+            "enum" : [ "USER", "EMAIL" ]
+          },
+          "sourceEmailId" : {
+            "type" : [ "string", "null" ]
+          },
           "toStatus" : {
             "type" : "string",
             "enum" : [ "SAVED", "APPLIED", "INTERVIEWING", "OFFER", "ACCEPTED", "DECLINED", "REJECTED", "WITHDRAWN" ]
           }
         },
-        "required" : [ "changedAt", "fromStatus", "toStatus" ]
+        "required" : [ "changedAt", "fromStatus", "id", "source", "sourceEmailId", "toStatus" ]
       },
       "StoryDraftResponse" : {
         "type" : "object",

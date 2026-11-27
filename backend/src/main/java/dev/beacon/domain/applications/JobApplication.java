@@ -107,7 +107,7 @@ public class JobApplication {
         app.applyDetails(company, role, jobUrl, notes);
         app.createdAt = now;
         app.updatedAt = now;
-        app.recordStatus(ApplicationStatus.SAVED, now);
+        app.recordStatus(ApplicationStatus.SAVED, now, StatusChangeSource.USER, null);
 
         return app;
     }
@@ -164,19 +164,30 @@ public class JobApplication {
     }
 
     public void changeStatus(ApplicationStatus newStatus, Instant now) {
+        changeStatus(newStatus, now, StatusChangeSource.USER, null);
+    }
+
+    /** Validates everything before touching state, so a failure records nothing. */
+    public void changeStatus(ApplicationStatus newStatus, Instant now, StatusChangeSource source, String sourceEmailId) {
         if (newStatus == status) {
             throw new DomainException("Application is already " + status + ".");
         }
         if (!ApplicationStatusTransitions.canMove(status, newStatus)) {
             throw new DomainException("Cannot move an application from " + status + " to " + newStatus + ".");
         }
+        if (source == StatusChangeSource.EMAIL && (sourceEmailId == null || sourceEmailId.isBlank())) {
+            throw new DomainException("An email-caused change needs the email id.");
+        }
+        if (source == StatusChangeSource.USER && sourceEmailId != null) {
+            throw new DomainException("A change made by the user cannot carry an email id.");
+        }
 
         this.updatedAt = now;
-        recordStatus(newStatus, now);
+        recordStatus(newStatus, now, source, sourceEmailId);
     }
 
-    private void recordStatus(ApplicationStatus newStatus, Instant now) {
-        statusHistory.add(new StatusChange(this, status, newStatus, now));
+    private void recordStatus(ApplicationStatus newStatus, Instant now, StatusChangeSource source, String sourceEmailId) {
+        statusHistory.add(new StatusChange(this, status, newStatus, now, source, sourceEmailId));
         this.status = newStatus;
         this.statusChangedAt = now;
     }

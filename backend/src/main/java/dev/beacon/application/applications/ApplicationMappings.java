@@ -84,9 +84,12 @@ public final class ApplicationMappings {
 
     public static StatusChangeResponse toResponse(StatusChange c) {
         return new StatusChangeResponse(
+                c.getId(),
                 c.getFromStatus() == null ? null : c.getFromStatus().name(),
                 c.getToStatus().name(),
-                c.getChangedAt()
+                c.getChangedAt(),
+                c.getSource().name(),
+                c.getSourceEmailId()
         );
     }
 }

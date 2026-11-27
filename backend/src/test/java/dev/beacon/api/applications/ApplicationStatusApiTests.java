@@ -97,6 +97,31 @@ class ApplicationStatusApiTests extends SignedInApiTests {
     }
 
     @Test
+    void historyEntriesCarryIdAndSource() {
+        var id = createApplication();
+        patchStatus(id, "APPLIED", 0);
+
+        var result = mvc.get().uri("/api/applications/{id}/history", id).exchange();
+
+        assertThat(result).hasStatus(HttpStatus.OK);
+        assertThat(result).bodyJson().extractingPath("$[*].source").asArray().containsExactly("USER", "USER");
+        assertThat(result).bodyJson().extractingPath("$[1].sourceEmailId").isNull();
+        assertThat(result).bodyJson().extractingPath("$[1].id").isNotNull();
+    }
+
+    @Test
+    void timelineStatusEntriesCarrySource() {
+        var id = createApplication();
+        patchStatus(id, "APPLIED", 0);
+
+        var result = mvc.get().uri("/api/applications/{id}/timeline", id).exchange();
+
+        assertThat(result).hasStatus(HttpStatus.OK);
+        assertThat(result).bodyJson().extractingPath("$[?(@.kind == 'STATUS_CHANGE')].statusChange.source")
+                .asArray().containsExactly("USER", "USER");
+    }
+
+    @Test
     void historyForUnknownIdReturns404() {
         var result = mvc.get().uri("/api/applications/{id}/history", UUID.randomUUID()).exchange();
 
