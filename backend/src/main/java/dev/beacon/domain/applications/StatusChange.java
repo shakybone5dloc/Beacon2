@@ -28,28 +28,29 @@ public class StatusChange {
     @Column(nullable = false, updatable = false)
     private Instant changedAt;
 
-    // TODO(BJAVA-1): add the `source` field: type StatusChangeSource, @Enumerated(EnumType.STRING),
-    //   @Column(nullable = false, length = 16, updatable = false). Copy the toStatus field above as your example.
-    //   Concept: JPA maps a Java enum to a varchar column; STRING stores the name instead of the fragile ordinal.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16, updatable = false)
+    private StatusChangeSource source;
 
-    // TODO(BJAVA-1): add `sourceEmailId` (String, nullable, length 255, updatable = false). Column name
-    //   comes from Spring's naming strategy: sourceEmailId -> source_email_id.
+    /** The Message-ID of the email that caused this change; null for user changes. */
+    @Column(length = 255, updatable = false)
+    private String sourceEmailId;
 
     protected StatusChange() { }
 
-    // TODO(BJAVA-1): add `StatusChangeSource source, String sourceEmailId` parameters and assign them.
-    //   Then fix the call in JobApplication.recordStatus. The constructor stays package-private so only the aggregate creates entries.
-    StatusChange(JobApplication application, ApplicationStatus fromStatus, ApplicationStatus toStatus, Instant changedAt) {
+    StatusChange(JobApplication application, ApplicationStatus fromStatus, ApplicationStatus toStatus, Instant changedAt,
+                 StatusChangeSource source, String sourceEmailId) {
         this.application = application;
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
         this.changedAt = changedAt;
+        this.source = source;
+        this.sourceEmailId = sourceEmailId;
     }
 
     public Long getId() { return id; }
-    // TODO(BJAVA-1): return the real fields. These stubs only keep the project compiling.
-    public StatusChangeSource getSource() { return null; }
-    public String getSourceEmailId() { return null; }
+    public StatusChangeSource getSource() { return source; }
+    public String getSourceEmailId() { return sourceEmailId; }
     public ApplicationStatus getFromStatus() { return fromStatus; }
     public ApplicationStatus getToStatus() { return toStatus; }
     public Instant getChangedAt() { return changedAt; }

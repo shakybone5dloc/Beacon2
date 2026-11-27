@@ -1,5 +1,3 @@
--- TODO(BJAVA-1): add two columns to application_status_changes.
---   source           varchar(16)  NOT NULL DEFAULT 'USER'   (existing rows become USER)
---   source_email_id  varchar(255) NULL                      (plain string, no foreign key: there is no emails table yet)
--- Look at V2__add_status_history.sql and V28__add_user_admin_fields.sql for the ALTER TABLE style.
--- Concept: a NOT NULL column with a DEFAULT backfills old rows in the same statement.
+ALTER TABLE application_status_changes
+    ADD COLUMN source varchar(16) NOT NULL DEFAULT 'USER',
+    ADD COLUMN source_email_id varchar(255) NULL;
