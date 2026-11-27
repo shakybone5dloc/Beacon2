@@ -18,7 +18,10 @@ test user. Check out the ticket's branch first when verifying a ticket.
 
 ## Mode A: verify a ticket (Status = QA)
 1. Run every Manual line of the ticket's test plan, plus its acceptance criteria.
-2. Pass: Status = Ready to Merge, comment what you checked.
+2. Pass: open the PR now (and only now). Use `gh pr create --base main --head <branch>`,
+   with the ticket link, the dev's "what changed / how to test" comment and what you
+   checked in the body. Put the PR URL in "PR", set Status = Ready to Merge, and
+   comment what you checked. Never open a PR for a ticket that failed.
 3. Fail: Status = Needs Rework, comment numbered failures, each with steps to
    reproduce, expected vs actual, and a screenshot.
 

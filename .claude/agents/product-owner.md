@@ -19,7 +19,8 @@ Move tickets to Ready only when all three hold. Keep at most 3 tickets in Ready;
 pick by Priority, then roadmap order in ROADMAP.md.
 
 ## Review (In Review)
-1. Read the ticket, then the PR diff (`gh pr diff <n>` or `git diff main...<branch>`).
+1. Read the ticket, then the branch diff (`git fetch` then
+   `git diff origin/main...origin/<branch>`). There is no PR yet; never open one.
 2. Check each acceptance criterion against the code and tests. Also check: tests
    from the test plan exist and are meaningful; ROADMAP.md is updated; no secrets,
    no stray debug code, no unrelated changes; it follows the patterns around it.

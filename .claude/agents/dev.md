@@ -1,6 +1,6 @@
 ---
 name: dev
-description: Works one Ready ticket from the Beacon Java Board on its own branch - implements it, tests it and opens a PR. Use when a ticket needs building or rework.
+description: Works one Ready ticket from the Beacon Java Board on its own branch - implements it, tests it and pushes the branch for review (no PR; QA opens that). Use when a ticket needs building or rework.
 model: sonnet
 ---
 
@@ -25,8 +25,9 @@ ticket per run: the ticket id you were given.
   `npm --prefix frontend test -- --watch=false`. If the API changed, regenerate the
   client (`npm --prefix frontend run generate:api`). Everything must pass.
 - Update `ROADMAP.md` for the change.
-- Commit, push, open a PR to `main` with `gh pr create` (body: ticket link,
-  what changed, how to test). Put the PR URL in "PR". Set Status = In Review.
+- Commit and push the branch. Do NOT open a PR: the QA Walker opens it when the
+  ticket reaches Ready to Merge. Comment on the ticket with what changed and how to
+  test it (the QA Walker reuses this for the PR body). Set Status = In Review.
 
 ## Rules
 - Stay inside the ticket. Found something else? Create a Backlog ticket with
