@@ -17,15 +17,20 @@ ticket page for every handoff.
 | Ready | In Progress | Dev |
 | In Progress | With AJ | Dev, when blocked on a decision only AJ can make (AJ answers questions; he does no codework, so agents write all the code) |
 | With AJ | In Review | AJ, when his TODOs are finished |
-| In Progress | In Review | Dev, Agent-codes mode: PR is open and tests pass |
+| In Progress | In Review | Dev, when the branch is pushed and tests pass (no PR yet) |
 | In Review | QA | Product Owner, when every acceptance criterion is met |
 | In Review | Needs Rework | Product Owner, with a numbered list of gaps; add 1 to "Rework count" |
 | Needs Rework | In Progress | Dev |
-| QA | Ready to Merge | QA Walker, after running the ticket's test plan in the browser |
+| QA | Ready to Merge | QA Walker, after running the ticket's test plan in the browser; it opens the PR at this step |
 | QA | Needs Rework | QA Walker, with steps to reproduce and screenshots |
 | Ready to Merge | Done | AJ only. Agents never merge to main. |
 
 If "Rework count" reaches 3, set the status to "With AJ" and stop: a person needs to look.
+
+**No PR until Ready to Merge.** Review and QA work from the pushed branch
+(`git diff origin/main...origin/<branch>`). An open PR means "AJ can merge this";
+only the QA Walker opens one, at QA → Ready to Merge. The "PR" property stays
+empty until then.
 
 ## Ticket page body (Planner writes this; everyone else keeps it)
 
@@ -55,4 +60,4 @@ What this ticket deliberately does not do.
 - Comment on the ticket page: who you are, what you did, what's next. Keep it short.
 - Set "Last update" to one line.
 - Never read, print or commit `.env` or any secret. Never push to main. Never merge.
-- Repo: `ROADMAP.md` gets updated in the same PR as the change it describes.
+- Repo: `ROADMAP.md` gets updated on the same branch as the change it describes.
