@@ -1310,6 +1310,41 @@
         "tags" : [ "Applications" ]
       }
     },
+    "/api/applications/{id}/history/{changeId}/revert" : {
+      "post" : {
+        "operationId" : "revertApplicationStatusChange",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "path",
+          "name" : "changeId",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApplicationResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "Applications" ]
+      }
+    },
     "/api/applications/{id}/possible-duplicates" : {
       "get" : {
         "operationId" : "listPossibleDuplicates",
@@ -6660,6 +6695,10 @@
             "type" : "integer",
             "format" : "int64"
           },
+          "revertsChangeId" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64"
+          },
           "source" : {
             "type" : "string",
             "enum" : [ "USER", "EMAIL" ]
@@ -6672,7 +6711,7 @@
             "enum" : [ "SAVED", "APPLIED", "INTERVIEWING", "OFFER", "ACCEPTED", "DECLINED", "REJECTED", "WITHDRAWN" ]
           }
         },
-        "required" : [ "changedAt", "fromStatus", "id", "source", "sourceEmailId", "toStatus" ]
+        "required" : [ "changedAt", "fromStatus", "id", "revertsChangeId", "source", "sourceEmailId", "toStatus" ]
       },
       "StoryDraftResponse" : {
         "type" : "object",

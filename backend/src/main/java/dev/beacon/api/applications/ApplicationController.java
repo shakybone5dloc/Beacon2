@@ -118,6 +118,16 @@ public class ApplicationController {
         return ResponseEntity.of(service.changeStatus(user.id(), id, status, request.version()));
     }
 
+    @Operation(operationId = "revertApplicationStatusChange")
+    @PostMapping("/{id}/history/{changeId}/revert")
+    public ResponseEntity<ApplicationResponse> revertStatusChange(
+            @AuthenticationPrincipal SignedInUser user,
+            @PathVariable UUID id,
+            @PathVariable long changeId
+    ) {
+        return ResponseEntity.of(service.revertStatusChange(user.id(), id, changeId));
+    }
+
     /** Another user's company id reads as unknown, the same as one that doesn't exist. */
     private static <T> T withCompanyErrors(Supplier<T> action) {
         try {

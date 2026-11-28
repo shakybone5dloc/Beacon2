@@ -2,6 +2,11 @@ package dev.beacon.api.applications;
 
 import dev.beacon.SignedInApiTests;
 import dev.beacon.TestcontainersConfiguration;
+import dev.beacon.domain.applications.ApplicationStatus;
+import dev.beacon.domain.applications.StatusChangeSource;
+import dev.beacon.infrastructure.persistence.JobApplicationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -21,6 +26,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import(TestcontainersConfiguration.class)
 @Transactional
 class ApplicationStatusApiTests extends SignedInApiTests {
+
+    @Autowired JobApplicationRepository applications;
 
     @Test
     void allowedMoveReturns200WithBumpedVersion() {
@@ -137,6 +144,102 @@ class ApplicationStatusApiTests extends SignedInApiTests {
         assertThat(result).bodyJson().extractingPath("$.statusChangedAt").isNotNull();
     }
 
+    // --- revert ---
+
+    @Test
+    void revertLatestUserMoveRestoresPriorStatusAndRecordsEntry() {
+        var id = createApplication();
+        patchStatus(id, "APPLIED", 0);
+        patchStatus(id, "REJECTED", 1);
+
+        var result = revert(id, latestChangeId(id));
+
+        assertThat(result).hasStatus(HttpStatus.OK);
+        assertThat(result).bodyJson().extractingPath("$.status").isEqualTo("APPLIED");
+        var history = mvc.get().uri("/api/applications/{id}/history", id).exchange();
+        assertThat(history).bodyJson().extractingPath("$[3].toStatus").isEqualTo("APPLIED");
+        assertThat(history).bodyJson().extractingPath("$[3].source").isEqualTo("USER");
+        assertThat(history).bodyJson().extractingPath("$[3].revertsChangeId").isEqualTo(
+                ((Number) historyIds(id).get(2)).intValue());
+    }
+
+    @Test
+    void revertLatestEmailChangeWorks() {
+        var id = createApplication();
+        patchStatus(id, "APPLIED", 0);
+        var app = applications.findById(UUID.fromString(id)).orElseThrow();
+        app.changeStatus(ApplicationStatus.REJECTED, Instant.now().plusSeconds(60), StatusChangeSource.EMAIL, "<m1@x>");
+        applications.saveAndFlush(app);
+
+        var result = revert(id, latestChangeId(id));
+
+        assertThat(result).hasStatus(HttpStatus.OK);
+        assertThat(result).bodyJson().extractingPath("$.status").isEqualTo("APPLIED");
+    }
+
+    @Test
+    void revertingTheRevertRedoesTheMove() {
+        var id = createApplication();
+        patchStatus(id, "APPLIED", 0);
+        patchStatus(id, "REJECTED", 1);
+        revert(id, latestChangeId(id));
+
+        var result = revert(id, latestChangeId(id));
+
+        assertThat(result).hasStatus(HttpStatus.OK);
+        assertThat(result).bodyJson().extractingPath("$.status").isEqualTo("REJECTED");
+    }
+
+    @Test
+    void revertOfOlderChangeReturns409AndChangesNothing() {
+        var id = createApplication();
+        patchStatus(id, "APPLIED", 0);
+        var applied = latestChangeId(id);
+        patchStatus(id, "INTERVIEWING", 1);
+
+        var result = revert(id, applied);
+
+        assertThat(result).hasStatus(HttpStatus.CONFLICT);
+        var history = mvc.get().uri("/api/applications/{id}/history", id).exchange();
+        assertThat(history).bodyJson().extractingPath("$.length()").isEqualTo(3);
+    }
+
+    @Test
+    void revertOfFirstEntryReturns409() {
+        var id = createApplication();
+
+        var result = revert(id, latestChangeId(id));
+
+        assertThat(result).hasStatus(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void revertOnAnotherUsersApplicationReturns404() {
+        var id = createApplication();
+        patchStatus(id, "APPLIED", 0);
+        var changeId = latestChangeId(id);
+
+        var result = as(register()).post().uri("/api/applications/{id}/history/{changeId}/revert", id, changeId).exchange();
+
+        assertThat(result).hasStatus(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void revertWithChangeFromAnotherApplicationReturns404() {
+        var first = createApplication();
+        var second = createApplication();
+        patchStatus(second, "APPLIED", 0);
+
+        var result = revert(first, latestChangeId(second));
+
+        assertThat(result).hasStatus(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void revertOfUnknownApplicationReturns404() {
+        assertThat(revert(UUID.randomUUID().toString(), 1)).hasStatus(HttpStatus.NOT_FOUND);
+    }
+
     // --- helpers ---
 
     private String createApplication() {
@@ -159,5 +262,23 @@ class ApplicationStatusApiTests extends SignedInApiTests {
                         {"status": "%s", "version": %d}
                         """.formatted(status, version))
                 .exchange();
+    }
+
+    private MvcTestResult revert(String id, long changeId) {
+        return mvc.post().uri("/api/applications/{id}/history/{changeId}/revert", id, changeId).exchange();
+    }
+
+    private long latestChangeId(String id) {
+        var ids = historyIds(id);
+        return ((Number) ids.get(ids.size() - 1)).longValue();
+    }
+
+    private java.util.List<Object> historyIds(String id) {
+        var history = mvc.get().uri("/api/applications/{id}/history", id).exchange();
+        try {
+            return com.jayway.jsonpath.JsonPath.read(history.getResponse().getContentAsString(), "$[*].id");
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

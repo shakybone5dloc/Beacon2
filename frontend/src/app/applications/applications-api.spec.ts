@@ -27,6 +27,14 @@ describe('ApplicationsApi', () => {
     req.flush({});
   });
 
+  it('revertStatusChange POSTs to the revert URL of the change', () => {
+    service.revertStatusChange('abc', 7).subscribe();
+
+    const req = http.expectOne('/api/applications/abc/history/7/revert');
+    expect(req.request.method).toBe('POST');
+    req.flush({});
+  });
+
   it('create POSTs request to /api/applications', () => {
     let request = {
       company: 'Acme',

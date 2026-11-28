@@ -89,7 +89,8 @@ public final class ApplicationMappings {
                 c.getToStatus().name(),
                 c.getChangedAt(),
                 c.getSource().name(),
-                c.getSourceEmailId()
+                c.getSourceEmailId(),
+                c.getRevertsChangeId()
         );
     }
 }

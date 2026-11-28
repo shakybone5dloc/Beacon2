@@ -16,6 +16,7 @@ public record StatusChangeResponse(
         Instant changedAt,
         @Schema(implementation = StatusChangeSource.class)
         String source,
-        @Nullable String sourceEmailId
+        @Nullable String sourceEmailId,
+        @Nullable Long revertsChangeId
 ) {
 }

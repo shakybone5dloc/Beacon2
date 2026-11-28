@@ -36,6 +36,10 @@ public class StatusChange {
     @Column(length = 255, updatable = false)
     private String sourceEmailId;
 
+    /** The change this entry undoes; null for ordinary changes. */
+    @Column(name = "reverts_change_id", updatable = false)
+    private Long revertsChangeId;
+
     protected StatusChange() { }
 
     StatusChange(JobApplication application, ApplicationStatus fromStatus, ApplicationStatus toStatus, Instant changedAt,
@@ -48,10 +52,17 @@ public class StatusChange {
         this.sourceEmailId = sourceEmailId;
     }
 
+    StatusChange(JobApplication application, ApplicationStatus fromStatus, ApplicationStatus toStatus, Instant changedAt,
+                 Long revertsChangeId) {
+        this(application, fromStatus, toStatus, changedAt, StatusChangeSource.USER, null);
+        this.revertsChangeId = revertsChangeId;
+    }
+
     public Long getId() { return id; }
     public StatusChangeSource getSource() { return source; }
     public String getSourceEmailId() { return sourceEmailId; }
     public ApplicationStatus getFromStatus() { return fromStatus; }
     public ApplicationStatus getToStatus() { return toStatus; }
     public Instant getChangedAt() { return changedAt; }
+    public Long getRevertsChangeId() { return revertsChangeId; }
 }
